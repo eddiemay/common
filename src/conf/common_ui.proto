@@ -1,0 +1,21 @@
+syntax = "proto2";
+
+package common;
+
+option java_package = "com.digitald4.common.proto";
+option java_outer_classname = "DD4UIProtos";
+
+enum DateRangeType {
+  UNSPECIFIED = 0;
+  DAY = 1;
+  WEEK = 2;
+  MONTH = 3;
+  YEAR = 4;
+}
+
+message GPSAddress {
+	optional string address = 1;
+	optional string unit = 2;
+	optional double latitude = 3;
+	optional double longitude = 4;
+}

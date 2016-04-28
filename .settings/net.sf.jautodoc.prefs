@@ -1,0 +1,16 @@
+add_header=true
+add_todo=false
+create_dummy_doc=false
+eclipse.preferences.version=1
+filter_fields=false
+filter_methods=false
+filter_types=false
+header_text=/*\r\n * Copyright (c) 2002-2010 ESP Suite. All Rights Reserved.\r\n *\r\n *     \r\n * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" \r\n * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, \r\n * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR \r\n * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR \r\n * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, \r\n * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, \r\n * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; \r\n * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, \r\n * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE \r\n * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, \r\n * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. \r\n * \r\n * Authors\: Technology Integration Group, SCE\r\n * Developers\: Eddie Mayfield, Frank Gonzales, Augustin Muniz,\r\n * Kate Suwan, Hiro Kushida, Andrew McNaughton, Brian Stonerock,\r\n * Russell Ragsdale, Patrick Ridge, Everett Aragon.\r\n * \r\n */
+mode=mode_keep
+project_specific_settings=true
+replace_header=true
+replacements=<?xml version\="1.0" standalone\="yes"?>\n\n<replacements>\n<replacement key\="get" scope\="1" mode\="0">Gets the</replacement>\n<replacement key\="set" scope\="1" mode\="0">Sets the</replacement>\n<replacement key\="add" scope\="1" mode\="0">Adds the</replacement>\n<replacement key\="edit" scope\="1" mode\="0">Edits the</replacement>\n<replacement key\="remove" scope\="1" mode\="0">Removes the</replacement>\n<replacement key\="init" scope\="1" mode\="0">Inits the</replacement>\n<replacement key\="parse" scope\="1" mode\="0">Parses the</replacement>\n<replacement key\="create" scope\="1" mode\="0">Creates the</replacement>\n<replacement key\="build" scope\="1" mode\="0">Builds the</replacement>\n<replacement key\="is" scope\="1" mode\="0">Checks if is</replacement>\n<replacement key\="print" scope\="1" mode\="0">Prints the</replacement>\n<replacement key\="has" scope\="1" mode\="0">Checks for</replacement>\n</replacements>\n\n
+single_line_comment=false
+visibility_package=false
+visibility_private=false
+visibility_protected=false

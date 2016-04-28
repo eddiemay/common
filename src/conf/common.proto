@@ -1,0 +1,50 @@
+syntax = "proto2";
+
+package common;
+
+option java_package = "com.digitald4.common.proto";
+option java_outer_classname = "DD4Protos";
+
+message GeneralData {
+	optional int32 id = 1;
+	optional int32 group_id = 2;
+	required int32 in_group_id = 3;
+	required string name = 4;
+	optional double rank = 5;
+	optional bool active = 6;
+	optional string description = 7;
+	optional string data = 8;
+}
+
+message DataFile {
+	required int32 id = 1;
+	required string name = 2;
+	enum FileType {
+		UNSPECIFIED = 0;
+		MISC = 1;
+		PDF = 2;
+	}
+	required FileType type = 3;
+	optional int32 size = 4;
+	optional bytes data = 5;
+}
+
+message User {
+	optional int32 id = 1;
+
+	enum UserType {
+		UNSPECIFIED = 0;
+		ADMIN = 1;
+		STANDARD = 2;
+	}
+	required UserType type_id = 2;
+	required string user_name = 3;
+	required string email = 4;
+	required string first_name = 5;
+	required string last_name = 6;
+	optional bool disabled = 7;
+	optional bool read_only = 8;
+	optional string password_d = 9;
+	optional string notes = 10;
+	optional int64 last_login = 11;
+}

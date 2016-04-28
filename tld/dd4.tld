@@ -1,0 +1,176 @@
+<taglib version="2.0" xmlns="http://java.sun.com/xml/ns/j2ee" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee web-jsptaglibrary_2_0.xsd">
+<tlib-version>1.0</tlib-version>
+<short-name>dd4</short-name>
+<uri>/WEB-INF/tld</uri>
+    <tag>
+        <name>nav</name>
+        <tag-class>com.digitald4.common.tld.NavTag</tag-class>
+        <body-content>JSP</body-content>
+        <info>This tag displays an entire web navigation</info>
+        <attribute>
+            <name>navigation</name>
+            <required>true</required>
+            <description>The navigation object</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>selected</name>
+            <required>true</required>
+            <description>The currently selected navigation item</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>breadcrumb</name>
+        <tag-class>com.digitald4.common.tld.BreadCrumbTag</tag-class>
+        <body-content>JSP</body-content>
+        <info>This tag displays a web bread crumb trail</info>
+        <attribute>
+            <name>navigation</name>
+            <required>true</required>
+            <description>The navigation object</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>selected</name>
+            <required>true</required>
+            <description>The currently selected navigation item</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>table</name>
+        <tag-class>com.digitald4.common.tld.TableTag</tag-class>
+        <body-content>JSP</body-content>
+        <info>This tag displays a table of data</info>
+        <attribute>
+            <name>title</name>
+            <required>true</required>
+            <description>The title of the table</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>columns</name>
+            <required>true</required>
+            <description>The columns of the table</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>data</name>
+            <required>true</required>
+            <description>The objects that are to be displayed</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>callbackCode</name>
+            <required>false</required>
+            <description>Javascript code to be executed after successful edit</description>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+		<name>input</name>
+		<tagclass>com.digitald4.common.tld.InputTag</tagclass>
+		<bodycontent>empty</bodycontent>
+		<info>This tag will generate an input tag complete with options and have the desired option selected</info>
+		<attribute>
+			<name>type</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>object</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>prop</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>label</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>options</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>size</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>required</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>async</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+	<tag>
+		<name>medcal</name>
+		<tagclass>com.digitald4.common.tld.MedCalTag</tagclass>
+		<bodycontent>empty</bodycontent>
+		<info>This tag will generate a medium sized calendar</info>
+		<attribute>
+			<name>title</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>year</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>month</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>events</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+	<tag>
+		<name>largecal</name>
+		<tagclass>com.digitald4.common.tld.LargeCalTag</tagclass>
+		<bodycontent>empty</bodycontent>
+		<info>This tag will generate a large sized calendar</info>
+		<attribute>
+			<name>title</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>userId</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>year</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>month</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>events</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+</taglib>
