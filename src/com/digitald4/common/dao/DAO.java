@@ -16,5 +16,7 @@ public interface DAO<T> {
 	
 	List<T> query(QueryParam... params) throws DD4StorageException;
 	
+	List<T> query(List<QueryParam> params) throws DD4StorageException;
+	
 	List<T> getAll() throws DD4StorageException;
 }

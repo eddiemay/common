@@ -42,6 +42,11 @@ public class GenericDAOStore<T> implements DAOStore<T> {
 	}
 	
 	@Override
+	public List<T> query(List<QueryParam> params) throws DD4StorageException {
+		return dao.query(params);
+	}
+	
+	@Override
 	public List<T> getAll() throws DD4StorageException {
 		return dao.getAll();
 	}

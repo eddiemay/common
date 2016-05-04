@@ -59,7 +59,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 				.replaceAll("\\{VALUES\\}", values);
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);) {
+				PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 			int index = 1;
 			for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
 				setObject(ps, index++, entry.getKey(), entry.getValue());
@@ -99,6 +99,15 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public List<T> query(QueryParam... params) throws DD4StorageException {
+		List<QueryParam> list = new ArrayList<>();
+		for (QueryParam param : params) {
+			list.add(param);
+		}
+		return query(list);
+	}
+	
+	@Override
+	public List<T> query(List<QueryParam> params) throws DD4StorageException {
 		String columns = "";
 		for (QueryParam param : params) {
 			if (columns.length() > 0) {
@@ -110,10 +119,10 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 				.replaceAll("\\{COLUMNS\\}", columns);
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql);) {
+				PreparedStatement ps = con.prepareStatement(sql)) {
 			int p = 1;
 			for (QueryParam param : params) {
-				ps.setObject(p++, param.getValue());
+				setObject(ps, p++, descriptor.findFieldByName(param.getColumn()), param.getValue());
 			}
 			List<T> results = new ArrayList<T>();
 			ResultSet rs = ps.executeQuery();
@@ -165,7 +174,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 				.replaceAll("\\{SETS\\}", sets);
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);) {
+				PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 			int index = 1;
 			for (Map.Entry<FieldDescriptor, Object> entry : modified) {
 				System.out.println("Setting: " + entry.getKey().getName());

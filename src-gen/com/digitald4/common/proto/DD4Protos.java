@@ -2126,13 +2126,13 @@ public final class DD4Protos {
     int getId();
 
     /**
-     * <code>required .common.User.UserType type_id = 2;</code>
+     * <code>required .common.User.UserType type = 2;</code>
      */
-    boolean hasTypeId();
+    boolean hasType();
     /**
-     * <code>required .common.User.UserType type_id = 2;</code>
+     * <code>required .common.User.UserType type = 2;</code>
      */
-    com.digitald4.common.proto.DD4Protos.User.UserType getTypeId();
+    com.digitald4.common.proto.DD4Protos.User.UserType getType();
 
     /**
      * <code>required string user_name = 3;</code>
@@ -2209,18 +2209,18 @@ public final class DD4Protos {
     boolean getReadOnly();
 
     /**
-     * <code>optional string password_d = 9;</code>
+     * <code>optional string password = 9;</code>
      */
-    boolean hasPasswordD();
+    boolean hasPassword();
     /**
-     * <code>optional string password_d = 9;</code>
+     * <code>optional string password = 9;</code>
      */
-    java.lang.String getPasswordD();
+    java.lang.String getPassword();
     /**
-     * <code>optional string password_d = 9;</code>
+     * <code>optional string password = 9;</code>
      */
     com.google.protobuf.ByteString
-        getPasswordDBytes();
+        getPasswordBytes();
 
     /**
      * <code>optional string notes = 10;</code>
@@ -2258,14 +2258,14 @@ public final class DD4Protos {
     }
     private User() {
       id_ = 0;
-      typeId_ = 0;
+      type_ = 0;
       userName_ = "";
       email_ = "";
       firstName_ = "";
       lastName_ = "";
       disabled_ = false;
       readOnly_ = false;
-      passwordD_ = "";
+      password_ = "";
       notes_ = "";
       lastLogin_ = 0L;
     }
@@ -2309,7 +2309,7 @@ public final class DD4Protos {
                 unknownFields.mergeVarintField(2, rawValue);
               } else {
                 bitField0_ |= 0x00000002;
-                typeId_ = rawValue;
+                type_ = rawValue;
               }
               break;
             }
@@ -2350,7 +2350,7 @@ public final class DD4Protos {
             case 74: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000100;
-              passwordD_ = bs;
+              password_ = bs;
               break;
             }
             case 82: {
@@ -2498,19 +2498,19 @@ public final class DD4Protos {
       return id_;
     }
 
-    public static final int TYPE_ID_FIELD_NUMBER = 2;
-    private int typeId_;
+    public static final int TYPE_FIELD_NUMBER = 2;
+    private int type_;
     /**
-     * <code>required .common.User.UserType type_id = 2;</code>
+     * <code>required .common.User.UserType type = 2;</code>
      */
-    public boolean hasTypeId() {
+    public boolean hasType() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>required .common.User.UserType type_id = 2;</code>
+     * <code>required .common.User.UserType type = 2;</code>
      */
-    public com.digitald4.common.proto.DD4Protos.User.UserType getTypeId() {
-      com.digitald4.common.proto.DD4Protos.User.UserType result = com.digitald4.common.proto.DD4Protos.User.UserType.valueOf(typeId_);
+    public com.digitald4.common.proto.DD4Protos.User.UserType getType() {
+      com.digitald4.common.proto.DD4Protos.User.UserType result = com.digitald4.common.proto.DD4Protos.User.UserType.valueOf(type_);
       return result == null ? com.digitald4.common.proto.DD4Protos.User.UserType.UNSPECIFIED : result;
     }
 
@@ -2712,19 +2712,19 @@ public final class DD4Protos {
       return readOnly_;
     }
 
-    public static final int PASSWORD_D_FIELD_NUMBER = 9;
-    private volatile java.lang.Object passwordD_;
+    public static final int PASSWORD_FIELD_NUMBER = 9;
+    private volatile java.lang.Object password_;
     /**
-     * <code>optional string password_d = 9;</code>
+     * <code>optional string password = 9;</code>
      */
-    public boolean hasPasswordD() {
+    public boolean hasPassword() {
       return ((bitField0_ & 0x00000100) == 0x00000100);
     }
     /**
-     * <code>optional string password_d = 9;</code>
+     * <code>optional string password = 9;</code>
      */
-    public java.lang.String getPasswordD() {
-      java.lang.Object ref = passwordD_;
+    public java.lang.String getPassword() {
+      java.lang.Object ref = password_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -2732,22 +2732,22 @@ public final class DD4Protos {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          passwordD_ = s;
+          password_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string password_d = 9;</code>
+     * <code>optional string password = 9;</code>
      */
     public com.google.protobuf.ByteString
-        getPasswordDBytes() {
-      java.lang.Object ref = passwordD_;
+        getPasswordBytes() {
+      java.lang.Object ref = password_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        passwordD_ = b;
+        password_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -2817,7 +2817,7 @@ public final class DD4Protos {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasTypeId()) {
+      if (!hasType()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -2847,7 +2847,7 @@ public final class DD4Protos {
         output.writeInt32(1, id_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeEnum(2, typeId_);
+        output.writeEnum(2, type_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessage.writeString(output, 3, userName_);
@@ -2868,7 +2868,7 @@ public final class DD4Protos {
         output.writeBool(8, readOnly_);
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        com.google.protobuf.GeneratedMessage.writeString(output, 9, passwordD_);
+        com.google.protobuf.GeneratedMessage.writeString(output, 9, password_);
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         com.google.protobuf.GeneratedMessage.writeString(output, 10, notes_);
@@ -2890,7 +2890,7 @@ public final class DD4Protos {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(2, typeId_);
+          .computeEnumSize(2, type_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessage.computeStringSize(3, userName_);
@@ -2913,7 +2913,7 @@ public final class DD4Protos {
           .computeBoolSize(8, readOnly_);
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        size += com.google.protobuf.GeneratedMessage.computeStringSize(9, passwordD_);
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(9, password_);
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.GeneratedMessage.computeStringSize(10, notes_);
@@ -3036,7 +3036,7 @@ public final class DD4Protos {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        typeId_ = 0;
+        type_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
         userName_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -3050,7 +3050,7 @@ public final class DD4Protos {
         bitField0_ = (bitField0_ & ~0x00000040);
         readOnly_ = false;
         bitField0_ = (bitField0_ & ~0x00000080);
-        passwordD_ = "";
+        password_ = "";
         bitField0_ = (bitField0_ & ~0x00000100);
         notes_ = "";
         bitField0_ = (bitField0_ & ~0x00000200);
@@ -3087,7 +3087,7 @@ public final class DD4Protos {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.typeId_ = typeId_;
+        result.type_ = type_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
@@ -3115,7 +3115,7 @@ public final class DD4Protos {
         if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
           to_bitField0_ |= 0x00000100;
         }
-        result.passwordD_ = passwordD_;
+        result.password_ = password_;
         if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
           to_bitField0_ |= 0x00000200;
         }
@@ -3143,8 +3143,8 @@ public final class DD4Protos {
         if (other.hasId()) {
           setId(other.getId());
         }
-        if (other.hasTypeId()) {
-          setTypeId(other.getTypeId());
+        if (other.hasType()) {
+          setType(other.getType());
         }
         if (other.hasUserName()) {
           bitField0_ |= 0x00000004;
@@ -3172,9 +3172,9 @@ public final class DD4Protos {
         if (other.hasReadOnly()) {
           setReadOnly(other.getReadOnly());
         }
-        if (other.hasPasswordD()) {
+        if (other.hasPassword()) {
           bitField0_ |= 0x00000100;
-          passwordD_ = other.passwordD_;
+          password_ = other.password_;
           onChanged();
         }
         if (other.hasNotes()) {
@@ -3191,7 +3191,7 @@ public final class DD4Protos {
       }
 
       public final boolean isInitialized() {
-        if (!hasTypeId()) {
+        if (!hasType()) {
           return false;
         }
         if (!hasUserName()) {
@@ -3260,38 +3260,38 @@ public final class DD4Protos {
         return this;
       }
 
-      private int typeId_ = 0;
+      private int type_ = 0;
       /**
-       * <code>required .common.User.UserType type_id = 2;</code>
+       * <code>required .common.User.UserType type = 2;</code>
        */
-      public boolean hasTypeId() {
+      public boolean hasType() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required .common.User.UserType type_id = 2;</code>
+       * <code>required .common.User.UserType type = 2;</code>
        */
-      public com.digitald4.common.proto.DD4Protos.User.UserType getTypeId() {
-        com.digitald4.common.proto.DD4Protos.User.UserType result = com.digitald4.common.proto.DD4Protos.User.UserType.valueOf(typeId_);
+      public com.digitald4.common.proto.DD4Protos.User.UserType getType() {
+        com.digitald4.common.proto.DD4Protos.User.UserType result = com.digitald4.common.proto.DD4Protos.User.UserType.valueOf(type_);
         return result == null ? com.digitald4.common.proto.DD4Protos.User.UserType.UNSPECIFIED : result;
       }
       /**
-       * <code>required .common.User.UserType type_id = 2;</code>
+       * <code>required .common.User.UserType type = 2;</code>
        */
-      public Builder setTypeId(com.digitald4.common.proto.DD4Protos.User.UserType value) {
+      public Builder setType(com.digitald4.common.proto.DD4Protos.User.UserType value) {
         if (value == null) {
           throw new NullPointerException();
         }
         bitField0_ |= 0x00000002;
-        typeId_ = value.getNumber();
+        type_ = value.getNumber();
         onChanged();
         return this;
       }
       /**
-       * <code>required .common.User.UserType type_id = 2;</code>
+       * <code>required .common.User.UserType type = 2;</code>
        */
-      public Builder clearTypeId() {
+      public Builder clearType() {
         bitField0_ = (bitField0_ & ~0x00000002);
-        typeId_ = 0;
+        type_ = 0;
         onChanged();
         return this;
       }
@@ -3664,24 +3664,24 @@ public final class DD4Protos {
         return this;
       }
 
-      private java.lang.Object passwordD_ = "";
+      private java.lang.Object password_ = "";
       /**
-       * <code>optional string password_d = 9;</code>
+       * <code>optional string password = 9;</code>
        */
-      public boolean hasPasswordD() {
+      public boolean hasPassword() {
         return ((bitField0_ & 0x00000100) == 0x00000100);
       }
       /**
-       * <code>optional string password_d = 9;</code>
+       * <code>optional string password = 9;</code>
        */
-      public java.lang.String getPasswordD() {
-        java.lang.Object ref = passwordD_;
+      public java.lang.String getPassword() {
+        java.lang.Object ref = password_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            passwordD_ = s;
+            password_ = s;
           }
           return s;
         } else {
@@ -3689,53 +3689,53 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>optional string password_d = 9;</code>
+       * <code>optional string password = 9;</code>
        */
       public com.google.protobuf.ByteString
-          getPasswordDBytes() {
-        java.lang.Object ref = passwordD_;
+          getPasswordBytes() {
+        java.lang.Object ref = password_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          passwordD_ = b;
+          password_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string password_d = 9;</code>
+       * <code>optional string password = 9;</code>
        */
-      public Builder setPasswordD(
+      public Builder setPassword(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000100;
-        passwordD_ = value;
+        password_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string password_d = 9;</code>
+       * <code>optional string password = 9;</code>
        */
-      public Builder clearPasswordD() {
+      public Builder clearPassword() {
         bitField0_ = (bitField0_ & ~0x00000100);
-        passwordD_ = getDefaultInstance().getPasswordD();
+        password_ = getDefaultInstance().getPassword();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string password_d = 9;</code>
+       * <code>optional string password = 9;</code>
        */
-      public Builder setPasswordDBytes(
+      public Builder setPasswordBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000100;
-        passwordD_ = value;
+        password_ = value;
         onChanged();
         return this;
       }
@@ -3927,15 +3927,15 @@ public final class DD4Protos {
       "\n\004name\030\002 \002(\t\022\'\n\004type\030\003 \002(\0162\031.common.Data" +
       "File.FileType\022\014\n\004size\030\004 \001(\005\022\014\n\004data\030\005 \001(" +
       "\014\".\n\010FileType\022\017\n\013UNSPECIFIED\020\000\022\010\n\004MISC\020\001" +
-      "\022\007\n\003PDF\020\002\"\225\002\n\004User\022\n\n\002id\030\001 \001(\005\022&\n\007type_i" +
-      "d\030\002 \002(\0162\025.common.User.UserType\022\021\n\tuser_n",
-      "ame\030\003 \002(\t\022\r\n\005email\030\004 \002(\t\022\022\n\nfirst_name\030\005" +
-      " \002(\t\022\021\n\tlast_name\030\006 \002(\t\022\020\n\010disabled\030\007 \001(" +
-      "\010\022\021\n\tread_only\030\010 \001(\010\022\022\n\npassword_d\030\t \001(\t" +
-      "\022\r\n\005notes\030\n \001(\t\022\022\n\nlast_login\030\013 \001(\003\"4\n\010U" +
-      "serType\022\017\n\013UNSPECIFIED\020\000\022\t\n\005ADMIN\020\001\022\014\n\010S" +
-      "TANDARD\020\002B\'\n\032com.digitald4.common.protoB" +
-      "\tDD4Protos"
+      "\022\007\n\003PDF\020\002\"\220\002\n\004User\022\n\n\002id\030\001 \001(\005\022#\n\004type\030\002" +
+      " \002(\0162\025.common.User.UserType\022\021\n\tuser_name",
+      "\030\003 \002(\t\022\r\n\005email\030\004 \002(\t\022\022\n\nfirst_name\030\005 \002(" +
+      "\t\022\021\n\tlast_name\030\006 \002(\t\022\020\n\010disabled\030\007 \001(\010\022\021" +
+      "\n\tread_only\030\010 \001(\010\022\020\n\010password\030\t \001(\t\022\r\n\005n" +
+      "otes\030\n \001(\t\022\022\n\nlast_login\030\013 \001(\003\"4\n\010UserTy" +
+      "pe\022\017\n\013UNSPECIFIED\020\000\022\t\n\005ADMIN\020\001\022\014\n\010STANDA" +
+      "RD\020\002B\'\n\032com.digitald4.common.protoB\tDD4P" +
+      "rotos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -3966,7 +3966,7 @@ public final class DD4Protos {
     internal_static_common_User_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_common_User_descriptor,
-        new java.lang.String[] { "Id", "TypeId", "UserName", "Email", "FirstName", "LastName", "Disabled", "ReadOnly", "PasswordD", "Notes", "LastLogin", });
+        new java.lang.String[] { "Id", "Type", "UserName", "Email", "FirstName", "LastName", "Disabled", "ReadOnly", "Password", "Notes", "LastLogin", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

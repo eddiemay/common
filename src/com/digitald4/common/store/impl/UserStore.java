@@ -20,7 +20,7 @@ public class UserStore extends GenericDAOStore<User> {
 	
 	public User getByUsernamePassword(String username, String password) throws DD4StorageException {
 		List<User> users = query(new QueryParam("user_name", "=", username),
-				new QueryParam("password_d", "=", password));
+				new QueryParam("password", "=", password));
 		if (users.isEmpty()) {
 			return null;
 		}
@@ -29,30 +29,40 @@ public class UserStore extends GenericDAOStore<User> {
 	
 	public User getByEmailPassword(String email, String password) throws DD4StorageException {
 		List<User> users = query(new QueryParam("email", "=", email),
-				new QueryParam("password_d", "=", password));
+				new QueryParam("password", "=", password));
 		if (users.isEmpty()) {
 			return null;
 		}
 		return users.get(0);
 	}
+
+	public User updateLastLogin(User user) throws DD4StorageException {
+		return update(user.getId(), new Function<User, User>() {
+			@Override
+			public User execute(User user) {
+				return user.toBuilder()
+						.setLastLogin(DateTime.now().getMillis())
+						.build();
+			}
+		});
+	}
 	
 	public static void main(String[] args) throws Exception {
 		User user = User.newBuilder()
-				.setTypeId(UserType.STANDARD)
+				.setType(UserType.STANDARD)
 				.setEmail("test@example.com")
 				.setUserName("testuser")
 				.setFirstName("Test")
 				.setLastName("User")
-				.setPasswordD("pass")
+				.setPassword("pass")
 				.build();
 		UserStore store = new UserStore(
-				new DAOProtoSQLImpl<User>(user,
+				new DAOProtoSQLImpl<>(User.getDefaultInstance(),
 				new DBConnectorThreadPoolImpl("com.mysql.jdbc.Driver",
-						"jdbc:mysql://localhost/budget?autoReconnect=true", "dd4_user", "getSchooled85")));
+						"jdbc:mysql://localhost/cpr?autoReconnect=true", "dd4_user", "getSchooled85")));
 		System.out.println(user);
 		try {
-			user = store.create(user);
-			System.out.println(user);
+			System.out.println(user = store.create(user));
 			System.out.println(store.read(user.getId()));
 			System.out.println(store.getByUsernamePassword("testuser", "pass"));
 			System.out.println(store.update(user.getId(), new Function<User, User>() {
@@ -63,6 +73,7 @@ public class UserStore extends GenericDAOStore<User> {
 							.build();
 				}
 			}));
+			System.out.println(store.updateLastLogin(user));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
