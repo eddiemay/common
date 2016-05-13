@@ -223,6 +223,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 					FieldDescriptor field = descriptor.findFieldByName(columnName); 
 					if (field.getJavaType() == JavaType.ENUM) {
 						value = field.getEnumType().findValueByNumber(rs.getInt(i));
+					} else if (field.getJavaType() == JavaType.LONG) {
+						value = rs.getTimestamp(i).getTime();
 					}
 					builder.setField(field, value);
 				} catch (Exception e) {

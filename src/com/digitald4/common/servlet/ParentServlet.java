@@ -17,8 +17,6 @@ import com.digitald4.common.model.GenData;
 import com.digitald4.common.model.GeneralData;
 import com.digitald4.common.model.User;
 import com.digitald4.common.util.Emailer;
-import com.google.protobuf.Message;
-import com.google.protobuf.Descriptors.Descriptor;
 
 public class ParentServlet extends HttpServlet {
 	private Emailer emailer;
@@ -170,15 +168,5 @@ public class ParentServlet extends HttpServlet {
 			out += elem + "\n";
 		}
 		return out;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <R extends Message> R transformRequest(R msgRequest, HttpServletRequest httpRequest) {
-		R.Builder builder = msgRequest.toBuilder(); 
-		Descriptor descriptor = builder.getDescriptorForType();
-		for (String paramName : httpRequest.getParameterMap().keySet()) {
-			builder.setField(descriptor.findFieldByName(paramName), httpRequest.getParameter(paramName));
-		}
-		return (R) builder.build();
 	}
 }
