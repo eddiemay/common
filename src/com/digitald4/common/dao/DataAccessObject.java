@@ -91,8 +91,12 @@ public abstract class DataAccessObject extends Observable implements Comparable<
 		return entityManager == null || !entityManager.contains(this);
 	}
 	
-
 	public <E> List<E> getCollection(Class<E> c, String[] props, Object... values) {
+		return getCollection(c, getEntityManager(), props, values);
+	}
+	
+	public static <E> List<E> getCollection(Class<E> c, EntityManager entityManager,
+			String[] props, Object... values) {
 		String qlString = "SELECT o FROM " + c.getSimpleName() + " o";
 		if (props != null && props.length > 0) {
 			qlString += " WHERE";
@@ -109,10 +113,15 @@ public abstract class DataAccessObject extends Observable implements Comparable<
 				p++;
 			}
 		}
-		return getCollection(c, qlString, values);
+		return getCollection(c, entityManager, qlString, values);
 	}
 	
 	public <E> List<E> getCollection(Class<E> c, String jpql, Object... values) {
+		return getCollection(c, getEntityManager(), jpql, values);
+	}
+	
+	public static <E> List<E> getCollection(Class<E> c, EntityManager entityManager,
+			String jpql, Object... values) {
 		TypedQuery<E> tq = entityManager.createQuery(jpql, c);
 		if (values != null && values.length > 0) {
 			int p = 1;
@@ -126,16 +135,29 @@ public abstract class DataAccessObject extends Observable implements Comparable<
 	}
 	
 	public <E> List<E> getNamedCollection(Class<E> c, String name, Object... values) {
+		return getNamedCollection(c, entityManager, name, values);
+	}
+	
+	public static <E> List<E> getNamedCollection(Class<E> c, EntityManager entityManager,
+			String name, Object... values) {
 		TypedQuery<E> tq = entityManager.createNamedQuery(name, c);
 		if (values != null && values.length > 0) {
 			int p = 1;
-			for (Object value:values) {
+			for (Object value : values) {
 				if (value != null) {
 					tq = tq.setParameter(p++, value);
 				}
 			}
 		}
 		return tq.getResultList();
+	}
+	
+	public static <E> List<E> getAll(Class<E> c, EntityManager entityManager) {
+		return getNamedCollection(c, entityManager, "findAll");
+	}
+	
+	public static <E> List<E> getAllActive(Class<E> c, EntityManager entityManager) {
+		return getNamedCollection(c, entityManager, "findAllActive");
 	}
 
 	/**
