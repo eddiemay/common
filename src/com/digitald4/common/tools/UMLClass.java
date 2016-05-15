@@ -18,6 +18,7 @@ import org.jdom.output.XMLOutputter;
 
 public class UMLClass implements Comparable<UMLClass>{
 	private static Hashtable<String,UMLClass> classes = new Hashtable<String,UMLClass>();
+	private String pkg;
 	private String name;
 	private String superClass;
 	private String tablePrefix;
@@ -33,7 +34,8 @@ public class UMLClass implements Comparable<UMLClass>{
 		setName(name);
 		addClass(this);
 	}
-	public UMLClass(Element e){
+	public UMLClass(String pkg, Element e) {
+		this.pkg = pkg;
 		setName(e.getAttributeValue("name"));
 		setSuperClass(e.getAttributeValue("extends"));
 		setTablePrefix(e.getAttributeValue("tableprefix"));
@@ -42,14 +44,19 @@ public class UMLClass implements Comparable<UMLClass>{
 		setUpdateRole(e.getAttributeValue("updaterole"));
 		setDeleteRole(e.getAttributeValue("deleterole"));
 		setDesc(e.getText());
-		for (Object o:e.getChildren("ATTRIBUTE")) {
-			addAttribute(new UMLAttribute(this,(Element)o));
+		for (Object o : e.getChildren("ATTRIBUTE")) {
+			addAttribute(new UMLAttribute(this, (Element) o));
 		}
-		for (Object o:e.getChildren("REFERENCE")) {
-			addReference(new UMLReference(this,(Element)o));
+		for (Object o : e.getChildren("REFERENCE")) {
+			addReference(new UMLReference(this, (Element) o));
 		}
 		addClass(this);
 	}
+	
+	public String getPackage() {
+		return pkg;
+	}
+	
 	public String getName() {
 		return name;
 	}

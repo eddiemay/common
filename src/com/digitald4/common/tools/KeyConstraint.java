@@ -9,6 +9,7 @@ public class KeyConstraint implements Comparable<Object> {
 	public final static int ID=1;
 	public final static int CHILD=2;
 	public final static int PARENT=3;
+	private String pkg;
 	private String name;
 	private String dbName;
 	private String refName;
@@ -18,11 +19,12 @@ public class KeyConstraint implements Comparable<Object> {
 	private boolean indexed;
 	private TreeSet<FKProperty> properties = new TreeSet<FKProperty>();
 	private int reference=1;
-	public KeyConstraint(DomainWriter dao, String name, String refName, String refClass, String dbName, int type){
-		this(dao,name,refName,refClass,dbName,type,false);
+	public KeyConstraint(DomainWriter dao, String pkg, String name, String refName, String refClass, String dbName, int type){
+		this(dao, pkg, name, refName, refClass, dbName, type, false);
 	}
-	public KeyConstraint(DomainWriter dao, String name, String refName, String refClass, String dbName, int type, boolean indexed){
+	public KeyConstraint(DomainWriter dao, String pkg, String name, String refName, String refClass, String dbName, int type, boolean indexed){
 		this.dao = dao;
+		this.pkg = pkg;
 		this.name = name;
 		this.refName = refName;
 		this.refClass = refClass;
@@ -74,6 +76,11 @@ public class KeyConstraint implements Comparable<Object> {
 	public void addProperty(FKProperty prop){
 		getProperties().add(prop);
 	}
+	
+	public String getJavaPackageHeader() {
+		return "com.digitald4." + pkg;
+	}
+	
 	public String getJavaRefClass(){
 		return FormatText.toUpperCamel(getRefClass());
 	}
@@ -284,6 +291,7 @@ public class KeyConstraint implements Comparable<Object> {
 		}
 		return out;
 	}
+	
 	public String getSQLEntry() {
 		String out="";
 		for(FKProperty prop:getProperties()){
@@ -293,6 +301,7 @@ public class KeyConstraint implements Comparable<Object> {
 		}
 		return out;
 	}
+	
 	public boolean contains(Property prop){
 		for(FKProperty fkp:getProperties())
 			if(fkp.getProp() == prop)

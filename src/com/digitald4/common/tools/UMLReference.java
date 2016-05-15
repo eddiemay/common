@@ -10,6 +10,7 @@ import org.jdom.Element;
 public class UMLReference implements Comparable<UMLReference>{
 	public static enum DeleteRule{NO_ACTION,CASCADE,SET_NULL};
 	private UMLClass umlClass;
+	private String pkg;
 	private String refClass;
 	private boolean indexed;
 	private String dbPrefix;
@@ -38,23 +39,36 @@ public class UMLReference implements Comparable<UMLReference>{
 	}
 	public UMLReference(UMLClass umlClass, Element e) {
 		setUmlClass(umlClass);
+		setPackage(e.getAttributeValue("package"));
 		setRefClass(e.getAttributeValue("refclass"));
-		setIndexed(e.getAttributeValue("indexed")!=null && e.getAttributeValue("indexed").equals("true"));
+		setIndexed(e.getAttributeValue("indexed") != null && e.getAttributeValue("indexed").equals("true"));
 		setDbPrefix(e.getAttributeValue("dbprefix"));
-		setRequired(e.getAttributeValue("required")==null || e.getAttributeValue("required").equals("false"));
+		setRequired(e.getAttributeValue("required") == null || e.getAttributeValue("required").equals("false"));
 		setName(e.getAttributeValue("name"));
 		setRefName(e.getAttributeValue("refname"));
 		setDesc(e.getText());
 		String dr = e.getAttributeValue("deleterule");
-		if(dr==null || dr.equalsIgnoreCase(""+DeleteRule.CASCADE))
+		if(dr==null || dr.equalsIgnoreCase("" + DeleteRule.CASCADE))
 			deleteRule = DeleteRule.CASCADE;
-		else if(dr.equalsIgnoreCase(""+DeleteRule.NO_ACTION))
+		else if(dr.equalsIgnoreCase("" + DeleteRule.NO_ACTION))
 			deleteRule = DeleteRule.NO_ACTION;
-		else if(dr.equalsIgnoreCase(""+DeleteRule.SET_NULL))
+		else if(dr.equalsIgnoreCase("" + DeleteRule.SET_NULL))
 			deleteRule = DeleteRule.SET_NULL;
 		for(Object o:e.getChildren("CONNECTOR"))
 			addConnector(new UMLConnector(this,(Element)o));
 	}
+	
+	public void setPackage(String pkg) {
+		this.pkg = pkg;
+	}
+	
+	public String getPackage() {
+		if (pkg == null) {
+			return umlClass.getPackage();
+		}
+		return pkg;
+	}
+	
 	public void addConnector(UMLConnector umlConnector) {
 		connectors.add(umlConnector);
 	}

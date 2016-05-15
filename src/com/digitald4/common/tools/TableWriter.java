@@ -21,7 +21,7 @@ public class TableWriter {
 		Document document = builder.build(xmlFile);
 		Element rootNode = document.getRootElement();
 		for (Object o:rootNode.getChildren("CLASS")) {
-			new UMLClass((Element)o);
+			new UMLClass("mdi", (Element)o);
 		}
 	}
 	public static void runUMLClasses(String base, Connection con, String schema, String pattern, PrintStream out)throws Exception{
@@ -35,7 +35,7 @@ public class TableWriter {
 			processImport(((Element)e).getAttributeValue("name"));
 		}
 		for (Object o:rootNode.getChildren("CLASS")) {
-			UMLClass umlClass = new UMLClass((Element)o);
+			UMLClass umlClass = new UMLClass(null, (Element)o);
 			if(umlClass.getDBTable().toUpperCase().contains(pattern))
 				classes.add(umlClass);
 		}

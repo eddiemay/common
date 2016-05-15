@@ -34,7 +34,7 @@ public class DomainWriter {
 	public final static String EXCEPTION_CLASS = " throws Exception ";
 	private TreeSet<String> imports = new TreeSet<String>();
 	private TreeSet<Property> properties = new TreeSet<Property>();
-	private KeyConstraint idKey = new KeyConstraint(this,"pk","pk","pk","pk",KeyConstraint.ID);
+	private KeyConstraint idKey = new KeyConstraint(this, "pk", "pk", "pk", "pk", "pk", KeyConstraint.ID);
 	private TreeSet<KeyConstraint> children = new TreeSet<KeyConstraint>();
 	private TreeSet<KeyConstraint> parents = new TreeSet<KeyConstraint>();
 	private ArrayList<String> namedQueries = new ArrayList<String>();
@@ -43,85 +43,105 @@ public class DomainWriter {
 	private String table;
 	private UMLClass umlClass;
 
-	public DomainWriter(String project, String name, String table){
+	public DomainWriter(String project, String name, String table) {
 		this.project = project;
 		this.name = name;
 		setTable(table);
 	}
+	
 	public DomainWriter(String project, UMLClass umlClass) {
 		this.umlClass = umlClass;
 		this.project = project;
 		genFromUMLClass();
 	}
+	
 	public String getProject() {
 		return project;
 	}
-	public String getName(){
+	
+	public String getName() {
 		if(umlClass!=null)
 			return umlClass.getName().replaceAll(" ", "_");
 		return name;
 	}
-	public String getTable(){
+	
+	public String getTable() {
 		if(umlClass!=null)
 			return umlClass.getDBTable();
 		return table;
 	}
-	public void setTable(String table){
+	
+	public void setTable(String table) {
 		this.table = table;
 	}
-	public TreeSet<String> getImports(){
+	
+	public TreeSet<String> getImports() {
 		return imports;
 	}
-	public void addImport(String jImport){
+	
+	public void addImport(String jImport) {
 		getImports().add(jImport);
 		if (jImport.contains("java.util.Date")) {
 			getImports().add("com.digitald4.common.util.FormatText");
 		}
 	}
-	public TreeSet<Property> getProperties(){
+	
+	public TreeSet<Property> getProperties() {
 		return properties;
 	}
-	public void addProperty(Property prop){
+	
+	public void addProperty(Property prop) {
 		Class<?> c = prop.getJavaClass();
 		if (c.getName().contains(".") && !c.getName().startsWith("java.lang.")) {
 			addImport(c.getName());
 		}
 		getProperties().add(prop);
 	}
-	public void setIdKey(KeyConstraint idKey){
+	
+	public void setIdKey(KeyConstraint idKey) {
 		this.idKey = idKey;
 	}
-	public KeyConstraint getIdKey(){
+	
+	public KeyConstraint getIdKey() {
 		return idKey;
 	}
-	public TreeSet<KeyConstraint> getChildren(){
+	
+	public TreeSet<KeyConstraint> getChildren() {
 		return children;
 	}
-	public void addChild(KeyConstraint child){
-		for(KeyConstraint p:getChildren())
-			if(p.getName().equals(child.getName()) && p.getReference()==child.getReference())
+	
+	public void addChild(KeyConstraint child) {
+		for (KeyConstraint p:getChildren()) {
+			if (p.getName().equals(child.getName()) && p.getReference() == child.getReference()) {
 				child.incrementReference();
+			}
+		}
 		getChildren().add(child);
-		if(child.isIndexed()){
+		if (child.isIndexed()) {
 			addImport("com.digitald4.common.util.SortedList");
-			addImport(getJavaPackageHeader()+".model."+child.getJavaRefClass());
+			addImport(child.getJavaPackageHeader() + ".model." + child.getJavaRefClass());
 		}
 	}
-	public TreeSet<KeyConstraint> getParents(){
+	
+	public TreeSet<KeyConstraint> getParents() {
 		return parents;
 	}
-	public void addParent(KeyConstraint parent){
+	
+	public void addParent(KeyConstraint parent) {
 		//EspLogger.message(this, "Parent: "+parent);
-		for(KeyConstraint p:getParents())
-			if(p.getName().equals(parent.getName()) && p.getReference()==parent.getReference())
+		for (KeyConstraint p : getParents()) {
+			if (p.getName().equals(parent.getName()) && p.getReference() == parent.getReference()) {
 				parent.incrementReference();
+			}
+		}
 		getParents().add(parent);
-		if(parent.isIndexed())
+		if (parent.isIndexed()) {
 			addNamedQueryEntry(parent.getJavaNamedQuery());
-		addImport(getJavaPackageHeader()+".model."+parent.getJavaRefClass());
+		}
+		addImport(parent.getJavaPackageHeader() + ".model." + parent.getJavaRefClass());
 	}
 
-	public void addStandardImports(){
+	public void addStandardImports() {
 		addImport(getJavaModelPackage()+"."+getJavaName());
 		addImport("java.util.List");
 		addImport("java.util.Hashtable");
@@ -132,15 +152,16 @@ public class DomainWriter {
 		addImport("javax.persistence.EntityManager");
 		addImport("javax.persistence.Column");
 		addImport("javax.persistence.Id");
-		if(!getJavaSuperClass().equals("DataAccessObject")){
+		if (!getJavaSuperClass().equals("DataAccessObject")){
 			String sc = getJavaSuperClass();
-			if(sc.contains("<"))
+			if (sc.contains("<")) {
 				sc = sc.substring(0, sc.indexOf('<'));
+			}
 			addImport(getJavaModelPackage()+"."+sc);
 		}
 	}
 
-	public void genFromUMLClass(){
+	public void genFromUMLClass() {
 		addStandardImports();
 		int index=0;
 		int pkIndex=0;
@@ -161,13 +182,14 @@ public class DomainWriter {
 		addNamedQueryEntry("@NamedQuery(name = \"findAll\", query=\"SELECT o FROM "+getJavaName()+" o\"),");
 		addNamedQueryEntry("@NamedQuery(name = \"findAllActive\", query=\"SELECT o FROM "+getJavaName()+" o\"),");
 
-		for(UMLReference ref:umlClass.getParentReferences()){
-			if(!ref.isStandard()){
-				KeyConstraint fK = new KeyConstraint(this,ref.getName(),ref.getRefName(),ref.getRefClass(),ref.getDBName(),KeyConstraint.PARENT,ref.isIndexed());
+		for (UMLReference ref : umlClass.getParentReferences()) {
+			if (!ref.isStandard()) {
+				KeyConstraint fK = new KeyConstraint(this,ref.getPackage(), ref.getName(), ref.getRefName(),
+						ref.getRefClass(), ref.getDBName(), KeyConstraint.PARENT, ref.isIndexed());
 				int i=0;
-				for(UMLConnector conn:ref.getConnectors()){
-					for(Property prop:getProperties()){
-						if(!prop.isGloballyHandled() && prop.getName().equals(conn.getAttrDBName())){
+				for (UMLConnector conn:ref.getConnectors()) {
+					for (Property prop:getProperties()) {
+						if (!prop.isGloballyHandled() && prop.getName().equals(conn.getAttrDBName())) {
 							fK.addProperty(new FKProperty(prop,i++,conn.getRefAttr()));
 							break;
 						}
@@ -176,12 +198,13 @@ public class DomainWriter {
 				addParent(fK);
 			}
 		}
-		for(UMLReference ref:umlClass.getChildReferences()){
-			KeyConstraint fK = new KeyConstraint(this,ref.getRefName(),ref.getName(),ref.getUmlClass().getName(),ref.getDBName(),KeyConstraint.CHILD,ref.isIndexed());
+		for (UMLReference ref : umlClass.getChildReferences()) {
+			KeyConstraint fK = new KeyConstraint(this, ref.getPackage(), ref.getRefName(), ref.getName(),
+					ref.getUmlClass().getName(), ref.getDBName(), KeyConstraint.CHILD, ref.isIndexed());
 			int i=0;
-			for(UMLConnector conn:ref.getConnectors()){
-				for(Property prop:getProperties()){
-					if(!prop.isGloballyHandled() && prop.getName().equals(conn.getRefAttrDBName())){
+			for (UMLConnector conn:ref.getConnectors()) {
+				for (Property prop:getProperties()) {
+					if (!prop.isGloballyHandled() && prop.getName().equals(conn.getRefAttrDBName())) {
 						fK.addProperty(new FKProperty(prop,i++,conn.getRefAttr()));
 						break;
 					}
@@ -191,30 +214,31 @@ public class DomainWriter {
 		}
 	}
 
-	public void genFromOracleDB(Connection conn, String schema, String table) throws SQLException{
+	public void genFromOracleDB(Connection conn, String schema, String table) throws SQLException {
 		addStandardImports();
 		DatabaseMetaData dbmd = conn.getMetaData();
 		PreparedStatement ps = conn.prepareStatement("SELECT COMMENTS REMARKS FROM user_col_comments WHERE table_name=? AND column_name=?");
 		ResultSet rs = dbmd.getColumns(null,schema,table,null);
 		int index=0;
-		while(rs.next()){
+		while (rs.next()) {
 			String colName = rs.getString("COLUMN_NAME");
 			FieldType type = FieldType.getColumnTypeFromDB(colName,rs.getInt("DATA_TYPE"),rs.getInt("COLUMN_SIZE"),rs.getInt("DECIMAL_DIGITS"));
-			if(type != FieldType.BLOB){
+			if (type != FieldType.BLOB) {
 				String def = rs.getString("COLUMN_DEF");
-				if(def != null){
-					if(def.contains("'"))
+				if (def != null) {
+					if (def.contains("'")) {
 						def = def.replaceAll("'", "");
+					}
 					def = def.trim();
 				}
 				Property prop = new Property(this,index++,rs.getString("COLUMN_NAME"),type,rs.getString("COLUMN_SIZE"),rs.getInt("NULLABLE")!=ResultSetMetaData.columnNoNulls,def);
 				ps.setString(1, table);
 				ps.setString(2, colName);
 				ResultSet rsC = ps.executeQuery();
-				if(rsC.next()){
+				if (rsC.next()) {
 					String comment = rsC.getString("REMARKS");
 					prop.setComment(comment);
-					if(comment != null){
+					if (comment != null) {
 						prop.setAbandoned(comment.toUpperCase().contains("ABANDONED"));
 						prop.setDeprecated(comment.toUpperCase().contains("DEPRECATED"));
 						prop.setHasSequence(comment.toUpperCase().contains("AUTO_INCREMENT"));
@@ -223,17 +247,18 @@ public class DomainWriter {
 					}
 				}
 				rsC.close();
-				if(!prop.isAbandoned())
+				if (!prop.isAbandoned()) {
 					addProperty(prop);
+				}
 			}
 		}
 		rs.close();
 		ps.close();
 		rs = dbmd.getPrimaryKeys(null,schema,table);
-		while(rs.next()){
+		while (rs.next()) {
 			String colName = rs.getString("COLUMN_NAME");
-			for(Property prop:getProperties()){
-				if(prop.getName().equals(colName)){
+			for (Property prop:getProperties()) {
+				if (prop.getName().equals(colName)) {
 					idKey.addProperty(new FKProperty(prop,rs.getInt("KEY_SEQ")));
 					break;
 				}
@@ -241,82 +266,70 @@ public class DomainWriter {
 		}
 		rs.close();
 
-		addNamedQueryEntry("@NamedQuery(name = \"findByID\", query=\"SELECT o FROM "+getJavaName()+" o WHERE "+getIdKey().getJPQLEntry()+"\"),");
-		addNamedQueryEntry("@NamedQuery(name = \"findAll\", query=\"SELECT o FROM "+getJavaName()+" o\"),");
-		addNamedQueryEntry("@NamedQuery(name = \"findAllActive\", query=\"SELECT o FROM "+getJavaName()+" o\"),");
+		addNamedQueryEntry("@NamedQuery(name = \"findByID\", query=\"SELECT o FROM " + getJavaName()
+				+ " o WHERE " + getIdKey().getJPQLEntry() + "\"),");
+		addNamedQueryEntry("@NamedQuery(name = \"findAll\", query=\"SELECT o FROM "+ getJavaName()
+				+ " o\"),");
+		addNamedQueryEntry("@NamedQuery(name = \"findAllActive\", query=\"SELECT o FROM "
+				+ getJavaName() + " o\"),");
 
 		Hashtable<String,KeyConstraint> pFKHash = new Hashtable<String,KeyConstraint>();
-		rs = dbmd.getCrossReference(null,schema,null,null,schema,table);
-		while(rs.next()){
+		rs = dbmd.getCrossReference(null, schema, null, null, schema, table);
+		while (rs.next()) {
 			KeyConstraint fK = pFKHash.get(rs.getString("FK_NAME"));
-			if(fK == null){
+			if (fK == null) {
 				String pkTable = rs.getString("PKTABLE_NAME");
-				String name = pkTable.substring(pkTable.indexOf('_')+1);
-				fK = new KeyConstraint(this,name,name,name,rs.getString("FK_NAME"),KeyConstraint.PARENT,rs.getString("FK_NAME").endsWith("I"));
+				String name = pkTable.substring(pkTable.indexOf('_') + 1);
+				fK = new KeyConstraint(this, project, name, name, name, rs.getString("FK_NAME"),
+						KeyConstraint.PARENT, rs.getString("FK_NAME").endsWith("I"));
 				pFKHash.put(rs.getString("FK_NAME"),fK);
 			}
 			String colName = rs.getString("FKCOLUMN_NAME");
-			for(Property prop:getProperties()){
-				if(!prop.isGloballyHandled() && prop.getName().equals(colName)){
+			for (Property prop:getProperties()) {
+				if (!prop.isGloballyHandled() && prop.getName().equals(colName)) {
 					fK.addProperty(new FKProperty(prop,rs.getInt("KEY_SEQ"),rs.getString("PKCOLUMN_NAME")));
 					break;
 				}
 			}
 		}
 		rs.close();
-		for(KeyConstraint fK:new TreeSet<KeyConstraint>(pFKHash.values()))
-			if(fK.getProperties().size() > 0)
+		for (KeyConstraint fK:new TreeSet<KeyConstraint>(pFKHash.values())) {
+			if (fK.getProperties().size() > 0) {
 				addParent(fK);
+			}
+		}
 
 		Hashtable<String,KeyConstraint> cFKHash = new Hashtable<String,KeyConstraint>();
-		if(!getJavaName().equals("Department")){
-			rs = dbmd.getCrossReference(null,schema,table,null,schema,null);
-			while(rs.next()){
-				if(isGoodTable(rs.getString("FKTABLE_NAME"))){
-					KeyConstraint fK = cFKHash.get(rs.getString("FK_NAME"));
-					if(fK == null){
-						String fkTable = rs.getString("FKTABLE_NAME");
-						String name = fkTable.substring(fkTable.indexOf('_')+1);
-						fK = new KeyConstraint(this,name,name,name,rs.getString("FK_NAME"),KeyConstraint.CHILD,rs.getString("FK_NAME").endsWith("I"));
-						cFKHash.put(rs.getString("FK_NAME"),fK);
-					}
-					String colName = rs.getString("PKCOLUMN_NAME");
-					for(Property prop:getProperties()){
-						if(prop.getName().equals(colName)){
-							fK.addProperty(new FKProperty(prop,rs.getInt("KEY_SEQ"),rs.getString("FKCOLUMN_NAME")));
-							break;
-						}
+		rs = dbmd.getCrossReference(null, schema, table, null, schema, null);
+		while (rs.next()) {
+			if (isGoodTable(rs.getString("FKTABLE_NAME"))){
+				KeyConstraint fK = cFKHash.get(rs.getString("FK_NAME"));
+				if (fK == null) {
+					String fkTable = rs.getString("FKTABLE_NAME");
+					String name = fkTable.substring(fkTable.indexOf('_')+1);
+					fK = new KeyConstraint(this, project, name, name, name, rs.getString("FK_NAME"),
+							KeyConstraint.CHILD, rs.getString("FK_NAME").endsWith("I"));
+					cFKHash.put(rs.getString("FK_NAME"), fK);
+				}
+				String colName = rs.getString("PKCOLUMN_NAME");
+				for (Property prop:getProperties()) {
+					if (prop.getName().equals(colName)) {
+						fK.addProperty(new FKProperty(prop,rs.getInt("KEY_SEQ"),rs.getString("FKCOLUMN_NAME")));
+						break;
 					}
 				}
 			}
-			rs.close();
-			for(KeyConstraint fK:new TreeSet<KeyConstraint>(cFKHash.values()))
-				if(fK.getProperties().size() > 0)
-					addChild(fK);
-		}else{
-			findAllPlanYearTables(dbmd,schema);
 		}
-	}
-
-	private void findAllPlanYearTables(DatabaseMetaData dbmd, String schema) throws SQLException {
-		Property prop = getProperties().first();
-		ResultSet rs = dbmd.getTables(null,schema,"MDI%_%",new String[]{"TABLE"});
-		while(rs.next()){
-			String table = rs.getString("TABLE_NAME");
-			if(table.charAt(6) == '_' && isGoodTable(table) && (!table.endsWith("LY") || table.contains("SYS")) && !table.startsWith("MDI600_") && !table.startsWith("MDI000_") && !table.startsWith("MDI010_") && !table.startsWith("MDIR_")){
-				ResultSet rs2 = dbmd.getColumns(null, schema, table, "PLANYEAR");
-				if(rs2.next()){
-					KeyConstraint child = new KeyConstraint(this,table.substring(table.indexOf('_')+1),table.substring(table.indexOf('_')+1),table.substring(table.indexOf('_')+1),table,KeyConstraint.CHILD,true);
-					child.addProperty(new FKProperty(prop,prop.getIndex(),"PLANYEAR"));
-					addChild(child);
-				}
-				rs2.close();
+		rs.close();
+		for (KeyConstraint fK:new TreeSet<KeyConstraint>(cFKHash.values())) {
+			if (fK.getProperties().size() > 0) {
+				addChild(fK);
 			}
 		}
 	}
 
 	//Java Generating stuff
-	public String getJavaDomain(){
+	public String getJavaDomain() {
 		String out = "";
 		//out += getJavaGenInfo(); 
 		out += "package "+getJavaDAOPackage() + ";\n\n";
@@ -339,45 +352,57 @@ public class DomainWriter {
 		out += getJavaInsertMethods();
 		return out+"}\n";
 	}
-	public String getJavaGenInfo(){
-		return "/**\n * AUTO GENERATED ON: "+FormatText.MYSQL_DATETIME.format(Calendar.getInstance().getTime())+" "+System.currentTimeMillis()+"\n"
-				+"*/\n";
+	
+	public String getJavaGenInfo() {
+		return "/**\n * AUTO GENERATED ON: " + FormatText.MYSQL_DATETIME.format(
+				Calendar.getInstance().getTime()) + " " + System.currentTimeMillis() + "\n" + "*/\n";
 	}
-	public String getJavaPackageHeader(){
-		return "com.digitald4."+project;
+	
+	public String getJavaPackageHeader() {
+		return "com.digitald4." + project;
 	}
-	public String getJavaDomainPackage(){
-		return getJavaPackageHeader()+".domain";
+	
+	public String getJavaDomainPackage() {
+		return getJavaPackageHeader() + ".domain";
 	}
-	public String getJavaDAOPackage(){
-		return getJavaPackageHeader()+".dao";
+	
+	public String getJavaDAOPackage() {
+		return getJavaPackageHeader() + ".dao";
 	}
-	public String getJavaModelPackage(){
-		return getJavaPackageHeader()+".model";
+	
+	public String getJavaModelPackage() {
+		return getJavaPackageHeader() + ".model";
 	}
-	public String getJavaCopyRight(){
+	
+	public String getJavaCopyRight() {
 		return "/** TODO Copy Right*/\n";
 	}
-	public String getJavaDescription(){
+	
+	public String getJavaDescription() {
 		return "/**Description of class, (we need to get this from somewhere, database? xml?)*/\n";
 	}
-	public String getJavaImports(){
+	
+	public String getJavaImports() {
 		String out = "";
 		for (String i : getImports()) {
 			out += "import " + i + ";\n";
 		}
 		return out;
 	}
-	public String getJavaName(){
+	
+	public String getJavaName() {
 		return FormatText.toUpperCamel(getName());
 	}
-	public String getJavaVarName(){
+	
+	public String getJavaVarName() {
 		return FormatText.toLowerCamel(getName());
 	}
-	public String getJavaDomainName(){
+	
+	public String getJavaDomainName() {
 		return getJavaName() + "DAO";
 	}
-	public String getJavaSuperClass(){
+	
+	public String getJavaSuperClass() {
 		if (umlClass != null) {
 			if (umlClass.getSuperClass() == null) {
 				return "DataAccessObject";
@@ -386,59 +411,78 @@ public class DomainWriter {
 		}
 		return "DataAccessObject";
 	}
-	public ArrayList<String> getNamedQueryEntries(){
+	
+	public ArrayList<String> getNamedQueryEntries() {
 		return namedQueries;
 	}
-	public void addNamedQueryEntry(String namedQuery){
+	
+	public void addNamedQueryEntry(String namedQuery) {
 		namedQueries.add(namedQuery);
 	}
+	
 	public ArrayList<String> getNamedNativeQueryEntries() {
 		ArrayList<String> entries = new ArrayList<String>();
-		entries.add("@NamedNativeQuery(name = \"refresh\", query=\"SELECT o.* FROM "+getTable()+" o WHERE "+getIdKey().getSQLEntry()+"\"),");
+		entries.add("@NamedNativeQuery(name = \"refresh\", query=\"SELECT o.* FROM " + getTable()
+				+ " o WHERE " + getIdKey().getSQLEntry() + "\"),");
 		return entries;
 	}
+	
 	public String getJavaClassDeclaration() {
 		return "public abstract class " + getJavaDomainName() + " extends " + getJavaSuperClass() + "{\n";
 	}
+	
 	public String getJavaHashtableType() {
-		return "Hashtable<String,TreeSet<"+getJavaName()+">>";
+		return "Hashtable<String, TreeSet<" + getJavaName() + ">>";
 	}
+	
 	public String getJavaStaticFields() {
-		String out = "\tpublic enum KEY_PROPERTY{"+getIdKey().getPropNames()+"};\n";
+		String out = "\tpublic enum KEY_PROPERTY{" + getIdKey().getPropNames() + "};\n";
 		out += "\tpublic enum PROPERTY{";
-		boolean first=true;
-		for(Property prop:getProperties()){
-			if(!first)
+		boolean first = true;
+		for (Property prop:getProperties()) {
+			if (!first) {
 				out += ",";
+			}
 			out += prop.getName();
-			first=false;
+			first = false;
 		}
-		out +="};\n";
+		out += "};\n";
 		return out;
 	}
-	public String getJavaFieldLimits(){
+	
+	public String getJavaFieldLimits() {
 		String out = "";
-		for(Property prop:getProperties())
-			if(!prop.isGloballyHandled())
+		for (Property prop:getProperties()) {
+			if (!prop.isGloballyHandled()) {
 				out += prop.getJavaLimitEntry()+"\n";
+			}
+		}
 		return out;
 	}
-	public String getJavaFields(){
+	
+	public String getJavaFields() {
 		String out = "";
-		for(Property prop:getProperties())
-			if(!prop.isGloballyHandled())
-				out += prop.getJavaFieldEntry()+"\n";
-		for(KeyConstraint key:getChildren())
-			if(key.isIndexed())
-				out += key.getJavaFieldEntry()+"\n";
-		for(KeyConstraint key:getParents())
+		for (Property prop : getProperties()) {
+			if (!prop.isGloballyHandled()) {
+				out += prop.getJavaFieldEntry() + "\n";
+			}
+		}
+		for (KeyConstraint key : getChildren()) {
+			if (key.isIndexed()) {
+				out += key.getJavaFieldEntry() + "\n";
+			}
+		}
+		for (KeyConstraint key : getParents()) {
 			//if(key.isIndexed())
 			out += key.getJavaFieldEntry()+"\n";
+		}
 		return out;
 	}
-	public String getJavaCollection(){
-		return "List<"+getJavaName()+">";
+	
+	public String getJavaCollection() {
+		return "List<" + getJavaName() + ">";
 	}
+	
 	public String getJavaConstructors(){
 		String out = "\tpublic "+getJavaDomainName()+"(EntityManager entityManager) {\n"
 				+ "\t\tsuper(entityManager);\n"
@@ -630,16 +674,17 @@ public class DomainWriter {
 		}
 
 		EspLogger.message(DomainWriter.class,"Running the following tables in 5 secs:");
-		for(String table:tables)
-			EspLogger.message(DomainWriter.class,"\t"+table.substring(table.indexOf('_')+1)+"\t"+table);
+		for (String table : tables) {
+			EspLogger.message(DomainWriter.class, "\t" + table.substring(table.indexOf('_') + 1) + "\t" + table);
+		}
 		//		Thread.sleep(5000);
-		for(String table:tables){
-			String className = table.substring(table.indexOf('_')+1);
+		for (String table : tables){
+			String className = table.substring(table.indexOf('_') + 1);
 			EspLogger.message(DomainWriter.class,className);
 			DomainWriter dao = new DomainWriter(project, className, table);
 			dao.genFromOracleDB(PDBConnection.getInstance().getConnection(), "MDI", table);
 			String code = dao.getJavaDomain();
-			writeFile("src/"+dao.getJavaDAOPackage().replace('.', '/')+"/",dao.getJavaDomainName()+".java",code);
+			writeFile("src/" + dao.getJavaDAOPackage().replace('.', '/') + "/", dao.getJavaDomainName() + ".java", code);
 			try{
 				updateBizObj(dao);
 			}
@@ -656,7 +701,7 @@ public class DomainWriter {
 		Document document = builder.build(xmlFile);
 		Element rootNode = document.getRootElement();
 		for (Object o:rootNode.getChildren("CLASS")){
-			UMLClass umlClass = new UMLClass((Element)o);
+			UMLClass umlClass = new UMLClass(project, (Element) o);
 			//EspLogger.message(DomainWriter.class,"Class: "+umlClass.getName());
 			if(umlClass.getDBTable().toUpperCase().contains(pattern)){
 				EspLogger.message(DomainWriter.class,"Class found: "+umlClass);
