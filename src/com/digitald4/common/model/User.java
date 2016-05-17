@@ -68,8 +68,8 @@ public class User extends UserDAO {
 		super(entityManager, orig);
 	}
 	
-	public boolean isAdmin(EntityManager entityManager) {
-		return getType() == GenData.UserType_Admin.get(entityManager);
+	public boolean isAdmin() {
+		return getType() == GenData.UserType_Admin.get(getEntityManager());
 	}
 	
 	public boolean isOfRank(GeneralData level) {
