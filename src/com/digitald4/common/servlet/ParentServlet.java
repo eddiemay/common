@@ -10,8 +10,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.digitald4.common.jdbc.DBConnector;
-import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.jpa.EntityManagerHelper;
 import com.digitald4.common.model.GenData;
 import com.digitald4.common.model.GeneralData;
@@ -19,9 +17,8 @@ import com.digitald4.common.model.User;
 import com.digitald4.common.util.Emailer;
 
 public class ParentServlet extends HttpServlet {
-	private Emailer emailer;
-	private DBConnector connector;
-	private EntityManager em;
+	private static Emailer emailer;
+	private static EntityManager em;
 	private RequestDispatcher layoutPage;
 	
 	public void init() throws ServletException {
@@ -30,42 +27,24 @@ public class ParentServlet extends HttpServlet {
 			throw new ServletException(getLayoutURL() + " not found");
 		}
 	}
-	
-	public DBConnector getDBConnector() throws ServletException {
-		if (connector == null) {
+	// 951-220-0116 Shanel
+	public EntityManager getEntityManager() throws ServletException {
+		if (em == null) {
 			synchronized (this) {
-				ServletContext sc = getServletContext();
-				if (connector == null) {
+				if (em == null) {
+					ServletContext sc = getServletContext();
 					try {
 						System.out.println("*********** Loading driver");
-						connector = new DBConnectorThreadPoolImpl(
+						em = EntityManagerHelper.getEntityManagerFactory(
 								sc.getInitParameter("dbdriver"), 
 								sc.getInitParameter("dburl"), 
 								sc.getInitParameter("dbuser"), 
-								sc.getInitParameter("dbpass"));
+								sc.getInitParameter("dbpass")).createEntityManager();
 					} catch(Exception e) {
-						System.out.println("****************** error connecting to database ****************");
+						System.out.println("******************* error init entity manager **********************");
 						throw new ServletException(e);
 					}
 				}
-			}
-		}
-		return connector;
-	}
-	
-	public EntityManager getEntityManager() throws ServletException {
-		if (em == null) {
-			ServletContext sc = getServletContext();
-			try {
-				System.out.println("*********** Loading driver");
-				em = EntityManagerHelper.getEntityManagerFactory(
-						sc.getInitParameter("dbdriver"), 
-						sc.getInitParameter("dburl"), 
-						sc.getInitParameter("dbuser"), 
-						sc.getInitParameter("dbpass")).createEntityManager();
-			} catch(Exception e) {
-				System.out.println("******************* error init entity manager **********************");
-				throw new ServletException(e);
 			}
 		}
 		return em;
@@ -80,9 +59,13 @@ public class ParentServlet extends HttpServlet {
 	
 	public Emailer getEmailer() {
 		if (emailer == null) {
-			ServletContext sc = getServletContext();
-			emailer = new Emailer(sc.getInitParameter("emailserver"),
-					sc.getInitParameter("emailuser"), sc.getInitParameter("emailpass"));
+			synchronized (this) {
+				if (emailer == null) {
+					ServletContext sc = getServletContext();
+					emailer = new Emailer(sc.getInitParameter("emailserver"),
+							sc.getInitParameter("emailuser"), sc.getInitParameter("emailpass"));
+				}
+			}
 		}
 		return emailer;
 	}
