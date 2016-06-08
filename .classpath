@@ -17,5 +17,6 @@
 	<classpathentry kind="lib" path="lib/itextpdf-5.5.1.jar"/>
 	<classpathentry kind="lib" path="lib/javax.mail.jar"/>
 	<classpathentry kind="lib" path="lib/protobuf-java-3.0.0-beta-2.jar"/>
+	<classpathentry kind="lib" path="lib/protobuf-java-format-1.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

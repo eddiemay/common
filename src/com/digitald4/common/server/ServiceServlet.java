@@ -21,6 +21,8 @@ import com.digitald4.common.util.Emailer;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.googlecode.protobuf.format.JsonFormat;
+import com.googlecode.protobuf.format.JsonFormat.ParseException;
 
 public class ServiceServlet extends HttpServlet {
 	private DBConnector connector;
@@ -125,8 +127,9 @@ public class ServiceServlet extends HttpServlet {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <R extends Message> R transformRequest(R msgRequest, HttpServletRequest httpRequest) {
-		R.Builder builder = msgRequest.toBuilder(); 
+	public static <R extends Message> R transformRequest(R msgRequest,
+			HttpServletRequest httpRequest) throws ParseException {
+		R.Builder builder = msgRequest.toBuilder();
 		Descriptor descriptor = builder.getDescriptorForType();
 		for (Map.Entry<String, String[]> entry : httpRequest.getParameterMap().entrySet()) {
 			FieldDescriptor field = descriptor.findFieldByName(entry.getKey());
@@ -135,7 +138,15 @@ public class ServiceServlet extends HttpServlet {
 		return (R) builder.build();
 	}
 	
-	public static Object transformValue(FieldDescriptor field, String value) {
+	@SuppressWarnings("unchecked")
+	public static <R extends Message> R transformRequest(R msgRequest, String json)
+			throws ParseException {
+		R.Builder builder = msgRequest.toBuilder();
+		JsonFormat.merge(json, builder);
+		return (R) builder.build();
+	}
+	
+	public static Object transformValue(FieldDescriptor field, String value) throws ParseException {
 		switch (field.getJavaType()) {
 			case BOOLEAN: return Boolean.valueOf(value);
 			case INT: return Integer.valueOf(value);
@@ -157,9 +168,9 @@ public class ServiceServlet extends HttpServlet {
 					return field.getEnumType().findValueByName(value);
 				}
 			}
-		case BYTE_STRING: break;
-		case MESSAGE: break;
-		default: break;
+			case BYTE_STRING: break;
+			case MESSAGE: break;
+			default: break;
 		}
 		return value;
 	}
