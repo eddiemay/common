@@ -18,6 +18,7 @@ import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
 import com.digitald4.common.store.impl.UserStore;
 import com.digitald4.common.util.Emailer;
+import com.digitald4.common.util.UserProvider;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -27,6 +28,7 @@ import com.googlecode.protobuf.format.JsonFormat.ParseException;
 public class ServiceServlet extends HttpServlet {
 	private DBConnector connector;
 	private UserStore userStore;
+	protected UserProvider userProvider = new UserProvider();
 	private Emailer emailer;
 	
 	public void init() throws ServletException {
@@ -69,16 +71,16 @@ public class ServiceServlet extends HttpServlet {
 	}
 	
 	public boolean checkLogin(HttpSession session) throws Exception {
-		User user = (User) session.getAttribute("user");
+		User user = (User) session.getAttribute("puser");
 		if (user == null || user.getId() == 0) {
 			String autoLoginId = getServletContext().getInitParameter("auto_login_id");
-			if (autoLoginId != null) {
-				user = userStore.read(Integer.parseInt(autoLoginId));
-				session.setAttribute("user", userStore.updateLastLogin(user));
-				return true;
+			if (autoLoginId == null) {
+				return false;
 			}
-			return false;
+			user = userStore.read(Integer.parseInt(autoLoginId));
+			session.setAttribute("puser", userStore.updateLastLogin(user));
 		}
+		userProvider.set(user);
 		return true;
 	}
 	
@@ -107,7 +109,7 @@ public class ServiceServlet extends HttpServlet {
 			throws Exception {
 		if (!checkLoginAutoRedirect(request,response)) return false;
 		HttpSession session = request.getSession(true);
-		if (((User) session.getAttribute("user")).getType().getNumber() > level.getNumber()) {
+		if (((User) session.getAttribute("puser")).getType().getNumber() > level.getNumber()) {
 			response.sendRedirect("denied.html");
 			return false;
 		}
@@ -135,6 +137,14 @@ public class ServiceServlet extends HttpServlet {
 			FieldDescriptor field = descriptor.findFieldByName(entry.getKey());
 			builder.setField(field, transformValue(field, entry.getValue()[0]));
 		}
+		return (R) builder.build();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <R extends Message> R transformJSONRequest(R msgRequest,
+			HttpServletRequest httpRequest) throws ParseException {
+		R.Builder builder = msgRequest.toBuilder();
+		JsonFormat.merge(httpRequest.getParameterMap().values().iterator().next()[0], builder);
 		return (R) builder.build();
 	}
 	

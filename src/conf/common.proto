@@ -37,11 +37,11 @@ message User {
 		ADMIN = 1;
 		STANDARD = 2;
 	}
-	required UserType type = 2;
-	required string user_name = 3;
-	required string email = 4;
-	required string first_name = 5;
-	required string last_name = 6;
+	optional UserType type = 2;
+	optional string user_name = 3;
+	optional string email = 4;
+	optional string first_name = 5;
+	optional string last_name = 6;
 	optional bool disabled = 7;
 	optional bool read_only = 8;
 	optional string password = 9;

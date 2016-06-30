@@ -22,6 +22,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
+import com.googlecode.protobuf.format.JsonFormat;
 
 public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
@@ -34,11 +35,17 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	private final T t;
 	private final Descriptor descriptor; 
 	private final DBConnector connector;
+	private final String table;
 	
 	public DAOProtoSQLImpl(T t, DBConnector connector) {
 		this.t = t;
 		this.descriptor = t.getDescriptorForType();
 		this.connector = connector;
+		this.table = t.getDescriptorForType().getName();
+	}
+
+	public String getTable() {
+		return table;
 	}
 	
 	@Override
@@ -54,7 +61,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 			columns += field.getName();
 			values += "?";
 		}
-		String sql = INSERT_SQL.replaceAll("\\{TABLE\\}", t.getDescriptorForType().getName())
+		String sql = INSERT_SQL.replaceAll("\\{TABLE\\}", getTable())
 				.replaceAll("\\{COLUMNS\\}", columns)
 				.replaceAll("\\{VALUES\\}", values);
 		System.out.println(sql);
@@ -80,15 +87,16 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public T read(int id) throws DD4StorageException {
-		String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", t.getClass().getSimpleName());
+		String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getTable());
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
 				PreparedStatement ps = con.prepareStatement(sql);) {
 			ps.setInt(1, id);
 			T result = null;
 			ResultSet rs = ps.executeQuery();
-			if (rs.next()) {
-				result = parseFrom(rs);
+			List<T> results = process(rs);
+			if (!results.isEmpty()) {
+				result = results.get(0);
 			}
 			rs.close();
 			return result;
@@ -115,7 +123,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 			}
 			columns += param.getColumn() + " " + param.getOperan() + " ?";
 		}
-		String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", t.getClass().getSimpleName())
+		String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", getTable())
 				.replaceAll("\\{COLUMNS\\}", columns);
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
@@ -124,11 +132,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 			for (QueryParam param : params) {
 				setObject(ps, p++, descriptor.findFieldByName(param.getColumn()), param.getValue());
 			}
-			List<T> results = new ArrayList<T>();
 			ResultSet rs = ps.executeQuery();
-			while (rs.next()) {
-				results.add(parseFrom(rs));
-			}
+			List<T> results = process(rs);
 			rs.close();
 			return results;
 		} catch (SQLException e) {
@@ -138,16 +143,12 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public List<T> getAll() throws DD4StorageException {
-		String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", t.getClass().getSimpleName());
+		String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", getTable());
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
 				PreparedStatement ps = con.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery();) {
-			List<T> results = new ArrayList<T>();
-			while (rs.next()) {
-				results.add(parseFrom(rs));
-			}
-			return results;
+			return process(rs);
 		} catch (SQLException e) {
 			throw new DD4StorageException("Error reading record", e);
 		}
@@ -170,7 +171,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 				sets += field.getName() + " = ?";
 			}
 		}
-		String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", updated.getDescriptorForType().getName())
+		String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getTable())
 				.replaceAll("\\{SETS\\}", sets);
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
@@ -190,7 +191,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public void delete(int id) throws DD4StorageException {
-		String sql = DELETE_SQL.replaceAll("\\{TABLE\\}", t.getClass().getSimpleName());
+		String sql = DELETE_SQL.replaceAll("\\{TABLE\\}", getTable());
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
 				PreparedStatement ps = con.prepareStatement(sql);) {
@@ -203,14 +204,42 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	static void setObject(PreparedStatement ps, int index, FieldDescriptor field, Object value)
 			throws SQLException {
-		switch (field.getJavaType()) {
-			case ENUM: ps.setObject(index, ((EnumValueDescriptor) value).getNumber()); break;
-			case LONG: ps.setTimestamp(index, new Timestamp((Long) value)); break;
-			default: ps.setObject(index, value);
+		if (field != null) {
+			switch (field.getJavaType()) {
+				case ENUM: ps.setObject(index, ((EnumValueDescriptor) value).getNumber()); break;
+				case LONG: ps.setTimestamp(index, new Timestamp((Long) value)); break;
+				case MESSAGE: {
+					if (field.isRepeated()) {
+						StringBuffer json = new StringBuffer()
+							.append("{\"" + field.getName() + "\": [");
+						for (Message message : (List<Message>) value) {
+							json.append(JsonFormat.printToString(message));
+							json.append(",");
+						}
+						json.append("]}");
+						System.out.println("JSON: " + json.toString());
+						ps.setString(index, json.toString());
+					} else {
+						ps.setString(index, JsonFormat.printToString((Message) value));
+					}
+				} break;
+				default: ps.setObject(index, value);
+			}
+		} else {
+			System.out.println("******************************************Field is null for: " + value);
+			ps.setObject(index, value);
 		}
 	}
 	
-	private T parseFrom(ResultSet rs) throws SQLException {
+	protected List<T> process(ResultSet rs) throws SQLException {
+		List<T> results = new ArrayList<T>();
+		while (rs.next()) {
+			results.add(parseFromRS(rs));
+		}
+		return results;
+	}
+	
+	private T parseFromRS(ResultSet rs) throws SQLException {
 		StringBuffer data = new StringBuffer("");
 		ResultSetMetaData rsmd = rs.getMetaData();
 		Message.Builder builder = t.newBuilderForType();
@@ -225,9 +254,14 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 						value = field.getEnumType().findValueByNumber(rs.getInt(i));
 					} else if (field.getJavaType() == JavaType.LONG) {
 						value = rs.getTimestamp(i).getTime();
+					} else if (field.getJavaType() == JavaType.MESSAGE) {
+						Message.Builder subBuilder = field.getMessageType().toProto().newBuilderForType();
+						JsonFormat.merge(rs.getString(i), subBuilder);
+						value = subBuilder;
 					}
 					builder.setField(field, value);
 				} catch (Exception e) {
+					e.printStackTrace();
 					System.out.println(e.getMessage() + " for column: " + columnName);
 				}
 			}

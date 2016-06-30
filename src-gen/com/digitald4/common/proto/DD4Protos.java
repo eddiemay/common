@@ -2126,66 +2126,66 @@ public final class DD4Protos {
     int getId();
 
     /**
-     * <code>required .common.User.UserType type = 2;</code>
+     * <code>optional .common.User.UserType type = 2;</code>
      */
     boolean hasType();
     /**
-     * <code>required .common.User.UserType type = 2;</code>
+     * <code>optional .common.User.UserType type = 2;</code>
      */
     com.digitald4.common.proto.DD4Protos.User.UserType getType();
 
     /**
-     * <code>required string user_name = 3;</code>
+     * <code>optional string user_name = 3;</code>
      */
     boolean hasUserName();
     /**
-     * <code>required string user_name = 3;</code>
+     * <code>optional string user_name = 3;</code>
      */
     java.lang.String getUserName();
     /**
-     * <code>required string user_name = 3;</code>
+     * <code>optional string user_name = 3;</code>
      */
     com.google.protobuf.ByteString
         getUserNameBytes();
 
     /**
-     * <code>required string email = 4;</code>
+     * <code>optional string email = 4;</code>
      */
     boolean hasEmail();
     /**
-     * <code>required string email = 4;</code>
+     * <code>optional string email = 4;</code>
      */
     java.lang.String getEmail();
     /**
-     * <code>required string email = 4;</code>
+     * <code>optional string email = 4;</code>
      */
     com.google.protobuf.ByteString
         getEmailBytes();
 
     /**
-     * <code>required string first_name = 5;</code>
+     * <code>optional string first_name = 5;</code>
      */
     boolean hasFirstName();
     /**
-     * <code>required string first_name = 5;</code>
+     * <code>optional string first_name = 5;</code>
      */
     java.lang.String getFirstName();
     /**
-     * <code>required string first_name = 5;</code>
+     * <code>optional string first_name = 5;</code>
      */
     com.google.protobuf.ByteString
         getFirstNameBytes();
 
     /**
-     * <code>required string last_name = 6;</code>
+     * <code>optional string last_name = 6;</code>
      */
     boolean hasLastName();
     /**
-     * <code>required string last_name = 6;</code>
+     * <code>optional string last_name = 6;</code>
      */
     java.lang.String getLastName();
     /**
-     * <code>required string last_name = 6;</code>
+     * <code>optional string last_name = 6;</code>
      */
     com.google.protobuf.ByteString
         getLastNameBytes();
@@ -2501,13 +2501,13 @@ public final class DD4Protos {
     public static final int TYPE_FIELD_NUMBER = 2;
     private int type_;
     /**
-     * <code>required .common.User.UserType type = 2;</code>
+     * <code>optional .common.User.UserType type = 2;</code>
      */
     public boolean hasType() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>required .common.User.UserType type = 2;</code>
+     * <code>optional .common.User.UserType type = 2;</code>
      */
     public com.digitald4.common.proto.DD4Protos.User.UserType getType() {
       com.digitald4.common.proto.DD4Protos.User.UserType result = com.digitald4.common.proto.DD4Protos.User.UserType.valueOf(type_);
@@ -2517,13 +2517,13 @@ public final class DD4Protos {
     public static final int USER_NAME_FIELD_NUMBER = 3;
     private volatile java.lang.Object userName_;
     /**
-     * <code>required string user_name = 3;</code>
+     * <code>optional string user_name = 3;</code>
      */
     public boolean hasUserName() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>required string user_name = 3;</code>
+     * <code>optional string user_name = 3;</code>
      */
     public java.lang.String getUserName() {
       java.lang.Object ref = userName_;
@@ -2540,7 +2540,7 @@ public final class DD4Protos {
       }
     }
     /**
-     * <code>required string user_name = 3;</code>
+     * <code>optional string user_name = 3;</code>
      */
     public com.google.protobuf.ByteString
         getUserNameBytes() {
@@ -2559,13 +2559,13 @@ public final class DD4Protos {
     public static final int EMAIL_FIELD_NUMBER = 4;
     private volatile java.lang.Object email_;
     /**
-     * <code>required string email = 4;</code>
+     * <code>optional string email = 4;</code>
      */
     public boolean hasEmail() {
       return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>required string email = 4;</code>
+     * <code>optional string email = 4;</code>
      */
     public java.lang.String getEmail() {
       java.lang.Object ref = email_;
@@ -2582,7 +2582,7 @@ public final class DD4Protos {
       }
     }
     /**
-     * <code>required string email = 4;</code>
+     * <code>optional string email = 4;</code>
      */
     public com.google.protobuf.ByteString
         getEmailBytes() {
@@ -2601,13 +2601,13 @@ public final class DD4Protos {
     public static final int FIRST_NAME_FIELD_NUMBER = 5;
     private volatile java.lang.Object firstName_;
     /**
-     * <code>required string first_name = 5;</code>
+     * <code>optional string first_name = 5;</code>
      */
     public boolean hasFirstName() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
-     * <code>required string first_name = 5;</code>
+     * <code>optional string first_name = 5;</code>
      */
     public java.lang.String getFirstName() {
       java.lang.Object ref = firstName_;
@@ -2624,7 +2624,7 @@ public final class DD4Protos {
       }
     }
     /**
-     * <code>required string first_name = 5;</code>
+     * <code>optional string first_name = 5;</code>
      */
     public com.google.protobuf.ByteString
         getFirstNameBytes() {
@@ -2643,13 +2643,13 @@ public final class DD4Protos {
     public static final int LAST_NAME_FIELD_NUMBER = 6;
     private volatile java.lang.Object lastName_;
     /**
-     * <code>required string last_name = 6;</code>
+     * <code>optional string last_name = 6;</code>
      */
     public boolean hasLastName() {
       return ((bitField0_ & 0x00000020) == 0x00000020);
     }
     /**
-     * <code>required string last_name = 6;</code>
+     * <code>optional string last_name = 6;</code>
      */
     public java.lang.String getLastName() {
       java.lang.Object ref = lastName_;
@@ -2666,7 +2666,7 @@ public final class DD4Protos {
       }
     }
     /**
-     * <code>required string last_name = 6;</code>
+     * <code>optional string last_name = 6;</code>
      */
     public com.google.protobuf.ByteString
         getLastNameBytes() {
@@ -2817,26 +2817,6 @@ public final class DD4Protos {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasType()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasUserName()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasEmail()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasFirstName()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasLastName()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -3191,21 +3171,6 @@ public final class DD4Protos {
       }
 
       public final boolean isInitialized() {
-        if (!hasType()) {
-          return false;
-        }
-        if (!hasUserName()) {
-          return false;
-        }
-        if (!hasEmail()) {
-          return false;
-        }
-        if (!hasFirstName()) {
-          return false;
-        }
-        if (!hasLastName()) {
-          return false;
-        }
         return true;
       }
 
@@ -3262,20 +3227,20 @@ public final class DD4Protos {
 
       private int type_ = 0;
       /**
-       * <code>required .common.User.UserType type = 2;</code>
+       * <code>optional .common.User.UserType type = 2;</code>
        */
       public boolean hasType() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required .common.User.UserType type = 2;</code>
+       * <code>optional .common.User.UserType type = 2;</code>
        */
       public com.digitald4.common.proto.DD4Protos.User.UserType getType() {
         com.digitald4.common.proto.DD4Protos.User.UserType result = com.digitald4.common.proto.DD4Protos.User.UserType.valueOf(type_);
         return result == null ? com.digitald4.common.proto.DD4Protos.User.UserType.UNSPECIFIED : result;
       }
       /**
-       * <code>required .common.User.UserType type = 2;</code>
+       * <code>optional .common.User.UserType type = 2;</code>
        */
       public Builder setType(com.digitald4.common.proto.DD4Protos.User.UserType value) {
         if (value == null) {
@@ -3287,7 +3252,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required .common.User.UserType type = 2;</code>
+       * <code>optional .common.User.UserType type = 2;</code>
        */
       public Builder clearType() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -3298,13 +3263,13 @@ public final class DD4Protos {
 
       private java.lang.Object userName_ = "";
       /**
-       * <code>required string user_name = 3;</code>
+       * <code>optional string user_name = 3;</code>
        */
       public boolean hasUserName() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>required string user_name = 3;</code>
+       * <code>optional string user_name = 3;</code>
        */
       public java.lang.String getUserName() {
         java.lang.Object ref = userName_;
@@ -3321,7 +3286,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string user_name = 3;</code>
+       * <code>optional string user_name = 3;</code>
        */
       public com.google.protobuf.ByteString
           getUserNameBytes() {
@@ -3337,7 +3302,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string user_name = 3;</code>
+       * <code>optional string user_name = 3;</code>
        */
       public Builder setUserName(
           java.lang.String value) {
@@ -3350,7 +3315,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string user_name = 3;</code>
+       * <code>optional string user_name = 3;</code>
        */
       public Builder clearUserName() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -3359,7 +3324,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string user_name = 3;</code>
+       * <code>optional string user_name = 3;</code>
        */
       public Builder setUserNameBytes(
           com.google.protobuf.ByteString value) {
@@ -3374,13 +3339,13 @@ public final class DD4Protos {
 
       private java.lang.Object email_ = "";
       /**
-       * <code>required string email = 4;</code>
+       * <code>optional string email = 4;</code>
        */
       public boolean hasEmail() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>required string email = 4;</code>
+       * <code>optional string email = 4;</code>
        */
       public java.lang.String getEmail() {
         java.lang.Object ref = email_;
@@ -3397,7 +3362,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string email = 4;</code>
+       * <code>optional string email = 4;</code>
        */
       public com.google.protobuf.ByteString
           getEmailBytes() {
@@ -3413,7 +3378,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string email = 4;</code>
+       * <code>optional string email = 4;</code>
        */
       public Builder setEmail(
           java.lang.String value) {
@@ -3426,7 +3391,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string email = 4;</code>
+       * <code>optional string email = 4;</code>
        */
       public Builder clearEmail() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -3435,7 +3400,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string email = 4;</code>
+       * <code>optional string email = 4;</code>
        */
       public Builder setEmailBytes(
           com.google.protobuf.ByteString value) {
@@ -3450,13 +3415,13 @@ public final class DD4Protos {
 
       private java.lang.Object firstName_ = "";
       /**
-       * <code>required string first_name = 5;</code>
+       * <code>optional string first_name = 5;</code>
        */
       public boolean hasFirstName() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
-       * <code>required string first_name = 5;</code>
+       * <code>optional string first_name = 5;</code>
        */
       public java.lang.String getFirstName() {
         java.lang.Object ref = firstName_;
@@ -3473,7 +3438,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string first_name = 5;</code>
+       * <code>optional string first_name = 5;</code>
        */
       public com.google.protobuf.ByteString
           getFirstNameBytes() {
@@ -3489,7 +3454,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string first_name = 5;</code>
+       * <code>optional string first_name = 5;</code>
        */
       public Builder setFirstName(
           java.lang.String value) {
@@ -3502,7 +3467,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string first_name = 5;</code>
+       * <code>optional string first_name = 5;</code>
        */
       public Builder clearFirstName() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -3511,7 +3476,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string first_name = 5;</code>
+       * <code>optional string first_name = 5;</code>
        */
       public Builder setFirstNameBytes(
           com.google.protobuf.ByteString value) {
@@ -3526,13 +3491,13 @@ public final class DD4Protos {
 
       private java.lang.Object lastName_ = "";
       /**
-       * <code>required string last_name = 6;</code>
+       * <code>optional string last_name = 6;</code>
        */
       public boolean hasLastName() {
         return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       /**
-       * <code>required string last_name = 6;</code>
+       * <code>optional string last_name = 6;</code>
        */
       public java.lang.String getLastName() {
         java.lang.Object ref = lastName_;
@@ -3549,7 +3514,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string last_name = 6;</code>
+       * <code>optional string last_name = 6;</code>
        */
       public com.google.protobuf.ByteString
           getLastNameBytes() {
@@ -3565,7 +3530,7 @@ public final class DD4Protos {
         }
       }
       /**
-       * <code>required string last_name = 6;</code>
+       * <code>optional string last_name = 6;</code>
        */
       public Builder setLastName(
           java.lang.String value) {
@@ -3578,7 +3543,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string last_name = 6;</code>
+       * <code>optional string last_name = 6;</code>
        */
       public Builder clearLastName() {
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -3587,7 +3552,7 @@ public final class DD4Protos {
         return this;
       }
       /**
-       * <code>required string last_name = 6;</code>
+       * <code>optional string last_name = 6;</code>
        */
       public Builder setLastNameBytes(
           com.google.protobuf.ByteString value) {
@@ -3928,9 +3893,9 @@ public final class DD4Protos {
       "File.FileType\022\014\n\004size\030\004 \001(\005\022\014\n\004data\030\005 \001(" +
       "\014\".\n\010FileType\022\017\n\013UNSPECIFIED\020\000\022\010\n\004MISC\020\001" +
       "\022\007\n\003PDF\020\002\"\220\002\n\004User\022\n\n\002id\030\001 \001(\005\022#\n\004type\030\002" +
-      " \002(\0162\025.common.User.UserType\022\021\n\tuser_name",
-      "\030\003 \002(\t\022\r\n\005email\030\004 \002(\t\022\022\n\nfirst_name\030\005 \002(" +
-      "\t\022\021\n\tlast_name\030\006 \002(\t\022\020\n\010disabled\030\007 \001(\010\022\021" +
+      " \001(\0162\025.common.User.UserType\022\021\n\tuser_name",
+      "\030\003 \001(\t\022\r\n\005email\030\004 \001(\t\022\022\n\nfirst_name\030\005 \001(" +
+      "\t\022\021\n\tlast_name\030\006 \001(\t\022\020\n\010disabled\030\007 \001(\010\022\021" +
       "\n\tread_only\030\010 \001(\010\022\020\n\010password\030\t \001(\t\022\r\n\005n" +
       "otes\030\n \001(\t\022\022\n\nlast_login\030\013 \001(\003\"4\n\010UserTy" +
       "pe\022\017\n\013UNSPECIFIED\020\000\022\t\n\005ADMIN\020\001\022\014\n\010STANDA" +
