@@ -228,9 +228,7 @@ public class JsonFormat {
             }
 
             case ENUM: {
-                generator.print("\"");
-                generator.print(((EnumValueDescriptor) value).getName());
-                generator.print("\"");
+                generator.print("" + ((EnumValueDescriptor) value).getNumber());
                 break;
             }
 
