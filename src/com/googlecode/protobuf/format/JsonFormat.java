@@ -538,7 +538,19 @@ public class JsonFormat {
             }
 
             char c = currentToken.charAt(0);
-            return (('0' <= c) && (c <= '9')) || (c == '-') || (c == '+');
+            return (('0' <= c) && (c <= '9') || (c == '-') || (c == '+')) && !currentToken.contains(".");
+        }
+
+        /**
+         * Returns {@code true} if the next token is an double, but does not consume it.
+         */
+        public boolean lookingAtDouble() {
+            if (currentToken.length() == 0) {
+                return false;
+            }
+
+            char c = currentToken.charAt(0);
+            return (('0' <= c) && (c <= '9') || (c == '-') || (c == '+')) && currentToken.contains(".");
         }
 
         /**
@@ -980,6 +992,8 @@ public class JsonFormat {
             // Primitive value
             if ("null".equals(tokenizer.currentToken())) {
                 tokenizer.consume("null");
+            } else if (tokenizer.lookingAtDouble()) {
+            	tokenizer.consumeDouble();
             } else if (tokenizer.lookingAtInteger()) {
                 tokenizer.consumeInt64();
             } else if (tokenizer.lookingAtBoolean()) {

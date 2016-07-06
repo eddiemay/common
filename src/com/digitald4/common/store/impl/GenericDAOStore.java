@@ -22,8 +22,8 @@ public class GenericDAOStore<T> implements DAOStore<T> {
 	}
 
 	@Override
-	public T read(int id) throws DD4StorageException {
-		return dao.read(id);
+	public T get(int id) throws DD4StorageException {
+		return dao.get(id);
 	}
 
 	@Override
@@ -37,13 +37,13 @@ public class GenericDAOStore<T> implements DAOStore<T> {
 	}
 	
 	@Override
-	public List<T> query(QueryParam... params) throws DD4StorageException {
-		return dao.query(params);
+	public List<T> get(QueryParam... params) throws DD4StorageException {
+		return dao.get(params);
 	}
 	
 	@Override
-	public List<T> query(List<QueryParam> params) throws DD4StorageException {
-		return dao.query(params);
+	public List<T> get(List<QueryParam> params) throws DD4StorageException {
+		return dao.get(params);
 	}
 	
 	@Override

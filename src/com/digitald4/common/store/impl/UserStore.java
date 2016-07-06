@@ -19,7 +19,7 @@ public class UserStore extends GenericDAOStore<User> {
 	}
 	
 	public User getByUsernamePassword(String username, String password) throws DD4StorageException {
-		List<User> users = query(new QueryParam("user_name", "=", username),
+		List<User> users = get(new QueryParam("user_name", "=", username),
 				new QueryParam("password", "=", password));
 		if (users.isEmpty()) {
 			return null;
@@ -28,7 +28,7 @@ public class UserStore extends GenericDAOStore<User> {
 	}
 	
 	public User getByEmailPassword(String email, String password) throws DD4StorageException {
-		List<User> users = query(new QueryParam("email", "=", email),
+		List<User> users = get(new QueryParam("email", "=", email),
 				new QueryParam("password", "=", password));
 		if (users.isEmpty()) {
 			return null;
@@ -63,7 +63,7 @@ public class UserStore extends GenericDAOStore<User> {
 		System.out.println(user);
 		try {
 			System.out.println(user = store.create(user));
-			System.out.println(store.read(user.getId()));
+			System.out.println(store.get(user.getId()));
 			System.out.println(store.getByUsernamePassword("testuser", "pass"));
 			System.out.println(store.update(user.getId(), new Function<User, User>() {
 				@Override public User execute(User user) {

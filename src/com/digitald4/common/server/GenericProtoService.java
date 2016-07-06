@@ -25,7 +25,7 @@ public class GenericProtoService<T> implements ProtoService<T> {
 
 	@Override
 	public T get(Message request) throws DD4StorageException {
-		return store.read(
+		return store.get(
 				(Integer) request.getField(request.getDescriptorForType().findFieldByName("id")));
 	}
 
@@ -35,7 +35,7 @@ public class GenericProtoService<T> implements ProtoService<T> {
 		for (Map.Entry<FieldDescriptor, Object> entry : request.getAllFields().entrySet()) {
 			params.add(new QueryParam(entry.getKey().getName(), "=", entry.getValue()));
 		}
-		return store.query(params);
+		return store.get(params);
 	}
 
 	@Override
@@ -49,5 +49,4 @@ public class GenericProtoService<T> implements ProtoService<T> {
 		store.delete((Integer) request.getField(request.getDescriptorForType().findFieldByName("id")));
 		return true;
 	}
-
 }

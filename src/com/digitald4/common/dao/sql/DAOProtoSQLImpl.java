@@ -86,7 +86,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	}
 	
 	@Override
-	public T read(int id) throws DD4StorageException {
+	public T get(int id) throws DD4StorageException {
 		String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getTable());
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
@@ -106,16 +106,16 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	}
 	
 	@Override
-	public List<T> query(QueryParam... params) throws DD4StorageException {
+	public List<T> get(QueryParam... params) throws DD4StorageException {
 		List<QueryParam> list = new ArrayList<>();
 		for (QueryParam param : params) {
 			list.add(param);
 		}
-		return query(list);
+		return get(list);
 	}
 	
 	@Override
-	public List<T> query(List<QueryParam> params) throws DD4StorageException {
+	public List<T> get(List<QueryParam> params) throws DD4StorageException {
 		String columns = "";
 		for (QueryParam param : params) {
 			if (columns.length() > 0) {
@@ -156,7 +156,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public T update(int id, Function<T, T> updater) throws DD4StorageException {
-		T orig = read(id);
+		T orig = get(id);
 		T updated = updater.execute(orig);
 		String sets = "";
 		Map<FieldDescriptor, Object> valueMap = updated.getAllFields();
@@ -212,9 +212,14 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 					if (field.isRepeated()) {
 						StringBuffer json = new StringBuffer()
 							.append("{\"" + field.getName() + "\": [");
+						boolean first = true;
 						for (Message message : (List<Message>) value) {
+							if (!first) {
+								json.append(",");
+							} else {
+								first = false;
+							}
 							json.append(JsonFormat.printToString(message));
-							json.append(",");
 						}
 						json.append("]}");
 						System.out.println("JSON: " + json.toString());
@@ -249,19 +254,23 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 			if (value != null) {
 				data.append(columnName + ": " + value + "\n");
 				try {
-					FieldDescriptor field = descriptor.findFieldByName(columnName); 
+					FieldDescriptor field = descriptor.findFieldByName(columnName);
+					if (field == null) {
+						field = descriptor.findFieldByName(columnName.substring(0, columnName.length() - 2));
+					}
 					if (field.getJavaType() == JavaType.ENUM) {
 						value = field.getEnumType().findValueByNumber(rs.getInt(i));
+						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.LONG) {
 						value = rs.getTimestamp(i).getTime();
+						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.MESSAGE) {
-						Message.Builder subBuilder = field.getMessageType().toProto().newBuilderForType();
-						JsonFormat.merge(rs.getString(i), subBuilder);
-						value = subBuilder;
+						JsonFormat.merge(rs.getString(i), builder);
+					} else {
+						builder.setField(field, value);
 					}
-					builder.setField(field, value);
 				} catch (Exception e) {
-					e.printStackTrace();
+					// e.printStackTrace();
 					System.out.println(e.getMessage() + " for column: " + columnName);
 				}
 			}

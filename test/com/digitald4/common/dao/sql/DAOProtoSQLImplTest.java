@@ -30,7 +30,7 @@ public class DAOProtoSQLImplTest {
 				.build();
 		try {
 			user = dao.create(user);
-			List<User> users = dao.query(new QueryParam("last_login", ">", new DateTime("2005-06-02").getMillis()),
+			List<User> users = dao.get(new QueryParam("last_login", ">", new DateTime("2005-06-02").getMillis()),
 					new QueryParam("last_login", "<", new DateTime("2005-07-11").getMillis()));
 			assertEquals(1, users.size());
 			DateTime lastLogin = new DateTime(users.get(0).getLastLogin());

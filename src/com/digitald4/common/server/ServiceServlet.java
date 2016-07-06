@@ -77,7 +77,7 @@ public class ServiceServlet extends HttpServlet {
 			if (autoLoginId == null) {
 				return false;
 			}
-			user = userStore.read(Integer.parseInt(autoLoginId));
+			user = userStore.get(Integer.parseInt(autoLoginId));
 			session.setAttribute("puser", userStore.updateLastLogin(user));
 		}
 		userProvider.set(user);
