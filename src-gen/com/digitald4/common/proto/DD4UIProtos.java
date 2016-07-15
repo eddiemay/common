@@ -9,9 +9,9 @@ public final class DD4UIProtos {
       com.google.protobuf.ExtensionRegistry registry) {
   }
   /**
-   * Protobuf enum {@code common.DateRangeType}
+   * Protobuf enum {@code common.DateRange}
    */
-  public enum DateRangeType
+  public enum DateRange
       implements com.google.protobuf.ProtocolMessageEnum {
     /**
      * <code>UNSPECIFIED = 0;</code>
@@ -30,9 +30,13 @@ public final class DD4UIProtos {
      */
     MONTH(3, 3),
     /**
-     * <code>YEAR = 4;</code>
+     * <code>CAL_MONTH = 4;</code>
      */
-    YEAR(4, 4),
+    CAL_MONTH(4, 4),
+    /**
+     * <code>YEAR = 5;</code>
+     */
+    YEAR(5, 5),
     ;
 
     /**
@@ -52,35 +56,40 @@ public final class DD4UIProtos {
      */
     public static final int MONTH_VALUE = 3;
     /**
-     * <code>YEAR = 4;</code>
+     * <code>CAL_MONTH = 4;</code>
      */
-    public static final int YEAR_VALUE = 4;
+    public static final int CAL_MONTH_VALUE = 4;
+    /**
+     * <code>YEAR = 5;</code>
+     */
+    public static final int YEAR_VALUE = 5;
 
 
     public final int getNumber() {
       return value;
     }
 
-    public static DateRangeType valueOf(int value) {
+    public static DateRange valueOf(int value) {
       switch (value) {
         case 0: return UNSPECIFIED;
         case 1: return DAY;
         case 2: return WEEK;
         case 3: return MONTH;
-        case 4: return YEAR;
+        case 4: return CAL_MONTH;
+        case 5: return YEAR;
         default: return null;
       }
     }
 
-    public static com.google.protobuf.Internal.EnumLiteMap<DateRangeType>
+    public static com.google.protobuf.Internal.EnumLiteMap<DateRange>
         internalGetValueMap() {
       return internalValueMap;
     }
     private static final com.google.protobuf.Internal.EnumLiteMap<
-        DateRangeType> internalValueMap =
-          new com.google.protobuf.Internal.EnumLiteMap<DateRangeType>() {
-            public DateRangeType findValueByNumber(int number) {
-              return DateRangeType.valueOf(number);
+        DateRange> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<DateRange>() {
+            public DateRange findValueByNumber(int number) {
+              return DateRange.valueOf(number);
             }
           };
 
@@ -97,9 +106,9 @@ public final class DD4UIProtos {
       return com.digitald4.common.proto.DD4UIProtos.getDescriptor().getEnumTypes().get(0);
     }
 
-    private static final DateRangeType[] VALUES = values();
+    private static final DateRange[] VALUES = values();
 
-    public static DateRangeType valueOf(
+    public static DateRange valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
       if (desc.getType() != getDescriptor()) {
         throw new java.lang.IllegalArgumentException(
@@ -111,12 +120,12 @@ public final class DD4UIProtos {
     private final int index;
     private final int value;
 
-    private DateRangeType(int index, int value) {
+    private DateRange(int index, int value) {
       this.index = index;
       this.value = value;
     }
 
-    // @@protoc_insertion_point(enum_scope:common.DateRangeType)
+    // @@protoc_insertion_point(enum_scope:common.DateRange)
   }
 
   public interface GPSAddressOrBuilder extends
@@ -921,10 +930,10 @@ public final class DD4UIProtos {
     java.lang.String[] descriptorData = {
       "\n\024conf/common_ui.proto\022\006common\"P\n\nGPSAdd" +
       "ress\022\017\n\007address\030\001 \001(\t\022\014\n\004unit\030\002 \001(\t\022\020\n\010l" +
-      "atitude\030\003 \001(\001\022\021\n\tlongitude\030\004 \001(\001*H\n\rDate" +
-      "RangeType\022\017\n\013UNSPECIFIED\020\000\022\007\n\003DAY\020\001\022\010\n\004W" +
-      "EEK\020\002\022\t\n\005MONTH\020\003\022\010\n\004YEAR\020\004B)\n\032com.digita" +
-      "ld4.common.protoB\013DD4UIProtos"
+      "atitude\030\003 \001(\001\022\021\n\tlongitude\030\004 \001(\001*S\n\tDate" +
+      "Range\022\017\n\013UNSPECIFIED\020\000\022\007\n\003DAY\020\001\022\010\n\004WEEK\020" +
+      "\002\022\t\n\005MONTH\020\003\022\r\n\tCAL_MONTH\020\004\022\010\n\004YEAR\020\005B)\n" +
+      "\032com.digitald4.common.protoB\013DD4UIProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

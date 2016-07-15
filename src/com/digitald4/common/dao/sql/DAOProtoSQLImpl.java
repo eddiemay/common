@@ -48,6 +48,10 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 		return table;
 	}
 	
+	public DBConnector getConnector() {
+		return connector;
+	}
+	
 	@Override
 	public T create(T t) throws DD4StorageException {
 		String columns = "";

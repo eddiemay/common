@@ -5,16 +5,17 @@
  */
 // GENERATED CODE -- DO NOT EDIT!
 
-goog.provide('proto.common.DateRangeType');
+goog.provide('proto.common.DateRange');
 
 /**
  * @enum {number}
  */
-proto.common.DateRangeType = {
+proto.common.DateRange = {
   UNSPECIFIED: 0,
   DAY: 1,
   WEEK: 2,
   MONTH: 3,
-  YEAR: 4
+  CAL_MONTH: 4,
+  YEAR: 5
 };
 
