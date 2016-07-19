@@ -7,6 +7,7 @@ import com.digitald4.common.dao.QueryParam;
 import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.store.DAOStore;
+import com.google.protobuf.Descriptors.Descriptor;
 
 public class GenericDAOStore<T> implements DAOStore<T> {
 
@@ -14,6 +15,11 @@ public class GenericDAOStore<T> implements DAOStore<T> {
 	
 	public GenericDAOStore(DAO<T> dao) {
 		this.dao = dao;
+	}
+	
+	@Override
+	public Descriptor getDescriptor() {
+		return dao.getDescriptor();
 	}
 	
 	@Override

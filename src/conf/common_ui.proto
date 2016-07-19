@@ -20,3 +20,17 @@ message GPSAddress {
 	optional double latitude = 3;
 	optional double longitude = 4;
 }
+
+message GetRequest {
+	optional int32 id = 1;
+};
+
+message UpdateRequest {
+	optional int32 id = 1;
+	optional string property = 2;
+	optional string value = 3;
+};
+
+message DeleteRequest {
+	optional int32 id = 1;
+};

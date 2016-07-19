@@ -4,8 +4,11 @@ import java.util.List;
 
 import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
+import com.google.protobuf.Descriptors.Descriptor;
 
 public interface DAO<T> {
+	Descriptor getDescriptor();
+	
 	T create(T t) throws DD4StorageException;
 	
 	T get(int id) throws DD4StorageException;

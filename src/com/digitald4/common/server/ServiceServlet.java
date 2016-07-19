@@ -38,8 +38,8 @@ public class ServiceServlet extends HttpServlet {
 	public DBConnector getDBConnector() throws ServletException {
 		if (connector == null) {
 			synchronized (this) {
-				ServletContext sc = getServletContext();
 				if (connector == null) {
+					ServletContext sc = getServletContext();
 					try {
 						System.out.println("*********** Loading driver");
 						connector = new DBConnectorThreadPoolImpl(

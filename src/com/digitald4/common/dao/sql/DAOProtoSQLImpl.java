@@ -43,9 +43,17 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 		this.connector = connector;
 		this.table = t.getDescriptorForType().getName();
 	}
+	
+	public Descriptor getDescriptor() {
+		return descriptor;
+	}
 
 	public String getTable() {
 		return table;
+	}
+	
+	public String getView() {
+		return getTable();
 	}
 	
 	public DBConnector getConnector() {
@@ -91,7 +99,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public T get(int id) throws DD4StorageException {
-		String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getTable());
+		String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getView());
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
 				PreparedStatement ps = con.prepareStatement(sql);) {
@@ -127,7 +135,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 			}
 			columns += param.getColumn() + " " + param.getOperan() + " ?";
 		}
-		String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", getTable())
+		String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", getView())
 				.replaceAll("\\{COLUMNS\\}", columns);
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
@@ -147,7 +155,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public List<T> getAll() throws DD4StorageException {
-		String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", getTable());
+		String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", getView());
 		System.out.println(sql);
 		try (Connection con = connector.getConnection();
 				PreparedStatement ps = con.prepareStatement(sql);
@@ -163,6 +171,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 		T orig = get(id);
 		T updated = updater.execute(orig);
 		String sets = "";
+		
+		// Find all the fields that were modified in the updated proto.
 		Map<FieldDescriptor, Object> valueMap = updated.getAllFields();
 		List<Map.Entry<FieldDescriptor, Object>> modified = new ArrayList<>();
 		for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
@@ -173,6 +183,16 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 				}
 				modified.add(entry);
 				sets += field.getName() + " = ?";
+			}
+		}
+		
+		// Find all the fields that have been removed from the update set them to null.
+		for (FieldDescriptor field : orig.getAllFields().keySet()) {
+			if (!valueMap.containsKey(field)) {
+				if (sets.length() > 0) {
+					sets += ", ";
+				}
+				sets += field.getName() + " = NULL";
 			}
 		}
 		String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getTable())

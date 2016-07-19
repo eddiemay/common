@@ -6,15 +6,18 @@ import java.util.Map;
 
 import com.digitald4.common.dao.QueryParam;
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
+import com.digitald4.common.proto.DD4UIProtos.GetRequest;
+import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.store.DAOStore;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 
-public class GenericProtoService<T> implements ProtoService<T> {
+public class SingleProtoService<T> implements ProtoService<T> {
 	
 	private final DAOStore<T> store;
 	
-	public GenericProtoService(DAOStore<T> store) {
+	public SingleProtoService(DAOStore<T> store) {
 		this.store = store;
 	}
 
@@ -24,7 +27,7 @@ public class GenericProtoService<T> implements ProtoService<T> {
 	}
 
 	@Override
-	public T get(Message request) throws DD4StorageException {
+	public T get(GetRequest request) throws DD4StorageException {
 		return store.get(
 				(Integer) request.getField(request.getDescriptorForType().findFieldByName("id")));
 	}
@@ -39,13 +42,13 @@ public class GenericProtoService<T> implements ProtoService<T> {
 	}
 
 	@Override
-	public T update(Message request) {
+	public T update(UpdateRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public boolean delete(Message request) throws DD4StorageException {
+	public boolean delete(DeleteRequest request) throws DD4StorageException {
 		store.delete((Integer) request.getField(request.getDescriptorForType().findFieldByName("id")));
 		return true;
 	}
