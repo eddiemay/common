@@ -3,11 +3,10 @@ package com.digitald4.common.store.impl;
 import java.util.List;
 
 import com.digitald4.common.dao.DAO;
-import com.digitald4.common.dao.QueryParam;
 import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
 import com.digitald4.common.store.DAOStore;
-import com.google.protobuf.Descriptors.Descriptor;
 
 public class GenericDAOStore<T> implements DAOStore<T> {
 
@@ -18,8 +17,8 @@ public class GenericDAOStore<T> implements DAOStore<T> {
 	}
 	
 	@Override
-	public Descriptor getDescriptor() {
-		return dao.getDescriptor();
+	public T getType() {
+		return dao.getType();
 	}
 	
 	@Override

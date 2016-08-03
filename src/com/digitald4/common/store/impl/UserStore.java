@@ -5,13 +5,13 @@ import java.util.List;
 import org.joda.time.DateTime;
 
 import com.digitald4.common.dao.DAO;
-import com.digitald4.common.dao.QueryParam;
 import com.digitald4.common.dao.sql.DAOProtoSQLImpl;
 import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
 
 public class UserStore extends GenericDAOStore<User> {
 	public UserStore(DAO<User> dao) {
@@ -19,8 +19,17 @@ public class UserStore extends GenericDAOStore<User> {
 	}
 	
 	public User getByUsernamePassword(String username, String password) throws DD4StorageException {
-		List<User> users = get(new QueryParam("user_name", "=", username),
-				new QueryParam("password", "=", password));
+		List<User> users = get(
+				QueryParam.newBuilder()
+						.setColumn("user_name")
+						.setOperan("=")
+						.setValue(username)
+						.build(),
+				QueryParam.newBuilder()
+						.setColumn("password")
+						.setOperan("=")
+						.setValue(password)
+						.build());
 		if (users.isEmpty()) {
 			return null;
 		}
@@ -28,8 +37,17 @@ public class UserStore extends GenericDAOStore<User> {
 	}
 	
 	public User getByEmailPassword(String email, String password) throws DD4StorageException {
-		List<User> users = get(new QueryParam("email", "=", email),
-				new QueryParam("password", "=", password));
+		List<User> users = get(
+				QueryParam.newBuilder()
+				.setColumn("email")
+				.setOperan("=")
+				.setValue(email)
+				.build(),
+		QueryParam.newBuilder()
+				.setColumn("password")
+				.setOperan("=")
+				.setValue(password)
+				.build());
 		if (users.isEmpty()) {
 			return null;
 		}
@@ -57,9 +75,9 @@ public class UserStore extends GenericDAOStore<User> {
 				.setPassword("pass")
 				.build();
 		UserStore store = new UserStore(
-				new DAOProtoSQLImpl<>(User.getDefaultInstance(),
-				new DBConnectorThreadPoolImpl("com.mysql.jdbc.Driver",
-						"jdbc:mysql://localhost/cpr?autoReconnect=true", "dd4_user", "getSchooled85")));
+				new DAOProtoSQLImpl<>(User.class,
+						new DBConnectorThreadPoolImpl("com.mysql.jdbc.Driver",
+								"jdbc:mysql://localhost/cpr?autoReconnect=true", "dd4_user", "getSchooled85")));
 		System.out.println(user);
 		try {
 			System.out.println(user = store.create(user));

@@ -16,21 +16,55 @@ enum DateRange {
 
 message GPSAddress {
 	optional string address = 1;
-	optional string unit = 2;
-	optional double latitude = 3;
-	optional double longitude = 4;
+	optional double latitude = 2;
+	optional double longitude = 3;
+	optional string unit = 4;
 }
 
 message GetRequest {
 	optional int32 id = 1;
-};
+}
+
+message ListRequest {
+	message QueryParam {
+		optional string column = 1;
+		optional string operan = 2;
+		optional string value = 3;
+	}
+	repeated QueryParam query_param = 1;
+}
+
+message CreateRequest {
+	optional string proto = 1;
+}
 
 message UpdateRequest {
 	optional int32 id = 1;
 	optional string property = 2;
 	optional string value = 3;
-};
+}
 
 message DeleteRequest {
 	optional int32 id = 1;
-};
+}
+
+message UserUI {
+	optional int32 id = 1;
+
+	enum UserType {
+		UNSPECIFIED = 0;
+		ADMIN = 1;
+		STANDARD = 2;
+	}
+	optional UserType type = 2;
+	optional string user_name = 3;
+	optional string email = 4;
+	optional string first_name = 5;
+	optional string last_name = 6;
+	optional bool disabled = 7;
+	optional bool read_only = 8;
+	optional string notes = 10;
+	optional int64 last_login = 11;
+
+	optional string name = 12;
+}

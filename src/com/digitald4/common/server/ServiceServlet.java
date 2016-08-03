@@ -1,5 +1,6 @@
 package com.digitald4.common.server;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
@@ -10,6 +11,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.digitald4.common.dao.sql.DAOProtoSQLImpl;
 import com.digitald4.common.jdbc.DBConnector;
@@ -32,7 +36,7 @@ public class ServiceServlet extends HttpServlet {
 	private Emailer emailer;
 	
 	public void init() throws ServletException {
-		userStore = new UserStore(new DAOProtoSQLImpl<>(User.getDefaultInstance(), getDBConnector()));
+		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, getDBConnector()));
 	}
 	
 	public DBConnector getDBConnector() throws ServletException {
@@ -183,5 +187,21 @@ public class ServiceServlet extends HttpServlet {
 			default: break;
 		}
 		return value;
+	}
+	
+	public JSONArray convertToJSON(List<? extends Message> items) throws JSONException {
+		JSONArray array = new JSONArray();
+		for (Message item : items) {
+			array.put(convertToJSON(item));
+		}
+		return array;
+	}
+	
+	public JSONObject convertToJSON(Message item) throws JSONException {
+		return new JSONObject(JsonFormat.printToString(item));
+	}
+	
+	public JSONObject convertToJSON(boolean bool) throws JSONException {
+		return new JSONObject(bool);
 	}
 }

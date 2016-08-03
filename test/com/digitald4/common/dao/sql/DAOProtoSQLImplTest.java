@@ -7,17 +7,16 @@ import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
-import com.digitald4.common.dao.QueryParam;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
 
 public class DAOProtoSQLImplTest {
 
 	@Test
 	public void testDateQueryWithDatabase() throws Exception {
-		DAOProtoSQLImpl<User> dao = new DAOProtoSQLImpl<>(
-				User.getDefaultInstance(),
+		DAOProtoSQLImpl<User> dao = new DAOProtoSQLImpl<>(User.class,
 				new DBConnectorThreadPoolImpl("com.mysql.jdbc.Driver",
 						"jdbc:mysql://localhost/cpr?autoReconnect=true", "dd4_user", "getSchooled85"));
 		User user = User.newBuilder()
@@ -30,8 +29,17 @@ public class DAOProtoSQLImplTest {
 				.build();
 		try {
 			user = dao.create(user);
-			List<User> users = dao.get(new QueryParam("last_login", ">", new DateTime("2005-06-02").getMillis()),
-					new QueryParam("last_login", "<", new DateTime("2005-07-11").getMillis()));
+			List<User> users = dao.get(
+					QueryParam.newBuilder()
+							.setColumn("last_login")
+							.setOperan(">")
+							.setValue(String.valueOf(new DateTime("2005-06-02").getMillis()))
+							.build(),
+					QueryParam.newBuilder()
+							.setColumn("last_login")
+							.setOperan(">")
+							.setValue(String.valueOf(new DateTime("2005-07-11").getMillis()))
+							.build());
 			assertEquals(1, users.size());
 			DateTime lastLogin = new DateTime(users.get(0).getLastLogin());
 			assertEquals(2005, lastLogin.getYear());
