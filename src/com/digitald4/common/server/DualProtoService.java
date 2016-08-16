@@ -12,7 +12,8 @@ import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
-import com.digitald4.common.store.DAOStore;
+import com.digitald4.common.storage.DAOStore;
+import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.GeneratedMessage;
@@ -37,7 +38,12 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 			for (Map.Entry<FieldDescriptor, Object> entry : internal.getAllFields().entrySet()) {
 				FieldDescriptor field = externalDescriptor.findFieldByName(entry.getKey().getName());
 				if (field != null) {
-					builder.setField(field, entry.getValue());
+					switch (field.getJavaType()) {
+						case ENUM: builder.setField(field,
+								field.getEnumType().findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
+							break;
+						default: builder.setField(field, entry.getValue());
+					}
 				}
 			}
 			return (T) builder.build();
@@ -51,7 +57,12 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 			for (Map.Entry<FieldDescriptor, Object> entry : external.getAllFields().entrySet()) {
 				FieldDescriptor field = internalDescriptor.findFieldByName(entry.getKey().getName());
 				if (field != null) {
-					builder.setField(field, entry.getValue());
+					switch (field.getJavaType()) {
+						case ENUM: builder.setField(field,
+								field.getEnumType().findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
+							break;
+						default: builder.setField(field, entry.getValue());
+					}
 				}
 			}
 			return (I) builder.build();

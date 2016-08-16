@@ -1,4 +1,4 @@
-package com.digitald4.common.dao.sql;
+package com.digitald4.common.storage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.digitald4.common.dao.DAO;
 import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnector;
@@ -37,8 +36,17 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	private final Descriptor descriptor; 
 	private final DBConnector connector;
 	private final String table;
+	private final String view;
 	
 	public DAOProtoSQLImpl(Class<T> c, DBConnector connector) {
+		this(c, connector, null, null);
+	}
+
+	public DAOProtoSQLImpl(Class<T> c, DBConnector connector, String view) {
+		this(c, connector, view, null);
+	}
+
+	public DAOProtoSQLImpl(Class<T> c, DBConnector connector, String view, String table) {
 		try {
 			this.type = (T) c.getMethod("getDefaultInstance").invoke(null);
 		} catch (IllegalAccessException | IllegalArgumentException
@@ -47,7 +55,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 		}
 		this.descriptor = type.getDescriptorForType();
 		this.connector = connector;
-		this.table = descriptor.getName();
+		this.table = table != null ? table : descriptor.getName();
+		this.view = view != null ? view : this.table;
 	}
 	
 	@Override
@@ -60,7 +69,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	}
 	
 	public String getView() {
-		return getTable();
+		return view;
 	}
 	
 	public DBConnector getConnector() {
@@ -242,9 +251,16 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	static void setObject(PreparedStatement ps, int index, FieldDescriptor field, Object value)
 			throws SQLException {
+		if ("".equals(value)) {
+			value = null;
+		}
 		if (field != null) {
 			switch (field.getJavaType()) {
-				case ENUM: ps.setObject(index, ((EnumValueDescriptor) value).getNumber()); break;
+				case ENUM: if (value instanceof EnumValueDescriptor) {
+					ps.setObject(index, ((EnumValueDescriptor) value).getNumber());
+				} else {
+					ps.setObject(index, Integer.valueOf(value.toString()));
+				} break;
 				case LONG: ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString())))); break;
 				case MESSAGE: {
 					if (field.isRepeated()) {

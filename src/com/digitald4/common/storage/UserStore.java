@@ -1,11 +1,9 @@
-package com.digitald4.common.store.impl;
+package com.digitald4.common.storage;
 
 import java.util.List;
 
 import org.joda.time.DateTime;
 
-import com.digitald4.common.dao.DAO;
-import com.digitald4.common.dao.sql.DAOProtoSQLImpl;
 import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;

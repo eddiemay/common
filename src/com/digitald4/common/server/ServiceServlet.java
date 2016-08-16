@@ -15,12 +15,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.digitald4.common.dao.sql.DAOProtoSQLImpl;
+import com.digitald4.common.storage.DAOProtoSQLImpl;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
-import com.digitald4.common.store.impl.UserStore;
+import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.UserProvider;
 import com.google.protobuf.Descriptors.FieldDescriptor;

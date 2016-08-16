@@ -1,4 +1,4 @@
-package com.digitald4.common.dao;
+package com.digitald4.common.storage;
 
 import java.util.List;
 

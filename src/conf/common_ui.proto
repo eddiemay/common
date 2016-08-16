@@ -48,6 +48,17 @@ message DeleteRequest {
 	optional int32 id = 1;
 }
 
+message GeneralDataUI {
+  optional int32 id = 1;
+  optional int32 group_id = 2;
+  optional int32 in_group_id = 3;
+  optional string name = 4;
+  optional double rank = 5;
+  optional bool active = 6;
+  optional string description = 7;
+  optional string data = 8;
+}
+
 message UserUI {
 	optional int32 id = 1;
 

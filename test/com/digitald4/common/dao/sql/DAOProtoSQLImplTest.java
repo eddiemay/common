@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
+import com.digitald4.common.storage.DAOProtoSQLImpl;
 import org.joda.time.DateTime;
 import org.junit.Test;
 

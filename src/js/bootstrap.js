@@ -1,5 +1,6 @@
 var goog = goog || {};
 goog.provide = goog.provide || function(provides) {};
+goog.require = goog.require || function(requires) {};
 
 var proto = proto || {};
 proto.common = proto.common || {};
