@@ -9,7 +9,7 @@ import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
-import com.digitald4.common.store.DAOStore;
+import com.digitald4.common.storage.DAOStore;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.Message;
@@ -79,7 +79,7 @@ public class SingleProtoService<T extends GeneratedMessage> implements ProtoServ
 
 	@Override
 	public boolean delete(DeleteRequest request) throws DD4StorageException {
-		store.delete((Integer) request.getField(request.getDescriptorForType().findFieldByName("id")));
+		store.delete(request.getId());
 		return true;
 	}
 }
