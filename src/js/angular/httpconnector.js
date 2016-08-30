@@ -1,17 +1,17 @@
-com.digitald4.common.JSONConnector = function($http, $httpParamSerializer) {
+com.digitald4.common.HttpConnector = function($http, $httpParamSerializer) {
 	this.baseUrl = 'json/';
 	this.$http = $http;
 	this.$httpParamSerializer = $httpParamSerializer;
 };
 
-com.digitald4.common.JSONConnector.prototype.baseUrl;
-com.digitald4.common.JSONConnector.prototype.$http;
-com.digitald4.common.JSONConnector.prototype.$httpParamSerializer;
+com.digitald4.common.HttpConnector.prototype.baseUrl;
+com.digitald4.common.HttpConnector.prototype.$http;
+com.digitald4.common.HttpConnector.prototype.$httpParamSerializer;
 	
-com.digitald4.common.JSONConnector.prototype.performRequest =
+com.digitald4.common.HttpConnector.prototype.performRequest =
 		function(url, params, successCallback, errorCallback) {
 	url = this.baseUrl + url;
-	var serializedParams = this.$httpParamSerializer({json: params});
+	var serializedParams = this.$httpParamSerializer(params);
   if (serializedParams.length > 0) {
   	url += ((url.indexOf('?') === -1) ? '?' : '&') + serializedParams;
   }
@@ -24,6 +24,7 @@ com.digitald4.common.JSONConnector.prototype.performRequest =
 			'Content-Type': 'json'
 		}
 	}).then(function(response) {
+		  console.log('Success response: ' + response);
 			if (response.data.valid) {
 				successCallback(response.data.data);
 			} else {
@@ -35,6 +36,7 @@ com.digitald4.common.JSONConnector.prototype.performRequest =
 			}
 		},
 		function(response) {
-			errorCallback(errorThrown);
+		  console.log('Error response: ' + response);
+			errorCallback(response);
 		});
 };

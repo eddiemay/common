@@ -44,7 +44,7 @@ public class UserServlet extends ParentServlet {
 				request.setAttribute("error", "Passwords don't match");
 			} else {
 				if (!DataAccessObject.isNull(password)) {
-					user.setPassword(password);
+					user.setUserPassword(password);
 				}
 				user.save();
 			}

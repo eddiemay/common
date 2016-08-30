@@ -58,7 +58,7 @@
     <ATTRIBUTE name="LAST NAME" type="String" size="20" nullable="false" />
     <ATTRIBUTE name="DISABLED" type="boolean" />
     <ATTRIBUTE name="READ ONLY" type="boolean" />
-    <ATTRIBUTE name="PASSWORD D" type="String" size="128"/>
+    <ATTRIBUTE name="PASSWORD" type="String" size="128"/>
     <ATTRIBUTE name="NOTES" type="String" size="4096" />
     <ATTRIBUTE name="LAST LOGIN" type="DateTime" />
     <REFERENCE refclass="General Data" indexed="false" name="Type" >

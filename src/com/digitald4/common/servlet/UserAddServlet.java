@@ -51,7 +51,7 @@ public class UserAddServlet extends ParentServlet {
 				forward2JSP(request, response, user);
 			} else {
 				if (!DataAccessObject.isNull(password)) {
-					user.setPassword(password);
+					user.setUserPassword(password);
 				}
 				user.insert();
 				response.sendRedirect("users");

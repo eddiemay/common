@@ -1,7 +1,9 @@
 package com.digitald4.common.storage;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import com.digitald4.common.util.Calculate;
 import org.joda.time.DateTime;
 
 import com.digitald4.common.distributed.Function;
@@ -16,36 +18,18 @@ public class UserStore extends GenericDAOStore<User> {
 		super(dao);
 	}
 	
-	public User getByUsernamePassword(String username, String password) throws DD4StorageException {
+	public User getBy(String login, String password) throws Exception {
 		List<User> users = get(
 				QueryParam.newBuilder()
-						.setColumn("user_name")
+						.setColumn(login.contains("@") ? "email" : "user_name")
 						.setOperan("=")
-						.setValue(username)
+						.setValue(login)
 						.build(),
 				QueryParam.newBuilder()
 						.setColumn("password")
 						.setOperan("=")
-						.setValue(password)
+						.setValue(encodePassword(password))
 						.build());
-		if (users.isEmpty()) {
-			return null;
-		}
-		return users.get(0);
-	}
-	
-	public User getByEmailPassword(String email, String password) throws DD4StorageException {
-		List<User> users = get(
-				QueryParam.newBuilder()
-				.setColumn("email")
-				.setOperan("=")
-				.setValue(email)
-				.build(),
-		QueryParam.newBuilder()
-				.setColumn("password")
-				.setOperan("=")
-				.setValue(password)
-				.build());
 		if (users.isEmpty()) {
 			return null;
 		}
@@ -61,6 +45,10 @@ public class UserStore extends GenericDAOStore<User> {
 						.build();
 			}
 		});
+	}
+
+	public static String encodePassword(String password) throws NoSuchAlgorithmException {
+		return Calculate.md5(password);
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -80,7 +68,7 @@ public class UserStore extends GenericDAOStore<User> {
 		try {
 			System.out.println(user = store.create(user));
 			System.out.println(store.get(user.getId()));
-			System.out.println(store.getByUsernamePassword("testuser", "pass"));
+			System.out.println(store.getBy("testuser", "pass"));
 			System.out.println(store.update(user.getId(), new Function<User, User>() {
 				@Override public User execute(User user) {
 					return user.toBuilder()

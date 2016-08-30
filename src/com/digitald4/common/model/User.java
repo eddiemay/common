@@ -41,7 +41,7 @@ public class User extends UserDAO {
 	}
 	
 	public static User get(EntityManager entityManager, String login, String passwd) throws Exception {
-		List<User> coll = User.getCollection(entityManager, new String[]{"" + (login.contains("@") ? PROPERTY.EMAIL : PROPERTY.USER_NAME), "" + PROPERTY.PASSWORD_D}, login, encodePassword(passwd));
+		List<User> coll = User.getCollection(entityManager, new String[]{"" + (login.contains("@") ? PROPERTY.EMAIL : PROPERTY.USER_NAME), "" + PROPERTY.PASSWORD}, login, encodePassword(passwd));
 		if (coll.size() > 0) {
 			return coll.get(0);
 		}
@@ -80,8 +80,8 @@ public class User extends UserDAO {
 		return setLastLogin(DateTime.now());
 	}
 	
-	public User setPassword(String password) throws Exception {
-		return setPasswordD(encodePassword(password));
+	public User setUserPassword(String password) throws Exception {
+		return super.setPassword(encodePassword(password));
 	}
 	
 	@Override
@@ -96,7 +96,7 @@ public class User extends UserDAO {
 	public User setPropertyValue(String property, String value) throws Exception {
 		property = formatProperty(property);
 		if (property.equalsIgnoreCase("PASSWORD")) {
-			return setPassword(value);
+			return setUserPassword(value);
 		} else {
 			return super.setPropertyValue(property, value);
 		}

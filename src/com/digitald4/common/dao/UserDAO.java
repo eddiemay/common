@@ -22,7 +22,7 @@ import org.joda.time.DateTime;
 /**Description of class, (we need to get this from somewhere, database? xml?)*/
 public abstract class UserDAO extends DataAccessObject{
 	public enum KEY_PROPERTY{ID};
-	public enum PROPERTY{ID,TYPE_ID,USER_NAME,EMAIL,FIRST_NAME,LAST_NAME,DISABLED,READ_ONLY,PASSWORD_D,NOTES,LAST_LOGIN};
+	public enum PROPERTY{ID,TYPE_ID,USER_NAME,EMAIL,FIRST_NAME,LAST_NAME,DISABLED,READ_ONLY,PASSWORD,NOTES,LAST_LOGIN};
 	private Integer id;
 	private Integer typeId;
 	private String userName;
@@ -31,7 +31,7 @@ public abstract class UserDAO extends DataAccessObject{
 	private String lastName;
 	private boolean disabled;
 	private boolean readOnly;
-	private String passwordD;
+	private String password;
 	private String notes;
 	private DateTime lastLogin;
 	private List<TransHist> transHists;
@@ -110,7 +110,7 @@ public abstract class UserDAO extends DataAccessObject{
 		this.lastName=orig.getLastName();
 		this.disabled=orig.isDisabled();
 		this.readOnly=orig.isReadOnly();
-		this.passwordD=orig.getPasswordD();
+		this.password=orig.getPassword();
 		this.notes=orig.getNotes();
 		this.lastLogin=orig.getLastLogin();
 	}
@@ -224,15 +224,15 @@ public abstract class UserDAO extends DataAccessObject{
 		}
 		return (User)this;
 	}
-	@Column(name="PASSWORD_D",nullable=true,length=128)
-	public String getPasswordD(){
-		return passwordD;
+	@Column(name="PASSWORD",nullable=true,length=128)
+	public String getPassword(){
+		return password;
 	}
-	public User setPasswordD(String passwordD) throws Exception  {
-		String oldValue = getPasswordD();
-		if (!isSame(passwordD, oldValue)) {
-			this.passwordD = passwordD;
-			setProperty("PASSWORD_D", passwordD, oldValue);
+	public User setPassword(String password) throws Exception  {
+		String oldValue = getPassword();
+		if (!isSame(password, oldValue)) {
+			this.password = password;
+			setProperty("PASSWORD", password, oldValue);
 		}
 		return (User)this;
 	}
@@ -323,7 +323,7 @@ public abstract class UserDAO extends DataAccessObject{
 			case LAST_NAME: return getLastName();
 			case DISABLED: return isDisabled();
 			case READ_ONLY: return isReadOnly();
-			case PASSWORD_D: return getPasswordD();
+			case PASSWORD: return getPassword();
 			case NOTES: return getNotes();
 			case LAST_LOGIN: return getLastLogin();
 		}
@@ -346,7 +346,7 @@ public abstract class UserDAO extends DataAccessObject{
 			case LAST_NAME:setLastName(String.valueOf(value)); break;
 			case DISABLED:setDisabled(Boolean.valueOf(value)); break;
 			case READ_ONLY:setReadOnly(Boolean.valueOf(value)); break;
-			case PASSWORD_D:setPasswordD(String.valueOf(value)); break;
+			case PASSWORD:setPassword(String.valueOf(value)); break;
 			case NOTES:setNotes(String.valueOf(value)); break;
 			case LAST_LOGIN:setLastLogin(new DateTime(value)); break;
 		}
@@ -373,7 +373,7 @@ public abstract class UserDAO extends DataAccessObject{
 		if(!isSame(getLastName(),o.getLastName())) diffs.add("LAST_NAME");
 		if(!isSame(isDisabled(),o.isDisabled())) diffs.add("DISABLED");
 		if(!isSame(isReadOnly(),o.isReadOnly())) diffs.add("READ_ONLY");
-		if(!isSame(getPasswordD(),o.getPasswordD())) diffs.add("PASSWORD_D");
+		if(!isSame(getPassword(),o.getPassword())) diffs.add("PASSWORD");
 		if(!isSame(getNotes(),o.getNotes())) diffs.add("NOTES");
 		if(!isSame(getLastLogin(),o.getLastLogin())) diffs.add("LAST_LOGIN");
 		return diffs;

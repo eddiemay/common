@@ -20,6 +20,7 @@ import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
+import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.UserProvider;
@@ -64,6 +65,19 @@ public class ServiceServlet extends HttpServlet {
 	public static boolean isAjax(HttpServletRequest request) {
 		return "xmlhttprequest".equalsIgnoreCase(request.getHeader("X-Requested-With"));
 	}
+
+	protected void process(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+		process(request, response);
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+		process(request, response);
+	}
 	
 	public Emailer getEmailer() {
 		if (emailer == null) {
@@ -72,20 +86,6 @@ public class ServiceServlet extends HttpServlet {
 					sc.getInitParameter("emailuser"), sc.getInitParameter("emailpass"));
 		}
 		return emailer;
-	}
-	
-	public boolean checkLogin(HttpSession session) throws Exception {
-		User user = (User) session.getAttribute("puser");
-		if (user == null || user.getId() == 0) {
-			String autoLoginId = getServletContext().getInitParameter("auto_login_id");
-			if (autoLoginId == null) {
-				return false;
-			}
-			user = userStore.get(Integer.parseInt(autoLoginId));
-			session.setAttribute("puser", userStore.updateLastLogin(user));
-		}
-		userProvider.set(user);
-		return true;
 	}
 	
 	public static String getFullURL(HttpServletRequest request) {
@@ -98,26 +98,39 @@ public class ServiceServlet extends HttpServlet {
         return requestURL.append('?').append(queryString).toString();
     }
 	}
-	
-	public boolean checkLoginAutoRedirect(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		HttpSession session = request.getSession(true);
-		if (!checkLogin(session)) {
-			session.setAttribute("redirect", getFullURL(request));
-			response.sendRedirect("login");
-			return false;
+
+	public boolean handleLogin(HttpServletRequest request, HttpServletResponse response, LoginRequest loginRequest)
+			throws Exception {
+		User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
+		if (user != null) {
+			request.getSession(true).setAttribute("puser", userStore.updateLastLogin(user));
+			return true;
 		}
-		return true;
+		return false;
 	}
 	
-	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, UserType level)
-			throws Exception {
-		if (!checkLoginAutoRedirect(request,response)) return false;
+	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, UserType level) throws Exception {
 		HttpSession session = request.getSession(true);
-		if (((User) session.getAttribute("puser")).getType().getNumber() > level.getNumber()) {
-			response.sendRedirect("denied.html");
+		User user = (User) session.getAttribute("puser");
+		if (user == null || user.getId() == 0) {
+			String autoLoginId = getServletContext().getInitParameter("auto_login_id");
+			if (autoLoginId == null) {
+				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				return false;
+			}
+			user = userStore.get(Integer.parseInt(autoLoginId));
+			session.setAttribute("puser", userStore.updateLastLogin(user));
+		}
+		if (user.getType().getNumber() > level.getNumber()) {
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 			return false;
 		}
+		userProvider.set(user);
 		return true;
+	}
+
+	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		return checkLogin(request, response, UserType.STANDARD);
 	}
 	
 	public boolean checkAdminLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -133,8 +146,8 @@ public class ServiceServlet extends HttpServlet {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <R extends Message> R transformRequest(R msgRequest,
-			HttpServletRequest httpRequest) throws ParseException {
+	public static <R extends Message> R transformRequest(R msgRequest, HttpServletRequest httpRequest)
+			throws ParseException {
 		R.Builder builder = msgRequest.toBuilder();
 		Descriptor descriptor = builder.getDescriptorForType();
 		for (Map.Entry<String, String[]> entry : httpRequest.getParameterMap().entrySet()) {

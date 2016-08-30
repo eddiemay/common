@@ -44,6 +44,11 @@ message UpdateRequest {
 	optional string value = 3;
 }
 
+message LoginRequest {
+  optional string username = 1;
+  optional string password = 2;
+}
+
 message DeleteRequest {
 	optional int32 id = 1;
 }
