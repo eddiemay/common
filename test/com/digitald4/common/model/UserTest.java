@@ -24,7 +24,7 @@ public class UserTest extends DD4TestCase {
 				.setLastName("Mayfield")
 				.setPassword("testpass");
 		assertEquals("Eddie", user.getFirstName());
-		assertEquals(User.encodePassword("testpass"), user.getPasswordD());
+		assertEquals(User.encodePassword("testpass"), user.getPassword());
 		assertNotNull(user);
 	}
 

@@ -16,7 +16,6 @@ com.digitald4.common.JSONConnector.prototype.performRequest =
   	url += ((url.indexOf('?') === -1) ? '?' : '&') + serializedParams;
   }
 	// Send
-	console.log('performing action: ' + url);
 	this.$http({
 		method: 'GET',
 		url: url,

@@ -1,33 +1,29 @@
 <div class="block-border">
   <h1>{{tableCtrl.base.title}}</h1>
-  <table class="table sortable no-margin" cellspacing="0" width="100%">
+  <table class="table sortable no-margin" cellspacing="0" width="100%" data-page-length="25">
     <thead>
-        <tr>
-            <th class="black-cell"><span data-ng-class="{loading: tableCtrl.loading}"></span></th>
-            <th data-ng-repeat="col in tableCtrl.base.columns" scope="col">
-                <span class="column-sort">
-                    <a href="#" title="Sort up" class="sort-up"></a> <a href="#" title="Sort down" class="sort-down"></a>
-                </span>{{col.title}}
-            </th>
-        </tr>
+      <tr>
+        <th class="black-cell"><span data-ng-class="{loading: tableCtrl.loading}"></span></th>
+        <th data-ng-repeat="col in tableCtrl.base.columns" scope="col">{{col.title}}</th>
+      </tr>
     </thead>
     <tbody>
-        <tr data-ng-repeat="entity in tableCtrl.entities | orderBy:'name'">
-            <td class="th table-check-cell"><input type="checkbox" data-ng-model="entity.selected"/></td>
-            <td data-ng-repeat="col in tableCtrl.base.columns">
-              <input data-ng-if="col.editable" data-ng-model="entity[col.prop]"
-                     data-on-change="tableCtrl.update(entity, col.prop)"/>
-                <div data-ng-if="col.getValue">{{col.getValue(entity)}}</div>
-                <div data-ng-if="col.getUrl">
-                  <a href="{{col.getUrl(entity)}}">{{entity[col.prop]}}</a>
-                </div>
-                <div data-ng-if="col.type == 'date'">{{entity[col.prop] | date:'MM/dd/yyyy'}}</div>
-                <div data-ng-if="col.type == 'datetime'">{{entity[col.prop] | date:'MM/dd/yyyy hh:mm a'}}</div>
-                <div data-ng-if="col.type == 'time'">{{entity[col.prop] | date:'shortTime'}}</div>
-                <div data-ng-if="col.type == 'currency'">{{entity[col.prop] | currency}}</div>
-                <div data-ng-if="!col.type && !col.getUrl && !col.editable && !col.getValue">{{entity[col.prop]}}</div>
-            </td>
-        </tr>
+      <tr data-ng-repeat="entity in tableCtrl.entities | orderBy:'name'">
+        <td class="th table-check-cell"><input type="checkbox" data-ng-model="entity.selected"/></td>
+        <td data-ng-repeat="col in tableCtrl.base.columns">
+          <input data-ng-if="col.editable" data-ng-model="entity[col.prop]"
+                 data-on-change="tableCtrl.update(entity, col.prop)"/>
+            <div data-ng-if="col.getValue">{{col.getValue(entity)}}</div>
+            <div data-ng-if="col.getUrl">
+              <a href="{{col.getUrl(entity)}}">{{entity[col.prop]}}</a>
+            </div>
+            <div data-ng-if="col.type == 'date'">{{entity[col.prop] | date:'MM/dd/yyyy'}}</div>
+            <div data-ng-if="col.type == 'datetime'">{{entity[col.prop] | date:'MM/dd/yyyy hh:mm a'}}</div>
+            <div data-ng-if="col.type == 'time'">{{entity[col.prop] | date:'shortTime'}}</div>
+            <div data-ng-if="col.type == 'currency'">{{entity[col.prop] | currency}}</div>
+            <div data-ng-if="!col.type && !col.getUrl && !col.editable && !col.getValue">{{entity[col.prop]}}</div>
+        </td>
+      </tr>
     </tbody>
   </table>
 </div>

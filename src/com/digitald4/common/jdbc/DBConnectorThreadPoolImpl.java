@@ -24,8 +24,8 @@ public class DBConnectorThreadPoolImpl implements DBConnector {
 		//
 		Class.forName(dbDriver).newInstance();
 		GenericObjectPool<Object> connectionPool = new GenericObjectPool<Object>(null);
-		connectionPool.setMaxActive(5);
-		connectionPool.setMaxWait(2);
+		connectionPool.setMaxActive(10);
+		connectionPool.setMaxWait(20);
 		connectionPool.setMaxIdle(2);
 
 		//
