@@ -14,7 +14,6 @@ com.digitald4.common.GeneralDataService.prototype.refresh = function() {
       generalData.generalDatas = [];
       hash[generalData.id] = generalData;
     }
-    console.debug('General Datas: ' + generalDatas.length + ', hash: ' + hash);
     for (var x = 0; x < generalDatas.length; x++) {
       var generalData = generalDatas[x];
       if (generalData.group_id) {
