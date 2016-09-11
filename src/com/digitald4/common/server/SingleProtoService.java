@@ -52,7 +52,7 @@ public class SingleProtoService<T extends GeneratedMessage> implements ProtoServ
 	public T update(final UpdateRequest request) throws DD4StorageException {
 		return store.update(request.getId(), new Function<T, T>() {
 			@Override
-			public T execute(T type) {
+			public T apply(T type) {
 				Message.Builder builder = type.toBuilder();
 				FieldDescriptor field = descriptor.findFieldByName(request.getProperty());
 				switch (field.getJavaType()) {

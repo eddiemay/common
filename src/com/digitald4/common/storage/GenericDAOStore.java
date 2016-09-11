@@ -2,11 +2,9 @@ package com.digitald4.common.storage;
 
 import java.util.List;
 
-import com.digitald4.common.storage.DAO;
 import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
-import com.digitald4.common.storage.DAOStore;
 
 public class GenericDAOStore<T> implements DAOStore<T> {
 

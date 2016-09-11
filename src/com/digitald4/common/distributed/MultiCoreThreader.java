@@ -16,7 +16,7 @@ public class MultiCoreThreader implements MultiThreader {
 		return this;
 	}
 	
-	public <R, T>  List<R> parDo(List<T> iterate, Function<R, T> function) {
+	public <R, T>  List<R> parDo(List<T> iterate, Function<T, R> function) {
 		AtomicInteger atomInt = new AtomicInteger();
 		List<R> results = new ArrayList<R>(iterate.size() * 2);
 		List<Runner<R, T>> runnerList = new ArrayList<Runner<R, T>>();
@@ -37,11 +37,11 @@ public class MultiCoreThreader implements MultiThreader {
 	
 	private static class Runner<R, T> extends Thread {
 		private final List<T> iterate;
-		private final Function<R, T> function;
+		private final Function<T, R> function;
 		private final AtomicInteger atomInt;
 		private final List<R> results;
 		
-		public Runner(List<T> iterate, Function<R, T> function, AtomicInteger atomInt, List<R> results) {
+		public Runner(List<T> iterate, Function<T, R> function, AtomicInteger atomInt, List<R> results) {
 			this.iterate = iterate;
 			this.function = function;
 			this.atomInt = atomInt;
@@ -56,7 +56,7 @@ public class MultiCoreThreader implements MultiThreader {
 				T i = iterate.get(index);
 				System.out.println(Calculate.round(index * 100.0 / size, 1) + "% Running for " + i);
 				long sTime = System.currentTimeMillis();
-				R result = function.execute(i);
+				R result = function.apply(i);
 				results.add(result);
 				System.out.println(FormatText.formatElapshed(System.currentTimeMillis() - sTime) + " for " + i);
 			}
@@ -74,7 +74,7 @@ public class MultiCoreThreader implements MultiThreader {
 		names.add("Jos");
 		List<String> results = new MultiCoreThreader().parDo(names, new Function<String, String>() {
 			@Override
-			public String execute(String name) {
+			public String apply(String name) {
 				return "Hello " + name;
 			}
 		});

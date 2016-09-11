@@ -188,7 +188,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	@Override
 	public T update(int id, Function<T, T> updater) throws DD4StorageException {
 		T orig = get(id);
-		T updated = updater.execute(orig);
+		T updated = updater.apply(orig);
 		String sets = "";
 		
 		// Find all the fields that were modified in the updated proto.

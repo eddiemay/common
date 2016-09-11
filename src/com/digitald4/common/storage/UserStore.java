@@ -39,7 +39,7 @@ public class UserStore extends GenericDAOStore<User> {
 	public User updateLastLogin(User user) throws DD4StorageException {
 		return update(user.getId(), new Function<User, User>() {
 			@Override
-			public User execute(User user) {
+			public User apply(User user) {
 				return user.toBuilder()
 						.setLastLogin(DateTime.now().getMillis())
 						.build();
@@ -70,7 +70,7 @@ public class UserStore extends GenericDAOStore<User> {
 			System.out.println(store.get(user.getId()));
 			System.out.println(store.getBy("testuser", "pass"));
 			System.out.println(store.update(user.getId(), new Function<User, User>() {
-				@Override public User execute(User user) {
+				@Override public User apply(User user) {
 					return user.toBuilder()
 							.setReadOnly(true)
 							.setLastLogin(DateTime.now().getMillis())

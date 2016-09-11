@@ -7,5 +7,5 @@ public interface MultiThreader {
 	public MultiThreader setRunners(int runners_);
 	
 	/** Performs the work on the items in parallel using the given function definition */
-	public <R, T>  List<R> parDo(List<T> items, Function<R, T> function);
+	public <R, T>  List<R> parDo(List<T> items, Function<T, R> function);
 }

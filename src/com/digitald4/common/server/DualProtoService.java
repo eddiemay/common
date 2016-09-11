@@ -3,9 +3,9 @@ package com.digitald4.common.server;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.digitald4.common.distributed.Function;
-import com.digitald4.common.distributed.MultiCoreThreader;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
@@ -24,16 +24,14 @@ import com.googlecode.protobuf.format.JsonFormat.ParseException;
 public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMessage>
 		implements ProtoService<T> {
 	
-	private final MultiCoreThreader threader = new MultiCoreThreader();
-	
 	private final T type;
 	private final DAOStore<I> store;
 	private final Descriptor internalDescriptor;
 	private final Descriptor externalDescriptor;
 	
-	private final Function<T, I> converter = new Function<T, I>() {
+	private final Function<I, T> converter = new Function<I, T>() {
 		@Override
-		public T execute(I internal) {
+		public T apply(I internal) {
 			Message.Builder builder = type.newBuilderForType();
 			for (Map.Entry<FieldDescriptor, Object> entry : internal.getAllFields().entrySet()) {
 				FieldDescriptor field = externalDescriptor.findFieldByName(entry.getKey().getName());
@@ -50,9 +48,9 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 		}
 	};
 	
-	private final Function<I, T> reverse = new Function<I, T>() {
+	private final Function<T, I> reverse = new Function<T, I>() {
 		@Override
-		public I execute(T external) {
+		public I apply(T external) {
 			Message.Builder builder = store.getType().newBuilderForType();
 			for (Map.Entry<FieldDescriptor, Object> entry : external.getAllFields().entrySet()) {
 				FieldDescriptor field = internalDescriptor.findFieldByName(entry.getKey().getName());
@@ -81,11 +79,11 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 		this.internalDescriptor = store.getType().getDescriptorForType();
 	}
 	
-	public Function<T, I> getConverter() {
+	public Function<I, T> getConverter() {
 		return converter;
 	}
 	
-	public Function<I, T> getReverseConverter() {
+	public Function<T, I> getReverseConverter() {
 		return reverse;
 	}
 
@@ -97,24 +95,24 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 		} catch (ParseException e) {
 			throw new DD4StorageException("Error creating object", e);
 		}
-		return getConverter().execute(store.create(getReverseConverter().execute((T) builder.build())));
+		return getConverter().apply(store.create(getReverseConverter().apply((T) builder.build())));
 	}
 
 	@Override
 	public T get(GetRequest request) throws DD4StorageException {
-		return getConverter().execute(store.get(request.getId()));
+		return getConverter().apply(store.get(request.getId()));
 	}
 
 	@Override
 	public List<T> list(ListRequest request) throws DD4StorageException {
-		return threader.parDo(store.get(request.getQueryParamList()), getConverter());
+		return store.get(request.getQueryParamList()).stream().map(getConverter()).collect(Collectors.toList());
 	}
 
 	@Override
 	public T update(final UpdateRequest request) throws DD4StorageException {
-		return getConverter().execute(store.update(request.getId(), new Function<I, I>() {
+		return getConverter().apply(store.update(request.getId(), new Function<I, I>() {
 			@Override
-			public I execute(I internal) {
+			public I apply(I internal) {
 				Message.Builder builder = internal.toBuilder();
 				FieldDescriptor field = internalDescriptor.findFieldByName(request.getProperty());
 				switch (field.getJavaType()) {
