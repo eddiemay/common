@@ -1,8 +1,5 @@
 package com.digitald4.common.server;
 
-import java.util.List;
-
-import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
@@ -16,6 +13,9 @@ import com.google.protobuf.Message;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.googlecode.protobuf.format.JsonFormat;
 import com.googlecode.protobuf.format.JsonFormat.ParseException;
+
+import java.util.List;
+import java.util.function.UnaryOperator;
 
 public class SingleProtoService<T extends GeneratedMessage> implements ProtoService<T> {
 	
@@ -50,7 +50,7 @@ public class SingleProtoService<T extends GeneratedMessage> implements ProtoServ
 
 	@Override
 	public T update(final UpdateRequest request) throws DD4StorageException {
-		return store.update(request.getId(), new Function<T, T>() {
+		return store.update(request.getId(), new UnaryOperator<T>() {
 			@Override
 			public T apply(T type) {
 				Message.Builder builder = type.toBuilder();

@@ -1,10 +1,10 @@
 package com.digitald4.common.storage;
 
-import java.util.List;
-
-import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+
+import java.util.List;
+import java.util.function.UnaryOperator;
 
 public class GenericDAOStore<T> implements DAOStore<T> {
 
@@ -30,7 +30,7 @@ public class GenericDAOStore<T> implements DAOStore<T> {
 	}
 
 	@Override
-	public T update(int id, Function<T, T> updater) throws DD4StorageException {
+	public T update(int id, UnaryOperator<T> updater) throws DD4StorageException {
 		return dao.update(id, updater);
 	}
 

@@ -1,5 +1,16 @@
 package com.digitald4.common.storage;
 
+import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.jdbc.DBConnector;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
+import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.Message;
+import com.googlecode.protobuf.format.JsonFormat;
+
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,18 +22,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import com.digitald4.common.distributed.Function;
-import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.jdbc.DBConnector;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
-import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Descriptors.EnumValueDescriptor;
-import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
-import com.google.protobuf.GeneratedMessage;
-import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.Message;
-import com.googlecode.protobuf.format.JsonFormat;
+import java.util.function.UnaryOperator;
 
 public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
@@ -186,7 +186,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	}
 	
 	@Override
-	public T update(int id, Function<T, T> updater) throws DD4StorageException {
+	public T update(int id, UnaryOperator<T> updater) throws DD4StorageException {
 		T orig = get(id);
 		T updated = updater.apply(orig);
 		String sets = "";

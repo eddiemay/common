@@ -1,10 +1,10 @@
 package com.digitald4.common.storage;
 
-import java.util.List;
-
-import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+
+import java.util.List;
+import java.util.function.UnaryOperator;
 
 public interface DAO<T> {
 	T getType();
@@ -13,7 +13,7 @@ public interface DAO<T> {
 	
 	T get(int id) throws DD4StorageException;
 	
-	T update(int id, Function<T, T> updater) throws DD4StorageException;
+	T update(int id, UnaryOperator<T> updater) throws DD4StorageException;
 	
 	void delete(int id) throws DD4StorageException;
 	

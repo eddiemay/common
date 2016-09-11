@@ -1,11 +1,5 @@
 package com.digitald4.common.server;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import com.digitald4.common.distributed.Function;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
@@ -20,6 +14,13 @@ import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import com.googlecode.protobuf.format.JsonFormat.ParseException;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMessage>
 		implements ProtoService<T> {
@@ -110,7 +111,7 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 
 	@Override
 	public T update(final UpdateRequest request) throws DD4StorageException {
-		return getConverter().apply(store.update(request.getId(), new Function<I, I>() {
+		return getConverter().apply(store.update(request.getId(), new UnaryOperator<I>() {
 			@Override
 			public I apply(I internal) {
 				Message.Builder builder = internal.toBuilder();
