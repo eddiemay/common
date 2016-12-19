@@ -38,9 +38,6 @@ import org.joda.time.DateTime;
 /**
  * Calculation utility for rounding, obtaining mva factor,
  * calendar creation, & lat/lon distance calculation.
- * 
- * @author Distribution Staff Engineering
- * @version 2.0
  */
 public class Calculate {
 
@@ -327,15 +324,15 @@ public class Calculate {
 	 * 
 	 * @param lat1 Start latitude in degrees, minutes, seconds.
 	 * @param lng1 Start longitude in degrees, minutes, seconds.
-	 * @param lat2 Start latitude in degrees, minutes, seconds.
-	 * @param lng2 Start longitude in degrees, minutes, seconds.
+	 * @param lat2 End latitude in degrees, minutes, seconds.
+	 * @param lng2 End longitude in degrees, minutes, seconds.
 	 * 
 	 * @return double The calculated distance in miles.
 	 */ 
 	public static double distance(double lat1, double lng1, double lat2, double lng2){		
 		return Math.toDegrees(Math.acos(Math.sin(Math.toRadians(lat1)) 
 				* Math.sin(Math.toRadians(lat2)) + Math.cos(Math.toRadians(lat1)) 
-				* Math.cos(Math.toRadians(lat2)) * Math.cos(Math.toRadians(lng1-lng2)))) 
+				* Math.cos(Math.toRadians(lat2)) * Math.cos(Math.toRadians(lng1 - lng2))))
 				* 60 * 1.1515;
 	}
 	

@@ -5,11 +5,11 @@ public class Company {
 	public static Company get() {
 		if(company == null) {
 			company = new Company()
-				.setName("Innovative Infusion Solutions")
-				.setWebsite("www.iisos.net")
-				.setSlogan("we are iis")
-				.setDescription("infusion")
-				.setEmail("kenya@iis.com")
+				.setName("IP360")
+				.setWebsite("www.ip360app.com")
+				.setSlogan("we are ip360")
+				.setDescription("ip360 webapp")
+				.setEmail("kenya@ip360.com")
 				.setPaypal("")
 				.setStatCounterID(null)
 				.setStatCounterPart(null)

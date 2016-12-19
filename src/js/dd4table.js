@@ -37,48 +37,51 @@ com.digitald4.common.module.directive('dd4Table', function() {
       return {
         post: function(scope, element, attributes) {
           scope.$watch('loading', function(loading) {
-            if (!loading) {
+            if (loading) {
+              return;
+            }
+            setTimeout(function() {
               var table = $(element.find('table'));
               //table.dataTable();
               oTable = table.dataTable({
-                  //"bSort": false,
+                //"bSort": false,
 
-                  /*
-                   * We set specific options for each columns here. Some columns contain raw data to enable correct sorting, so we convert it for display
-                   * @url http://www.datatables.net/usage/columns
-                   */
-                  aoColumns: [
-                    { bSortable: false},	// No sorting for this columns, as it only contains checkboxes
-                    { sType: 'string' },
-                    { sType: 'string' },
-                    { sType: 'string' },
-                    { sType: 'string' },
-                    { sType: 'string' }
-                  ],
+                /*
+                 * We set specific options for each columns here. Some columns contain raw data to enable correct sorting, so we convert it for display
+                 * @url http://www.datatables.net/usage/columns
+                 */
+                /*aoColumns: [
+                  { bSortable: false},	// No sorting for this columns, as it only contains checkboxes
+                  { sType: 'string' },
+                  { sType: 'string' },
+                  { sType: 'string' },
+                  { sType: 'string' },
+                  { sType: 'string' }
+                ],*/
 
-                  "aoColumnDefs": [
-                    { "bSortable": false, "aTargets": [ 0 ] }
-                  ],
+                "aoColumnDefs": [
+                  { "bSortable": false, "aTargets": [ 0 ] }
+                ],
 
-                  //"order": [[ 1, "asc" ]],
+                //"order": [[ 1, "asc" ]],
 
 
-                  /*
-                   * Set DOM structure for table controls
-                   * @url http://www.datatables.net/examples/basic_init/dom.html
-                   */
-                  sDom: '<"block-controls"<"controls-buttons"p>>rti<"block-footer clearfix"l>',
+                /*
+                 * Set DOM structure for table controls
+                 * @url http://www.datatables.net/examples/basic_init/dom.html
+                 */
+                sDom: '<"block-controls"<"controls-buttons"p>>rti<"block-footer clearfix"l>',
 
-                  /*
-                   * Callback to apply template setup
-                   */
-                  fnDrawCallback: function() {
-                    table.parent().applyTemplateSetup();
-                  },
-                  fnInitComplete: function() {
-                    table.parent().applyTemplateSetup();
-                  }
-                });
+                /*
+                 * Callback to apply template setup
+                 */
+                fnDrawCallback: function() {
+                  table.parent().applyTemplateSetup();
+                },
+                fnInitComplete: function() {
+                  table.parent().applyTemplateSetup();
+                }
+              });
 
               // Sorting arrows behaviour
               table.find('thead .sort-up').click(function(event) {
@@ -109,7 +112,7 @@ com.digitald4.common.module.directive('dd4Table', function() {
                 // Prevent bubbling
                 return false;
               });
-            }
+            }, 500);
           });
         }
       }

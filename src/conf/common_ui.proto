@@ -40,8 +40,11 @@ message CreateRequest {
 
 message UpdateRequest {
 	optional int32 id = 1;
-	optional string property = 2;
-	optional string value = 3;
+  message Update {
+	  optional string property = 1;
+	  optional string value = 2;
+  }
+  repeated Update update = 2;
 }
 
 message LoginRequest {
@@ -82,5 +85,5 @@ message UserUI {
 	optional string notes = 10;
 	optional int64 last_login = 11;
 
-	optional string name = 12;
+	optional string full_name = 12;
 }

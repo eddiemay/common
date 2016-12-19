@@ -20,13 +20,13 @@ com.digitald4.common.module.directive('onChange', function() {
 
 com.digitald4.common.module.directive('mapauto', function() {
   return function(scope, element, attrs) {
-    var google = google || null;
-    if (google) {
+    // var google = google || null;
+    // if (google) {
       google.maps.event.addDomListener(window, 'load', addMapAutoComplete(element.get(0), function(place) {
         scope.place = place;
         scope.$apply(attrs.mapauto);
       }));
-    }
+    // }
   }
 });
 
@@ -36,9 +36,9 @@ com.digitald4.common.module.directive('dd4Datepicker', function($compile) {
     scope: {
       ngModel: '='
     },
-    template: '<div><label data-ng-if="label">{{label}}</label>' +
+    template: '<span><label data-ng-if="label">{{label}}</label>' +
         '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10"/>' +
-        '<img src="images/icons/fugue/calendar-month.png" width="16" height="16"/></div>',
+        '<img src="images/icons/fugue/calendar-month.png" width="16" height="16"/></span>',
     replace: true,
     require: 'ngModel',
     link: function(scope, element, attrs) {
@@ -46,12 +46,25 @@ com.digitald4.common.module.directive('dd4Datepicker', function($compile) {
           //attr('data-ng-model', 'date').
           //val(scope.$parent.$eval(attrs.ngModel));
 
-      textField.bind('blur', function() {
-        var newValue = new Date(textField.val()).getTime();
-        if (scope.$parent.$eval(attrs.ngModel) != newValue) {
+      var update = function(date) {
+        var currentValue = scope.$parent.$eval(attrs.ngModel);
+        var newDate = new Date(currentValue);
+        newDate.setFullYear(date.getFullYear());
+        newDate.setMonth(date.getMonth());
+        newDate.setDate(date.getDate());
+        var newValue = newDate.getTime();
+        /* if (!newValue && !currentValue) {
+           return;
+        } */
+        if (currentValue != newValue) {
+          console.log('Time changed from ' + currentValue + ' to ' + newValue);
           scope.$parent.$eval(attrs.ngModel + ' = ' + newValue);
           scope.$parent.$apply(attrs.dd4Datepicker);
         }
+      };
+
+      textField.bind('blur', function() {
+        update(new Date(textField.val()));
       });
       $compile(textField)(scope.$parent);
 
@@ -92,11 +105,46 @@ com.digitald4.common.module.directive('dd4Datepicker', function($compile) {
           disabledClass: 'unavailable'
         },
         onSelect: function(dateText, inst) {
-          scope.$parent.$eval(attrs.ngModel + ' = ' + new Date(dateText).getTime() + ';');
+          console.log('Selected: ' + dateText);
+          update(new Date(dateText));
           $(this).change();
-          scope.$parent.$apply(attrs.dd4Datepicker);
         }
       });
+    }
+  }
+});
+
+
+
+com.digitald4.common.module.directive('dd4Timepicker', function($compile) {
+  return {
+    restrict: 'AE',
+    scope: {
+      ngModel: '='
+    },
+    template: '<div><input type="text" value="{{ngModel | date:\'shortTime\'}}" size="8"/></div>',
+    replace: true,
+    require: 'ngModel',
+    link: function(scope, element, attrs) {
+      var textField = $('input', element);
+
+      textField.bind('blur', function() {
+        var currentValue = scope.$parent.$eval(attrs.ngModel);
+        var d = new Date(currentValue);
+        var time = textField.val().toLowerCase().match(/(\d+)(?::(\d\d))?\s*(p?)/);
+        d.setHours(parseInt(time[1]) + (time[3] && time[1] < 12 ? 12 : 0));
+        d.setMinutes(parseInt(time[2]) || 0);
+        var newValue = d.getTime();
+        /* if (!newValue && !currentValue) {
+          return;
+        } */
+        if (currentValue != newValue) {
+          console.log('Time changed from ' + currentValue + ' to ' + newValue);
+          scope.$parent.$eval(attrs.ngModel + ' = ' + newValue);
+          scope.$parent.$apply(attrs.dd4Timepicker);
+        }
+      });
+      $compile(textField)(scope.$parent);
     }
   }
 });

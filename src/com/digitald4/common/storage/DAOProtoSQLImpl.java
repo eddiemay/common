@@ -3,6 +3,7 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
@@ -93,44 +94,52 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 				.replaceAll("\\{COLUMNS\\}", columns)
 				.replaceAll("\\{VALUES\\}", values);
 		System.out.println(sql);
-		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-			int index = 1;
-			for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
-				setObject(ps, index++, entry.getKey(), entry.getValue());
+
+		return new RetryableFunction<String, T>() {
+			@Override
+			public T apply(String sql) {
+				try (Connection con = connector.getConnection();
+						 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+					int index = 1;
+					for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
+						setObject(ps, index++, entry.getKey(), entry.getValue());
+					}
+					ps.executeUpdate();
+					ResultSet rs = ps.getGeneratedKeys();
+					if (rs.next()) {
+						return get(rs.getInt(1));
+					}
+					return t;
+				} catch (SQLException e) {
+					throw new RuntimeException("Error creating record: " + e.getMessage(), e);
+				}
 			}
-			ps.executeUpdate();
-			ResultSet rs = ps.getGeneratedKeys();
-			if (rs.next()) {
-				t = (T) t.toBuilder()
-						.setField(t.getDescriptorForType().findFieldByName("id"), rs.getInt(1))
-						.build();
-			}
-			rs.close();
-			return t;
-		} catch (SQLException e) {
-			throw new DD4StorageException("Error creating record", e);
-		}
+		}.applyWithRetries(sql);
 	}
 	
 	@Override
-	public T get(int id) throws DD4StorageException {
+	public T get(int id) {
 		String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getView());
 		System.out.println(sql);
-		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql);) {
-			ps.setInt(1, id);
-			T result = null;
-			ResultSet rs = ps.executeQuery();
-			List<T> results = process(rs);
-			if (!results.isEmpty()) {
-				result = results.get(0);
+		return new RetryableFunction<Integer, T>() {
+			@Override
+			public T apply(Integer id) {
+				try (Connection con = connector.getConnection();
+						 PreparedStatement ps = con.prepareStatement(sql);) {
+					ps.setInt(1, id);
+					T result = null;
+					ResultSet rs = ps.executeQuery();
+					List<T> results = process(rs);
+					if (!results.isEmpty()) {
+						result = results.get(0);
+					}
+					rs.close();
+					return result;
+				} catch (SQLException e) {
+					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+				}
 			}
-			rs.close();
-			return result;
-		} catch (SQLException e) {
-			throw new DD4StorageException("Error reading record: " + e.getMessage(), e);
-		}
+		}.applyWithRetries(id);
 	}
 	
 	@Override
@@ -143,7 +152,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	}
 	
 	@Override
-	public List<T> get(List<QueryParam> params) throws DD4StorageException {
+	public List<T> get(List<QueryParam> params) {
 		String columns = "";
 		for (QueryParam param : params) {
 			if (columns.length() > 0) {
@@ -151,42 +160,53 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 			}
 			columns += param.getColumn() + " " + param.getOperan() + " ?";
 		}
-		String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", getView())
+		String sql_ = QUERY_SQL.replaceAll("\\{TABLE\\}", getView())
 				.replaceAll("\\{COLUMNS\\}", columns);
 		if (params.size() == 0) {
-			sql = sql.replaceAll(" WHERE ", "");
+			sql_ = sql_.replaceAll(" WHERE ", "");
 		}
+		final String sql = sql_;
 		System.out.println(sql);
-		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql)) {
-			int p = 1;
-			for (QueryParam param : params) {
-				setObject(ps, p++, descriptor.findFieldByName(param.getColumn()), param.getValue());
+		return new RetryableFunction<List<QueryParam>, List<T>>() {
+			@Override
+			public List<T> apply(List<QueryParam> params) {
+				try (Connection con = connector.getConnection();
+						 PreparedStatement ps = con.prepareStatement(sql)) {
+					int p = 1;
+					for (QueryParam param : params) {
+						setObject(ps, p++, descriptor.findFieldByName(param.getColumn()), param.getValue());
+					}
+					ResultSet rs = ps.executeQuery();
+					List<T> results = process(rs);
+					rs.close();
+					return results;
+				} catch (SQLException e) {
+					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+				}
 			}
-			ResultSet rs = ps.executeQuery();
-			List<T> results = process(rs);
-			rs.close();
-			return results;
-		} catch (SQLException e) {
-			throw new DD4StorageException("Error reading record: " + e.getMessage(), e);
-		}
+		}.applyWithRetries(params);
 	}
 	
 	@Override
 	public List<T> getAll() throws DD4StorageException {
 		String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", getView());
 		System.out.println(sql);
-		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql);
-				ResultSet rs = ps.executeQuery();) {
-			return process(rs);
-		} catch (SQLException e) {
-			throw new DD4StorageException("Error reading record: " + e.getMessage(), e);
-		}
+		return new RetryableFunction<String, List<T>>() {
+			@Override
+			public List<T> apply(String sql) {
+				try (Connection con = connector.getConnection();
+						 PreparedStatement ps = con.prepareStatement(sql);
+						 ResultSet rs = ps.executeQuery();) {
+					return process(rs);
+				} catch (SQLException e) {
+					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+				}
+			}
+		}.applyWithRetries(sql);
 	}
 	
 	@Override
-	public T update(int id, UnaryOperator<T> updater) throws DD4StorageException {
+	public T update(int id, UnaryOperator<T> updater) {
 		T orig = get(id);
 		T updated = updater.apply(orig);
 		String sets = "";
@@ -217,36 +237,49 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 		if (sets.isEmpty()) {
 			System.out.println("Nothing changed, returning");
 		} else {
-			String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getTable())
+			String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getView())
 					.replaceAll("\\{SETS\\}", sets);
 			System.out.println(sql);
-			try (Connection con = connector.getConnection();
-					PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-				int index = 1;
-				for (Map.Entry<FieldDescriptor, Object> entry : modified) {
-					System.out.println("Setting: " + entry.getKey().getName());
-					setObject(ps, index++, entry.getKey(), entry.getValue());
+
+			new RetryableFunction<String, Boolean>() {
+				@Override
+				public Boolean apply(String sql) {
+					try (Connection con = connector.getConnection();
+							 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+						int index = 1;
+						for (Map.Entry<FieldDescriptor, Object> entry : modified) {
+							System.out.println("Setting: " + entry.getKey().getName());
+							setObject(ps, index++, entry.getKey(), entry.getValue());
+						}
+						ps.setInt(index, id);
+						ps.executeUpdate();
+						return true;
+					} catch (SQLException e) {
+						throw new RuntimeException("Error updating record: " + e.getMessage(), e);
+					}
 				}
-				ps.setInt(index, id);
-				ps.executeUpdate();
-			} catch (SQLException e) {
-				throw new DD4StorageException("Error updating record", e);
-			}
+			}.applyWithRetries(sql);
 		}
-		return updated;
+		return get(id);
 	}
 	
 	@Override
-	public void delete(int id) throws DD4StorageException {
+	public void delete(int id) {
 		String sql = DELETE_SQL.replaceAll("\\{TABLE\\}", getTable());
 		System.out.println(sql);
-		try (Connection con = connector.getConnection();
-				PreparedStatement ps = con.prepareStatement(sql);) {
-			ps.setInt(1, id);
-			ps.executeUpdate();
-		} catch (SQLException e) {
-			throw new DD4StorageException("Error deleting record", e);
-		}
+		new RetryableFunction<String, Boolean>() {
+			@Override
+			public Boolean apply(String sql) {
+				try (Connection con = connector.getConnection();
+						 PreparedStatement ps = con.prepareStatement(sql);) {
+					ps.setInt(1, id);
+					ps.executeUpdate();
+					return true;
+				} catch (SQLException e) {
+					throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
+				}
+			}
+		};
 	}
 	
 	static void setObject(PreparedStatement ps, int index, FieldDescriptor field, Object value)

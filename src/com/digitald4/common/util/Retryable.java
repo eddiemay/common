@@ -4,8 +4,7 @@ import static java.lang.Thread.sleep;
 
 public abstract class Retryable<R, D> {
 	private int retryLimit;
-	private int failures = 0;
-	
+
 	public Retryable() {
 		this(1);
 	}
@@ -15,6 +14,7 @@ public abstract class Retryable<R, D> {
 	}
 	
 	public R run(D data) throws Exception {
+		int failures = 0;
 		try {
 			return execute(data);
 		} catch (Exception e) {

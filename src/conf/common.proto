@@ -47,4 +47,6 @@ message User {
 	optional string password = 9;
 	optional string notes = 10;
 	optional int64 last_login = 11;
+
+  optional string full_name = 12;
 }

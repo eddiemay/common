@@ -1,6 +1,19 @@
 package com.digitald4.common.server;
 
-import java.util.List;
+import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.jdbc.DBConnector;
+import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
+import com.digitald4.common.proto.DD4Protos.GeneralData;
+import com.digitald4.common.proto.DD4Protos.User;
+import com.digitald4.common.proto.DD4Protos.User.UserType;
+import com.digitald4.common.proto.DD4UIProtos.GeneralDataUI;
+import com.digitald4.common.storage.DAOProtoSQLImpl;
+import com.digitald4.common.storage.GenericDAOStore;
+import com.digitald4.common.storage.UserStore;
+import com.digitald4.common.util.Emailer;
+import com.digitald4.common.util.ProviderThreadLocalImpl;
+
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
@@ -10,34 +23,25 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.digitald4.common.storage.DAOProtoSQLImpl;
-import com.digitald4.common.jdbc.DBConnector;
-import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4Protos.User.UserType;
-import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
-import com.digitald4.common.storage.UserStore;
-import com.digitald4.common.util.Emailer;
-import com.digitald4.common.util.UserProvider;
-import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.Message;
-import com.google.protobuf.Descriptors.Descriptor;
-import com.googlecode.protobuf.format.JsonFormat;
-import com.googlecode.protobuf.format.JsonFormat.ParseException;
 
 public class ServiceServlet extends HttpServlet {
 	private DBConnector connector;
-	private UserStore userStore;
-	protected UserProvider userProvider = new UserProvider();
+	private Map<String, JSONService> services = new HashMap<>();
+	protected UserStore userStore;
+	protected UserService userService;
+	protected ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
+	protected ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	private Emailer emailer;
 	
 	public void init() throws ServletException {
-		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, getDBConnector()));
+		DBConnector dbConnector = getDBConnector();
+
+		addService("general_data", new DualProtoService<>(GeneralDataUI.class, new GenericDAOStore<>(
+				new DAOProtoSQLImpl<>(GeneralData.class, dbConnector, null, "general_data"))));
+
+		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, dbConnector));
+		addService("user", userService = new UserService(userStore, requestProvider));
 	}
 	
 	public DBConnector getDBConnector() throws ServletException {
@@ -66,7 +70,41 @@ public class ServiceServlet extends HttpServlet {
 		return "xmlhttprequest".equalsIgnoreCase(request.getHeader("X-Requested-With"));
 	}
 
+	protected ServiceServlet addService(String entity, JSONService service) {
+		services.put(entity, service);
+		return this;
+	}
+
 	protected void process(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+		requestProvider.set(request);
+		try {
+			JSONObject json = null;
+			try {
+				String[] urlParts = request.getRequestURL().toString().split("/");
+				String entity = urlParts[urlParts.length - 2];
+				String action = urlParts[urlParts.length - 1];
+				JSONService service = services.get(entity);
+				if (service == null) {
+					throw new DD4StorageException("Unknown service: " + entity);
+				}
+				json = service.performAction(action, request.getParameterMap().values().iterator().next()[0])
+						.put("valid", true);
+			} catch (Exception e) {
+				json = new JSONObject()
+						.put("valid", false)
+						.put("error", e.getMessage())
+						.put("stackTrace", formatStackTrace(e))
+						.put("requestParams", "" + request.getParameterMap().keySet())
+						.put("queryString", request.getQueryString());
+				e.printStackTrace();
+			} finally {
+				response.setContentType("application/json");
+				response.setHeader("Cache-Control", "no-cache, must-revalidate");
+				response.getWriter().println(json);
+			}
+		} catch (Exception e) {
+			throw new ServletException(e);
+		}
 	}
 
 	@Override
@@ -97,16 +135,6 @@ public class ServiceServlet extends HttpServlet {
     } else {
         return requestURL.append('?').append(queryString).toString();
     }
-	}
-
-	public boolean handleLogin(HttpServletRequest request, HttpServletResponse response, LoginRequest loginRequest)
-			throws Exception {
-		User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
-		if (user != null) {
-			request.getSession(true).setAttribute("puser", userStore.updateLastLogin(user));
-			return true;
-		}
-		return false;
 	}
 	
 	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, UserType level) throws Exception {
@@ -143,78 +171,5 @@ public class ServiceServlet extends HttpServlet {
 			out += elem + "\n";
 		}
 		return out;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <R extends Message> R transformRequest(R msgRequest, HttpServletRequest httpRequest)
-			throws ParseException {
-		R.Builder builder = msgRequest.toBuilder();
-		Descriptor descriptor = builder.getDescriptorForType();
-		for (Map.Entry<String, String[]> entry : httpRequest.getParameterMap().entrySet()) {
-			FieldDescriptor field = descriptor.findFieldByName(entry.getKey());
-			builder.setField(field, transformValue(field, entry.getValue()[0]));
-		}
-		return (R) builder.build();
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <R extends Message> R transformJSONRequest(R msgRequest,
-			HttpServletRequest httpRequest) throws ParseException {
-		R.Builder builder = msgRequest.toBuilder();
-		JsonFormat.merge(httpRequest.getParameterMap().values().iterator().next()[0], builder);
-		return (R) builder.build();
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <R extends Message> R transformRequest(R msgRequest, String json)
-			throws ParseException {
-		R.Builder builder = msgRequest.toBuilder();
-		JsonFormat.merge(json, builder);
-		return (R) builder.build();
-	}
-	
-	public static Object transformValue(FieldDescriptor field, String value) throws ParseException {
-		switch (field.getJavaType()) {
-			case BOOLEAN: return Boolean.valueOf(value);
-			case INT: return Integer.valueOf(value);
-			case LONG: {
-				try {
-					return Long.valueOf(value);
-				} catch (NumberFormatException nfe) {
-					// If the value is not a number it must be in date format.
-					return DateTime.parse(value).getMillis();
-				}
-			}
-			case FLOAT: return Float.valueOf(value);
-			case DOUBLE: return Double.valueOf(value);
-			case STRING: return value;
-			case ENUM: {
-				try {
-					return field.getEnumType().findValueByNumber(Integer.valueOf(value));
-				} catch (NumberFormatException nfe) {
-					return field.getEnumType().findValueByName(value);
-				}
-			}
-			case BYTE_STRING: break;
-			case MESSAGE: break;
-			default: break;
-		}
-		return value;
-	}
-	
-	public JSONArray convertToJSON(List<? extends Message> items) throws JSONException {
-		JSONArray array = new JSONArray();
-		for (Message item : items) {
-			array.put(convertToJSON(item));
-		}
-		return array;
-	}
-	
-	public JSONObject convertToJSON(Message item) throws JSONException {
-		return new JSONObject(JsonFormat.printToString(item));
-	}
-	
-	public JSONObject convertToJSON(boolean bool) throws JSONException {
-		return new JSONObject(bool);
 	}
 }

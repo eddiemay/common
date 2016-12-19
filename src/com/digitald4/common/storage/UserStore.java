@@ -18,7 +18,7 @@ public class UserStore extends GenericDAOStore<User> {
 		super(dao);
 	}
 	
-	public User getBy(String login, String password) throws Exception {
+	public User getBy(String login, String password) throws DD4StorageException {
 		List<User> users = get(
 				QueryParam.newBuilder()
 						.setColumn(login.contains("@") ? "email" : "user_name")
@@ -47,7 +47,11 @@ public class UserStore extends GenericDAOStore<User> {
 		});
 	}
 
-	public static String encodePassword(String password) throws NoSuchAlgorithmException {
-		return Calculate.md5(password);
+	public static String encodePassword(String password) {
+		try {
+			return Calculate.md5(password);
+		} catch (NoSuchAlgorithmException nsae) {
+			throw new RuntimeException(nsae);
+		}
 	}
 }

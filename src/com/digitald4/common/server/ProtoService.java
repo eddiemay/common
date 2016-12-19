@@ -11,7 +11,7 @@ import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.google.protobuf.GeneratedMessage;
 
 public interface ProtoService<T extends GeneratedMessage> {
-	
+
 	T create(CreateRequest request) throws DD4StorageException;
 	
 	T get(GetRequest request) throws DD4StorageException;
