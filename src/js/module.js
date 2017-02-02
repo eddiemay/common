@@ -1,9 +1,10 @@
-com.digitald4.common.module = angular.module('DD4Common', []);
-
-com.digitald4.common.module.service('restService', com.digitald4.common.JSONConnector);
-com.digitald4.common.module.service('generalDataService', com.digitald4.common.GeneralDataService);
-
-com.digitald4.common.module.controller('LoginCtrl', com.digitald4.common.LoginCtrl);
+com.digitald4.common.module = angular.module('DD4Common', [])
+    .service('sessionWatcher', com.digitald4.common.SessionWatcher)
+    .service('restService', com.digitald4.common.JSONConnector)
+    .service('userService', com.digitald4.common.UserService)
+    .service('generalDataService', com.digitald4.common.GeneralDataService)
+    .controller('LoginCtrl', com.digitald4.common.LoginCtrl)
+    .controller('UserCtrl', com.digitald4.common.UserCtrl);
 
 com.digitald4.common.module.directive('onChange', function() {
   return function(scope, element, attrs) {
@@ -20,13 +21,42 @@ com.digitald4.common.module.directive('onChange', function() {
 
 com.digitald4.common.module.directive('mapauto', function() {
   return function(scope, element, attrs) {
-    // var google = google || null;
-    // if (google) {
+    if (typeof(google) != 'undefined') {
       google.maps.event.addDomListener(window, 'load', addMapAutoComplete(element.get(0), function(place) {
         scope.place = place;
         scope.$apply(attrs.mapauto);
       }));
-    // }
+    }
+  }
+});
+
+com.digitald4.common.module.directive('dd4Address', function($compile) {
+  return {
+    restrict: 'AE',
+    scope: {
+      ngModel: '='
+    },
+    template: '<span><label data-ng-if="label">{{label}}</label>' +
+        '<input type="text" value="{{ngModel.address}}" class="full-width"/></span>',
+    replace: true,
+    require: 'ngModel',
+    link: function(scope, element, attrs) {
+      var textField = $('input', element);
+      $compile(textField)(scope.$parent);
+
+      if (typeof(google) != 'undefined') {
+        google.maps.event.addDomListener(window, 'load', addMapAutoComplete(textField[0], function(place) {
+          if (typeof(gpsAdress) == 'undefined') {
+            scope.$parent.$eval(attrs.ngModel + ' = {}');
+            gpsAddress = scope.$parent.$eval(attrs.ngModel);
+          }
+          gpsAddress.address = place.formatted_address;
+          gpsAddress.latitude = place.geometry.location.lat();
+          gpsAddress.longitude = place.geometry.location.lng();
+          scope.$parent.$apply(attrs.dd4Address);
+        }));
+      }
+    }
   }
 });
 

@@ -40,11 +40,17 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 			for (Map.Entry<FieldDescriptor, Object> entry : internal.getAllFields().entrySet()) {
 				FieldDescriptor field = externalDescriptor.findFieldByName(entry.getKey().getName());
 				if (field != null) {
-					switch (field.getJavaType()) {
-						case ENUM: builder.setField(field,
-								field.getEnumType().findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
-							break;
-						default: builder.setField(field, entry.getValue());
+					try {
+						switch (field.getJavaType()) {
+							case ENUM:
+								builder.setField(field,
+										field.getEnumType().findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
+								break;
+							default:
+								builder.setField(field, entry.getValue());
+						}
+					} catch (IllegalArgumentException iae) {
+						throw new IllegalArgumentException("for field: " + field + " value: " + entry.getValue(), iae);
 					}
 				}
 			}
@@ -100,9 +106,9 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 
 	@Override
 	public T create(CreateRequest request) throws DD4StorageException {
-		Message.Builder builder = store.getType().toBuilder();
+		Message.Builder builder = type.toBuilder();
 		try {
-			JsonFormat.merge(request.getProto(), builder);
+			JsonFormat.merge(request.getProto().replaceAll(",\"\\$\\$hashKey\":\"object:\\d+\"", ""), builder);
 		} catch (ParseException e) {
 			throw new DD4StorageException("Error creating object: " + e.getMessage(), e);
 		}
@@ -129,36 +135,22 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 					FieldDescriptor field = internalDescriptor.findFieldByName(update.getProperty());
 					String value = update.getValue();
 					switch (field.getJavaType()) {
-						case BOOLEAN:
-							builder.setField(field, Boolean.valueOf(value));
-							break;
-						case DOUBLE:
-							builder.setField(field, Double.valueOf(value));
-							break;
-						case ENUM:
-							builder.setField(field, field.getEnumType().findValueByNumber(Integer.valueOf(value)));
-							break;
-						case FLOAT:
-							builder.setField(field, Float.valueOf(value));
-							break;
-						case INT:
-							builder.setField(field, Integer.valueOf(value));
-							break;
-						case LONG:
-							builder.setField(field, Long.valueOf(value));
-							break;
+						case BOOLEAN: builder.setField(field, Boolean.valueOf(value)); break;
+						case DOUBLE: builder.setField(field, Double.valueOf(value)); break;
+						case ENUM: builder.setField(field, field.getEnumType().findValueByNumber(Integer.valueOf(value))); break;
+						case FLOAT: builder.setField(field, Float.valueOf(value)); break;
+						case INT: builder.setField(field, Integer.valueOf(value)); break;
+						case LONG: builder.setField(field, Long.valueOf(value)); break;
 						case MESSAGE:
 							try {
 								builder.clearField(field);
-								JsonFormat.merge(value, builder);
+								JsonFormat.merge("{\"" + field.getName() + "\": " + value + "}", builder);
 							} catch (ParseException e) {
 								e.printStackTrace();
 							}
 							break;
 						case BYTE_STRING:
-						case STRING:
-							builder.setField(field, value);
-							break;
+						case STRING: builder.setField(field, value); break;
 					}
 				}
 				return (I) builder.build();
@@ -168,36 +160,28 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 
 	@Override
 	public boolean delete(DeleteRequest request) throws DD4StorageException {
-		store.delete(request.getId());
-		return true;
+		return store.delete(request.getId());
 	}
 
-	public JSONObject performAction(String action, String jsonRequest)
+	@Override
+	public Object performAction(String action, String jsonRequest)
 			throws DD4StorageException, JSONException, ParseException {
-		JSONObject json = new JSONObject();
 		switch (action) {
-			case "get":
-				json.put("data", JSONService.convertToJSON(
-						get(JSONService.transformJSONRequest(GetRequest.getDefaultInstance(), jsonRequest))));
-				break;
-			case "list":
-				json.put("data", JSONService.convertToJSON(
-						list(JSONService.transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest))));
-				break;
-			case "create":
-				json.put("data", JSONService.convertToJSON(
-						create(JSONService.transformJSONRequest(CreateRequest.getDefaultInstance(), jsonRequest))));
-				break;
-			case "update":
-				json.put("data", JSONService.convertToJSON(
-						update(JSONService.transformJSONRequest(UpdateRequest.getDefaultInstance(), jsonRequest))));
-				break;
-			case "delete":
-				json.put("data", JSONService.convertToJSON(
-						delete(JSONService.transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest))));
-				break;
+			case "create": return JSONService.convertToJSON(create(
+					JSONService.transformJSONRequest(CreateRequest.getDefaultInstance(), jsonRequest)));
+			case "get": return JSONService.convertToJSON(get(
+					JSONService.transformJSONRequest(GetRequest.getDefaultInstance(), jsonRequest)));
+			case "list": return JSONService.convertToJSON(list(
+					JSONService.transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
+			case "update": return JSONService.convertToJSON(update(
+					JSONService.transformJSONRequest(UpdateRequest.getDefaultInstance(), jsonRequest)));
+			case "delete": return JSONService.convertToJSON(delete(
+					JSONService.transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest)));
 			default: throw new DD4StorageException("Invalid action: " + action);
 		}
-		return json;
+	}
+
+	public boolean requiresLogin(String action) {
+		return true;
 	}
 }

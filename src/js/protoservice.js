@@ -28,8 +28,9 @@ com.digitald4.common.ProtoService.prototype.create = function(newProto, success,
 com.digitald4.common.ProtoService.prototype.update = function(proto, props, success, error) {
 	var request = {id: proto.id, update: []};
 	for (var p = 0; p < props.length; p++) {
-	  var prop = props[p];
-	  request.update.push({property: prop, value: proto[prop].toString()});
+	  var prop = proto[props[p]];
+	  var value = typeof(prop) == 'object' ? JSON.stringify(prop) : prop.toString();
+	  request.update.push({property: props[p], value: value});
 	}
 	this.performRequest('update', request, success, error);
 };

@@ -15,7 +15,7 @@ public interface DAO<T> {
 	
 	T update(int id, UnaryOperator<T> updater) throws DD4StorageException;
 	
-	void delete(int id) throws DD4StorageException;
+	boolean delete(int id) throws DD4StorageException;
 	
 	List<T> get(QueryParam... params) throws DD4StorageException;
 	

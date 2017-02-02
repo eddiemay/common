@@ -35,7 +35,6 @@ public class DBConnectorThreadPoolImpl implements DBConnector {
 		// using the connect string passed in the command line
 		// arguments.
 		//
-		System.out.println("DB URL: "+url);
 		ConnectionFactory connectionFactory =
 				new DriverManagerConnectionFactory(url,user,password);
 

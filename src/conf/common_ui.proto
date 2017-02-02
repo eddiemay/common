@@ -80,10 +80,9 @@ message UserUI {
 	optional string email = 4;
 	optional string first_name = 5;
 	optional string last_name = 6;
-	optional bool disabled = 7;
-	optional bool read_only = 8;
+  optional string full_name = 7;
+	optional bool disabled = 8;
+	optional bool read_only = 9;
 	optional string notes = 10;
 	optional int64 last_login = 11;
-
-	optional string full_name = 12;
 }

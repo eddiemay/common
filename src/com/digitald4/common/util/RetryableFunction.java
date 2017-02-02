@@ -8,7 +8,7 @@ import java.util.function.Function;
  * Created by eddiemay on 12/9/16.
  */
 public abstract class RetryableFunction<T, R> implements Function<T, R> {
-	private int tryLimit;
+	private final int tryLimit;
 
 	public RetryableFunction() {
 		this(3);
@@ -25,7 +25,7 @@ public abstract class RetryableFunction<T, R> implements Function<T, R> {
 				return apply(t);
 			} catch (Exception e) {
 				e.printStackTrace();
-				if (failures++ < tryLimit) {
+				if (++failures < tryLimit) {
 					System.out.println("Retrying in 2 secs...");
 					pause();
 				} else {

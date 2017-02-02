@@ -35,8 +35,8 @@ public class GenericDAOStore<T> implements DAOStore<T> {
 	}
 
 	@Override
-	public void delete(int id) throws DD4StorageException {
-		dao.delete(id);
+	public boolean delete(int id) throws DD4StorageException {
+		return dao.delete(id);
 	}
 	
 	@Override

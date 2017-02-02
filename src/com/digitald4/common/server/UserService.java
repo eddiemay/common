@@ -2,6 +2,7 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.User;
+import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
 import com.digitald4.common.proto.DD4UIProtos.UserUI;
 import com.digitald4.common.storage.UserStore;
@@ -26,17 +27,8 @@ public class UserService extends DualProtoService<UserUI, User> {
 		this.requestProvider = requestProvider;
 	}
 
-	@Override
-	public JSONObject performAction(String action, String jsonRequest)
-			throws DD4StorageException, JSONException, ParseException {
-		JSONObject json = new JSONObject();
-		if (action.equals("login")) {
-			json.put("data", JSONService.convertToJSON(
-					login(JSONService.transformJSONRequest(LoginRequest.getDefaultInstance(), jsonRequest))));
-		} else {
-			return super.performAction(action, jsonRequest);
-		}
-		return json;
+	public UserUI getActive() throws DD4StorageException {
+		return getConverter().apply((User) requestProvider.get().getSession(true).getAttribute("puser"));
 	}
 
 	public boolean login(LoginRequest loginRequest) throws DD4StorageException {
@@ -46,5 +38,26 @@ public class UserService extends DualProtoService<UserUI, User> {
 			return true;
 		}
 		return false;
+	}
+
+	public boolean logout() throws DD4StorageException {
+		requestProvider.get().getSession().setAttribute("puser", null);
+		return true;
+	}
+
+	@Override
+	public Object performAction(String action, String jsonRequest)
+			throws DD4StorageException, JSONException, ParseException {
+		switch (action) {
+			case "active": return JSONService.convertToJSON(getActive());
+			case "login": return JSONService.convertToJSON(login(
+					JSONService.transformJSONRequest(LoginRequest.getDefaultInstance(), jsonRequest)));
+			case "logout": return JSONService.convertToJSON(logout());
+			default: return super.performAction(action, jsonRequest);
+		}
+	}
+
+	public boolean requiresLogin(String action) {
+		return !action.equals("login") && !action.equals("logout");
 	}
 }

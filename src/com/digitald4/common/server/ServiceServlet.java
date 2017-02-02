@@ -40,7 +40,7 @@ public class ServiceServlet extends HttpServlet {
 		addService("general_data", new DualProtoService<>(GeneralDataUI.class, new GenericDAOStore<>(
 				new DAOProtoSQLImpl<>(GeneralData.class, dbConnector, null, "general_data"))));
 
-		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, dbConnector));
+		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, dbConnector, "V_USER"));
 		addService("user", userService = new UserService(userStore, requestProvider));
 	}
 	
@@ -78,7 +78,7 @@ public class ServiceServlet extends HttpServlet {
 	protected void process(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		requestProvider.set(request);
 		try {
-			JSONObject json = null;
+			Object json = null;
 			try {
 				String[] urlParts = request.getRequestURL().toString().split("/");
 				String entity = urlParts[urlParts.length - 2];
@@ -87,11 +87,10 @@ public class ServiceServlet extends HttpServlet {
 				if (service == null) {
 					throw new DD4StorageException("Unknown service: " + entity);
 				}
-				json = service.performAction(action, request.getParameterMap().values().iterator().next()[0])
-						.put("valid", true);
+				if (service.requiresLogin(action) && !checkLogin(request, response)) return;
+				json = service.performAction(action, request.getParameterMap().values().iterator().next()[0]);
 			} catch (Exception e) {
 				json = new JSONObject()
-						.put("valid", false)
 						.put("error", e.getMessage())
 						.put("stackTrace", formatStackTrace(e))
 						.put("requestParams", "" + request.getParameterMap().keySet())

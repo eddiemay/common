@@ -1,14 +1,12 @@
-com.digitald4.common.LoginCtrl = function(restService) {
-  this.restService = restService;
+com.digitald4.common.LoginCtrl = function(userService, sessionWatcher) {
+  this.userService = userService;
+  sessionWatcher.disable();
 };
 
-com.digitald4.common.LoginCtrl.prototype.restService;
+com.digitald4.common.LoginCtrl.prototype.userService;
 
 com.digitald4.common.LoginCtrl.prototype.login = function() {
-  this.restService.performRequest('login', {username: this.username, password: this.password},
-      function() {
-        document.location.href = './';
-      }, notify);
+  this.userService.login(this.username, this.password);
 };
 
 com.digitald4.common.LoginCtrl.prototype.recoverPassword = function() {

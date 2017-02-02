@@ -3,6 +3,7 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
@@ -79,67 +80,12 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public T create(T t) throws DD4StorageException {
-		String columns = "";
-		String values = "";
-		Map<FieldDescriptor, Object> valueMap = t.getAllFields();
-		for (FieldDescriptor field : valueMap.keySet()) {
-			if (columns.length() > 0) {
-				columns += ",";
-				values += ",";
-			}
-			columns += field.getName();
-			values += "?";
-		}
-		String sql = INSERT_SQL.replaceAll("\\{TABLE\\}", getTable())
-				.replaceAll("\\{COLUMNS\\}", columns)
-				.replaceAll("\\{VALUES\\}", values);
-		System.out.println(sql);
-
-		return new RetryableFunction<String, T>() {
-			@Override
-			public T apply(String sql) {
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-					int index = 1;
-					for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
-						setObject(ps, index++, entry.getKey(), entry.getValue());
-					}
-					ps.executeUpdate();
-					ResultSet rs = ps.getGeneratedKeys();
-					if (rs.next()) {
-						return get(rs.getInt(1));
-					}
-					return t;
-				} catch (SQLException e) {
-					throw new RuntimeException("Error creating record: " + e.getMessage(), e);
-				}
-			}
-		}.applyWithRetries(sql);
+		return CREATE_FUNC.applyWithRetries(t);
 	}
 	
 	@Override
 	public T get(int id) {
-		String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getView());
-		System.out.println(sql);
-		return new RetryableFunction<Integer, T>() {
-			@Override
-			public T apply(Integer id) {
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql);) {
-					ps.setInt(1, id);
-					T result = null;
-					ResultSet rs = ps.executeQuery();
-					List<T> results = process(rs);
-					if (!results.isEmpty()) {
-						result = results.get(0);
-					}
-					rs.close();
-					return result;
-				} catch (SQLException e) {
-					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
-				}
-			}
-		}.applyWithRetries(id);
+		return GET_BY_ID_FUNC.applyWithRetries(id);
 	}
 	
 	@Override
@@ -153,133 +99,22 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	
 	@Override
 	public List<T> get(List<QueryParam> params) {
-		String columns = "";
-		for (QueryParam param : params) {
-			if (columns.length() > 0) {
-				columns += " AND ";
-			}
-			columns += param.getColumn() + " " + param.getOperan() + " ?";
-		}
-		String sql_ = QUERY_SQL.replaceAll("\\{TABLE\\}", getView())
-				.replaceAll("\\{COLUMNS\\}", columns);
-		if (params.size() == 0) {
-			sql_ = sql_.replaceAll(" WHERE ", "");
-		}
-		final String sql = sql_;
-		System.out.println(sql);
-		return new RetryableFunction<List<QueryParam>, List<T>>() {
-			@Override
-			public List<T> apply(List<QueryParam> params) {
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql)) {
-					int p = 1;
-					for (QueryParam param : params) {
-						setObject(ps, p++, descriptor.findFieldByName(param.getColumn()), param.getValue());
-					}
-					ResultSet rs = ps.executeQuery();
-					List<T> results = process(rs);
-					rs.close();
-					return results;
-				} catch (SQLException e) {
-					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
-				}
-			}
-		}.applyWithRetries(params);
+		return GET_COLL_FUNC.applyWithRetries(params);
 	}
 	
 	@Override
 	public List<T> getAll() throws DD4StorageException {
-		String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", getView());
-		System.out.println(sql);
-		return new RetryableFunction<String, List<T>>() {
-			@Override
-			public List<T> apply(String sql) {
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql);
-						 ResultSet rs = ps.executeQuery();) {
-					return process(rs);
-				} catch (SQLException e) {
-					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
-				}
-			}
-		}.applyWithRetries(sql);
+		return GET_ALL_FUNC.applyWithRetries(true);
 	}
 	
 	@Override
 	public T update(int id, UnaryOperator<T> updater) {
-		T orig = get(id);
-		T updated = updater.apply(orig);
-		String sets = "";
-		
-		// Find all the fields that were modified in the updated proto.
-		Map<FieldDescriptor, Object> valueMap = updated.getAllFields();
-		List<Map.Entry<FieldDescriptor, Object>> modified = new ArrayList<>();
-		for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
-			FieldDescriptor field = entry.getKey();
-			if (!valueMap.get(field).equals(orig.getField(field))) {
-				if (sets.length() > 0) {
-					sets += ", ";
-				}
-				modified.add(entry);
-				sets += field.getName() + " = ?";
-			}
-		}
-		
-		// Find all the fields that have been removed from the update set them to null.
-		for (FieldDescriptor field : orig.getAllFields().keySet()) {
-			if (!valueMap.containsKey(field)) {
-				if (sets.length() > 0) {
-					sets += ", ";
-				}
-				sets += field.getName() + " = NULL";
-			}
-		}
-		if (sets.isEmpty()) {
-			System.out.println("Nothing changed, returning");
-		} else {
-			String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getView())
-					.replaceAll("\\{SETS\\}", sets);
-			System.out.println(sql);
-
-			new RetryableFunction<String, Boolean>() {
-				@Override
-				public Boolean apply(String sql) {
-					try (Connection con = connector.getConnection();
-							 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-						int index = 1;
-						for (Map.Entry<FieldDescriptor, Object> entry : modified) {
-							System.out.println("Setting: " + entry.getKey().getName());
-							setObject(ps, index++, entry.getKey(), entry.getValue());
-						}
-						ps.setInt(index, id);
-						ps.executeUpdate();
-						return true;
-					} catch (SQLException e) {
-						throw new RuntimeException("Error updating record: " + e.getMessage(), e);
-					}
-				}
-			}.applyWithRetries(sql);
-		}
-		return get(id);
+		return UPDATE_FUNC.applyWithRetries(Pair.of(id, updater));
 	}
 	
 	@Override
-	public void delete(int id) {
-		String sql = DELETE_SQL.replaceAll("\\{TABLE\\}", getTable());
-		System.out.println(sql);
-		new RetryableFunction<String, Boolean>() {
-			@Override
-			public Boolean apply(String sql) {
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql);) {
-					ps.setInt(1, id);
-					ps.executeUpdate();
-					return true;
-				} catch (SQLException e) {
-					throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
-				}
-			}
-		};
+	public boolean delete(int id) {
+		return DELETE_FUNC.applyWithRetries(id);
 	}
 	
 	static void setObject(PreparedStatement ps, int index, FieldDescriptor field, Object value)
@@ -298,7 +133,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 				case MESSAGE: {
 					if (field.isRepeated()) {
 						StringBuffer json = new StringBuffer()
-							.append("{\"" + field.getName() + "\": [");
+							.append("[");
 						boolean first = true;
 						for (Message message : (List<Message>) value) {
 							if (!first) {
@@ -308,8 +143,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 							}
 							json.append(JsonFormat.printToString(message));
 						}
-						json.append("]}");
-						System.out.println("JSON: " + json.toString());
+						json.append("]");
 						ps.setString(index, json.toString());
 					} else {
 						ps.setString(index, JsonFormat.printToString((Message) value));
@@ -332,14 +166,12 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	}
 	
 	private T parseFromRS(ResultSet rs) throws SQLException {
-		StringBuffer data = new StringBuffer("");
 		ResultSetMetaData rsmd = rs.getMetaData();
 		Message.Builder builder = type.newBuilderForType();
 		for (int i = 1; i <= rsmd.getColumnCount(); i++) {
 			String columnName = rsmd.getColumnName(i).toLowerCase();
 			Object value = rs.getObject(i);
 			if (value != null) {
-				data.append(columnName + ": " + value + "\n");
 				try {
 					FieldDescriptor field = descriptor.findFieldByName(columnName);
 					if (field == null) {
@@ -352,17 +184,186 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 						value = rs.getTimestamp(i).getTime();
 						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.MESSAGE) {
-						JsonFormat.merge(rs.getString(i), builder);
+						JsonFormat.merge("{\"" + field.getName() + "\": " + rs.getString(i) + "}", builder);
 					} else {
 						builder.setField(field, value);
 					}
 				} catch (Exception e) {
 					// e.printStackTrace();
-					System.out.println(e.getMessage() + " for column: " + columnName);
+					System.out.println(e.getMessage() + " for column: " + columnName + ". value: " + value);
 				}
 			}
 		}
-		System.out.println(data);
 		return (T) builder.build();
 	}
+
+	private final RetryableFunction<T, T> CREATE_FUNC =  new RetryableFunction<T, T>() {
+		@Override
+		public T apply(T t) {
+			String columns = "";
+			String values = "";
+			Map<FieldDescriptor, Object> valueMap = t.getAllFields();
+			for (FieldDescriptor field : valueMap.keySet()) {
+				if (columns.length() > 0) {
+					columns += ",";
+					values += ",";
+				}
+				columns += field.getName();
+				values += "?";
+			}
+			String sql = INSERT_SQL.replaceAll("\\{TABLE\\}", getTable())
+					.replaceAll("\\{COLUMNS\\}", columns)
+					.replaceAll("\\{VALUES\\}", values);
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+				int index = 1;
+				for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
+					setObject(ps, index++, entry.getKey(), entry.getValue());
+				}
+				ps.executeUpdate();
+				ResultSet rs = ps.getGeneratedKeys();
+				if (rs.next()) {
+					return get(rs.getInt(1));
+				}
+				return t;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error creating record: " + e.getMessage(), e);
+			}
+		}
+	};
+
+	private final RetryableFunction<Integer, T> GET_BY_ID_FUNC = new RetryableFunction<Integer, T>() {
+		@Override
+		public T apply(Integer id) {
+			String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getView());
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql);) {
+				ps.setInt(1, id);
+				T result = null;
+				ResultSet rs = ps.executeQuery();
+				List<T> results = process(rs);
+				if (!results.isEmpty()) {
+					result = results.get(0);
+				}
+				rs.close();
+				return result;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+			}
+		}
+	};
+
+	private final RetryableFunction<List<QueryParam>, List<T>> GET_COLL_FUNC =
+			new RetryableFunction<List<QueryParam>, List<T>>() {
+		@Override
+		public List<T> apply(List<QueryParam> params) {
+			String columns = "";
+			for (QueryParam param : params) {
+				if (columns.length() > 0) {
+					columns += " AND ";
+				}
+				columns += param.getColumn() + " " + param.getOperan() + " ?";
+			}
+			String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", getView())
+					.replaceAll("\\{COLUMNS\\}", columns);
+			if (params.size() == 0) {
+				sql = sql.replaceAll(" WHERE ", "");
+			}
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql)) {
+				int p = 1;
+				for (QueryParam param : params) {
+					setObject(ps, p++, descriptor.findFieldByName(param.getColumn()), param.getValue());
+				}
+				ResultSet rs = ps.executeQuery();
+				List<T> results = process(rs);
+				rs.close();
+				return results;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+			}
+		}
+	};
+
+	private final RetryableFunction<Boolean, List<T>> GET_ALL_FUNC = new RetryableFunction<Boolean, List<T>>() {
+		@Override
+		public List<T> apply(Boolean Void) {
+			String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", getView());
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql);
+					 ResultSet rs = ps.executeQuery();) {
+				return process(rs);
+			} catch (SQLException e) {
+				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+			}
+		}
+	};
+
+	private final RetryableFunction<Pair<Integer, UnaryOperator<T>>, T> UPDATE_FUNC =
+			new RetryableFunction<Pair<Integer, UnaryOperator<T>>, T>() {
+		@Override
+		public T apply(Pair<Integer, UnaryOperator<T>> pair) {
+			int id = pair.getLeft();
+			UnaryOperator<T> updater = pair.getRight();
+			T orig = get(id);
+			T updated = updater.apply(orig);
+			String sets = "";
+
+			// Find all the fields that were modified in the updated proto.
+			Map<FieldDescriptor, Object> valueMap = updated.getAllFields();
+			List<Map.Entry<FieldDescriptor, Object>> modified = new ArrayList<>();
+			for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
+				FieldDescriptor field = entry.getKey();
+				if (!valueMap.get(field).equals(orig.getField(field))) {
+					if (sets.length() > 0) {
+						sets += ", ";
+					}
+					modified.add(entry);
+					sets += field.getName() + " = ?";
+				}
+			}
+
+			// Find all the fields that have been removed from the update set them to null.
+			for (FieldDescriptor field : orig.getAllFields().keySet()) {
+				if (!valueMap.containsKey(field)) {
+					if (sets.length() > 0) {
+						sets += ", ";
+					}
+					sets += field.getName() + " = NULL";
+				}
+			}
+			if (sets.isEmpty()) {
+				System.out.println("Nothing changed, returning");
+			} else {
+				String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getView())
+						.replaceAll("\\{SETS\\}", sets);
+				try (Connection con = connector.getConnection();
+						 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+					int index = 1;
+					for (Map.Entry<FieldDescriptor, Object> entry : modified) {
+						setObject(ps, index++, entry.getKey(), entry.getValue());
+					}
+					ps.setInt(index, id);
+					ps.executeUpdate();
+				} catch (SQLException e) {
+					throw new RuntimeException("Error updating record: " + e.getMessage(), e);
+				}
+			}
+			return get(id);
+		}
+	};
+
+	private final RetryableFunction<Integer, Boolean> DELETE_FUNC = new RetryableFunction<Integer, Boolean>() {
+		@Override
+		public Boolean apply(Integer id) {
+			String sql = DELETE_SQL.replaceAll("\\{TABLE\\}", getTable());
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql);) {
+				ps.setInt(1, id);
+				return ps.executeUpdate() > 0;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
+			}
+		}
+	};
 }

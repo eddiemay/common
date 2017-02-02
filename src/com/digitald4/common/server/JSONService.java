@@ -8,12 +8,15 @@ import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by eddiemay on 9/24/16.
  */
 public interface JSONService {
-	JSONObject performAction(String action, String json) throws Exception;
+	Object performAction(String action, String json) throws Exception;
+
+	boolean requiresLogin(String action);
 
 	public static <R extends Message> R transformJSONRequest(R msgRequest, HttpServletRequest request) throws JsonFormat.ParseException {
 		return transformJSONRequest(msgRequest, request.getParameterMap().values().iterator().next()[0]);
@@ -34,8 +37,12 @@ public interface JSONService {
 		return array;
 	}
 
-	public static JSONObject convertToJSON(Message item) throws JSONException {
-		return new JSONObject(JsonFormat.printToString(item));
+	public static JSONObject convertToJSON(Message item) {
+		try {
+			return new JSONObject(JsonFormat.printToString(item));
+		} catch (JSONException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public static JSONObject convertToJSON(boolean bool) throws JSONException {
