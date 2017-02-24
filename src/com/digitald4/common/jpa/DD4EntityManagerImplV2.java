@@ -609,10 +609,10 @@ public class DD4EntityManagerImplV2 implements DD4EntityManager {
 				try {
 					//EspLogger.debug(this, ""+setMethod);
 					pc.setMethod.invoke(o, getValue(rs, c, md.getColumnName(c), pc.javaType));
-				} catch(SQLException e) {
+				} catch(Exception e) {
 					EspLogger.error(this, "for: " + pc.javaType + " " + pc.setMethod);
 					System.out.println("Error: " + pc.javaType + " " + pc.setMethod);
-					throw e;
+					// throw new Exception("Error setting field: " + md.getColumnName(c), e);
 				}
 			}
 		}

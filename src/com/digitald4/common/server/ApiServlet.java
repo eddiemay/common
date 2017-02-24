@@ -7,14 +7,13 @@ import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
 import com.digitald4.common.proto.DD4UIProtos.GeneralDataUI;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
 import com.digitald4.common.storage.DAOProtoSQLImpl;
 import com.digitald4.common.storage.GenericDAOStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.json.JSONObject;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -22,10 +21,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.json.JSONObject;
-
-public class ServiceServlet extends HttpServlet {
+public class ApiServlet extends HttpServlet {
 	private DBConnector connector;
 	private Map<String, JSONService> services = new HashMap<>();
 	protected UserStore userStore;
@@ -70,7 +71,7 @@ public class ServiceServlet extends HttpServlet {
 		return "xmlhttprequest".equalsIgnoreCase(request.getHeader("X-Requested-With"));
 	}
 
-	protected ServiceServlet addService(String entity, JSONService service) {
+	protected ApiServlet addService(String entity, JSONService service) {
 		services.put(entity, service);
 		return this;
 	}
@@ -106,14 +107,48 @@ public class ServiceServlet extends HttpServlet {
 		}
 	}
 
+	private List<QueryParam> getEntitykeys(HttpServletRequest request) {
+		List<QueryParam> entityGroups = new ArrayList<>();
+		String url = request.getRequestURL().toString();
+		String[] urlParts = url.substring(url.indexOf("/api/") + 5).split("/");
+		for (int i = 0; i < urlParts.length; i+=2) {
+			QueryParam.Builder queryParam = QueryParam.newBuilder()
+					.setColumn(urlParts[i]);
+			if (i + 1 < urlParts.length) {
+				queryParam.setOperan("=")
+						.setValue(urlParts[i + 1]);
+			}
+			entityGroups.add(queryParam.build());
+		}
+		return entityGroups;
+	}
+
+	private JSONService getService(String entity) throws ServletException {
+		JSONService service = services.get(entity);
+		if (service == null) {
+			throw new ServletException("Unknown service: " + entity);
+		}
+		return service;
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+		processRequest(request, response);
+	}
+
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		processRequest(request, response);
 	}
 
 	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		processRequest(request, response);
+	}
+
+	@Override
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+		List<QueryParam> entitykeys = getEntitykeys(request);
 	}
 	
 	public Emailer getEmailer() {

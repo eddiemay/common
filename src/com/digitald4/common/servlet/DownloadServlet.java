@@ -17,7 +17,7 @@ public class DownloadServlet extends ParentServlet {
 			String className = request.getParameter("classname");
 			int id = Integer.parseInt(request.getParameter("id"));
 			Class<?> c = Class.forName(className);
-			FileAttachable fa = (FileAttachable)c.getMethod("getInstance", Integer.class).invoke(null, id);
+			FileAttachable fa = (FileAttachable) c.getMethod("getInstance", Integer.class).invoke(null, id);
 			byte[] bytes = fa.getDataFile().getData();
 			//response.setContentType("application/pdf");
 			response.setHeader("Cache-Control", "no-cache, must-revalidate");

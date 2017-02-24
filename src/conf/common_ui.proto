@@ -21,6 +21,19 @@ message GPSAddress {
 	optional string unit = 4;
 }
 
+message DataFileUI {
+  required int32 id = 1;
+  required string name = 2;
+  enum FileType {
+    UNSPECIFIED = 0;
+    MISC = 1;
+    PDF = 2;
+  }
+  required FileType type = 3;
+  optional int32 size = 4;
+  optional bytes data = 5;
+}
+
 message GetRequest {
 	optional int32 id = 1;
 }

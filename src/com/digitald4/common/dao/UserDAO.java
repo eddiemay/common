@@ -24,7 +24,7 @@ public abstract class UserDAO extends DataAccessObject{
 	public enum KEY_PROPERTY{ID};
 	public enum PROPERTY{ID,TYPE_ID,USER_NAME,EMAIL,FIRST_NAME,LAST_NAME,DISABLED,READ_ONLY,PASSWORD,NOTES,LAST_LOGIN};
 	private Integer id;
-	private Integer typeId;
+	private Integer typeId = 1128;
 	private String userName;
 	private String email;
 	private String firstName;
