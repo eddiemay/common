@@ -1,13 +1,13 @@
 com.digitald4.common.GeneralDataService = function(restService) {
-  this.protoService = new com.digitald4.common.ProtoService('general_data', restService);
+  this.jsonService = new com.digitald4.common.JSONService('general_data', restService);
   this.refresh();
 };
 
-com.digitald4.common.GeneralDataService.prototype.protoService;
+com.digitald4.common.GeneralDataService.prototype.jsonService;
 com.digitald4.common.GeneralDataService.prototype.generalDataHash = {};
 
 com.digitald4.common.GeneralDataService.prototype.refresh = function() {
-  this.protoService.list([], function(generalDatas) {
+  this.jsonService.list([], function(generalDatas) {
     var hash = {};
     for (var x = 0; x < generalDatas.length; x++) {
       var generalData = generalDatas[x];

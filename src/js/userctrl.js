@@ -1,6 +1,6 @@
-com.digitald4.common.UserCtrl = function($routeParams, restService, generalDataService) {
+com.digitald4.common.UserCtrl = function($routeParams, userService, generalDataService) {
 	this.userId = parseInt($routeParams.id, 10);
-	this.userService = new com.digitald4.common.ProtoService('user', restService);
+	this.userService = userService;
 	this.generalDataService = generalDataService;
   this.userTypes = [
       {id: 0, name: 'Unknown'},

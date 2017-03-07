@@ -88,7 +88,7 @@ public class ServiceServlet extends HttpServlet {
 					throw new DD4StorageException("Unknown service: " + entity);
 				}
 				if (service.requiresLogin(action) && !checkLogin(request, response)) return;
-				json = service.performAction(action, request.getParameterMap().values().iterator().next()[0]);
+				json = service.performAction(action, new JSONObject(request.getParameterMap().values().iterator().next()[0]));
 			} catch (Exception e) {
 				json = new JSONObject()
 						.put("error", e.getMessage())

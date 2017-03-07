@@ -666,7 +666,8 @@ public class JsonFormat {
                 return Double.NaN;
             }
             try {
-                double result = Double.parseDouble(currentToken);
+                double result = Double.parseDouble(currentToken.startsWith("\"")
+										? currentToken.substring(1, currentToken.length() - 1) : currentToken);
                 nextToken();
                 return result;
             } catch (NumberFormatException e) {
@@ -1536,6 +1537,9 @@ public class JsonFormat {
         int pos = 0;
 
         boolean negative = false;
+        if (text.startsWith("\"")) {
+        	text = text.substring(1, text.length() - 1);
+				}
         if (text.startsWith("-", pos)) {
             if (!isSigned) {
                 throw new NumberFormatException("Number must be positive: " + text);

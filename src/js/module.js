@@ -1,6 +1,6 @@
 com.digitald4.common.module = angular.module('DD4Common', [])
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
-    .service('restService', com.digitald4.common.JSONConnector)
+    .service('restService', com.digitald4.common.ApiConnector)
     .service('userService', com.digitald4.common.UserService)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .controller('LoginCtrl', com.digitald4.common.LoginCtrl)

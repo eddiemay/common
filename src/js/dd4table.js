@@ -2,24 +2,24 @@ com.digitald4.common.TableCtrl = function($scope, restService) {
   this.scope = $scope;
 	this.metadata = $scope.metadata;
 	this.base = this.metadata.base;
-	this.protoService = new com.digitald4.common.ProtoService(this.base.entity, restService);
+	this.jsonService = new com.digitald4.common.JSONService(this.base.entity, restService);
 	this.refresh();
 };
 
 com.digitald4.common.TableCtrl.prototype.refresh = function() {
   this.scope.loading = true;
-	this.protoService.list(this.metadata.request, function(entities) {
-			this.entities = entities;
-			this.scope.loading = false;
-		}.bind(this), notify);
+	this.jsonService.list(this.metadata.filter, function(entities) {
+	  this.entities = entities;
+	  this.scope.loading = false;
+	}.bind(this), notify);
 };
 
 com.digitald4.common.TableCtrl.prototype.update = function(entity, prop) {
-  this.scope.loading = true;
+  // this.scope.loading = true;
   var index = this.entities.indexOf(entity);
-  this.protoService.update(entity, prop, function(entity_) {
+  this.jsonService.update(entity, [prop], function(entity_) {
       this.entities.splice(index, 1, entity_);
-      this.scope.loading = false;
+      // this.scope.loading = false;
     }.bind(this), notify);
 };
 

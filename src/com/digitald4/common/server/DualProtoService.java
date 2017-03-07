@@ -164,7 +164,7 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 	}
 
 	@Override
-	public Object performAction(String action, String jsonRequest)
+	public Object performAction(String action, JSONObject jsonRequest)
 			throws DD4StorageException, JSONException, ParseException {
 		switch (action) {
 			case "create": return JSONService.convertToJSON(create(

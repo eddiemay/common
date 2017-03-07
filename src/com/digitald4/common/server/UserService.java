@@ -46,7 +46,7 @@ public class UserService extends DualProtoService<UserUI, User> {
 	}
 
 	@Override
-	public Object performAction(String action, String jsonRequest)
+	public Object performAction(String action, JSONObject jsonRequest)
 			throws DD4StorageException, JSONException, ParseException {
 		switch (action) {
 			case "active": return JSONService.convertToJSON(getActive());

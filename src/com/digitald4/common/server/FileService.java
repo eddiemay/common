@@ -7,6 +7,8 @@ import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.storage.GenericDAOStore;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.ByteString;
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,7 +116,7 @@ public class FileService implements JSONService {
 	}
 
 	@Override
-	public Object performAction(String action, String json) throws Exception {
+	public Object performAction(String action, JSONObject json) throws Exception {
 		switch (action) {
 			case "create":
 				return create(requestProvider.get());
