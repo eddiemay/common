@@ -1,90 +1,70 @@
-com.digitald4.common.JSONService = function(proto, restService) {
-	this.restService = restService;
+com.digitald4.common.JSONService = function(proto, apiConnector) {
+	this.apiConnector = apiConnector;
 	this.service = proto + 's';
 };
 
-com.digitald4.common.JSONService.prototype.restService;
+com.digitald4.common.JSONService.prototype.apiConnector;
 com.digitald4.common.JSONService.prototype.service;
 
-com.digitald4.common.JSONService.prototype.performRequest = function(method, url, request, success, error) {
-  this.restService.performRequest(method, url, request, success, error);
+/**
+ * Performs the specified request.
+ *
+ * @param {string | array} method The HTTP method to use for the request. If this is a custom action then action, method
+ *   as an array i.e. ['summary', 'post']. If the method is GET then method can be left off of array.
+ * @param {string | number | Object} requestParams The request parameters to use to build the url. If standard url this
+ *  can simplily be the id of the item being requested. If an object id should be .id of that object.
+ * @param {Object} request The body information to send to the server.
+ * @param {!function(!Object)} success The call back function to call after a successful submission.
+ * @param {!function(!Object)} error The call back function to call after a submission error.
+ */
+com.digitald4.common.JSONService.prototype.performRequest = function(method, requestParams, body, success, error) {
+  var url = [];
+  var id;
+  if (typeof(requestParams) == 'object') {
+    for (var prop in requestParams) {
+      if (prop == 'id') {
+        id = requestParams[prop];
+      } else {
+        url.push(prop.indexOf('_id') == -1 ? prop : prop.substring(0, prop.length - 3) + 's');
+        url.push(requestParams[prop]);
+      }
+    }
+  } else if (typeof(requestParams) != 'undefined') {
+    id = requestParams;
+  }
+  url.push(this.service);
+  if (id) {
+    url.push(id);
+  }
+  if (typeof(method) == 'object') {
+    url.push(method[0]);
+    method = method[1] || 'GET';
+  }
+
+  this.apiConnector.performRequest(method, url.join('/'), body, success, error);
 };
 
 com.digitald4.common.JSONService.prototype.get = function(id, success, error) {
-	this.performRequest('GET', this.service + '/' + id, undefined, success, error);
+	this.performRequest('GET', id, undefined, success, error);
 };
 
 com.digitald4.common.JSONService.prototype.list = function(filter, success, error) {
-	this.performRequest('GET', this.service, filter, success, error);
+	this.performRequest('GET', undefined, filter, success, error);
 };
 
-com.digitald4.common.JSONService.prototype.create = function(newJSON, success, error) {
-  newJSON.$$hashKey = undefined;
-	this.performRequest('POST', this.service, {proto: newJSON}, success, error);
+com.digitald4.common.JSONService.prototype.create = function(proto, success, error) {
+  proto.$$hashKey = undefined;
+	this.performRequest('POST', undefined, {proto: JSON.stringify(proto)}, success, error);
 };
 
 com.digitald4.common.JSONService.prototype.update = function(proto, props, success, error) {
-	var request = {id: proto.id, update: []};
+	var updated = {};
 	for (var p = 0; p < props.length; p++) {
-	  var value = proto[props[p]];
-	  value = typeof(value) == 'object' ? JSON.stringify(value) : value.toString();
-	  request.update.push({property: props[p], value: value});
+	  updated[props[p]] = proto[props[p]];
 	}
-	this.performRequest('POST', this.service + '/' + proto.id, request, success, error);
+	this.performRequest('POST', proto.id, {proto: JSON.stringify(updated)}, success, error);
 };
 
 com.digitald4.common.JSONService.prototype.Delete = function(id, success, error) {
-	this.performRequest('DELETE', this.service + '/' + id, undefined, success, error);
-};
-
-com.digitald4.common.ApiConnector = function($http, $httpParamSerializer, sessionWatcher) {
-	this.baseUrl = 'api/';
-	this.$http = $http;
-	this.$httpParamSerializer = $httpParamSerializer;
-	this.sessionWatcher = sessionWatcher;
-};
-
-com.digitald4.common.ApiConnector.prototype.baseUrl;
-com.digitald4.common.ApiConnector.prototype.$http;
-com.digitald4.common.ApiConnector.prototype.$httpParamSerializer;
-
-com.digitald4.common.ApiConnector.prototype.performRequest =
-		function(method, url, params, successCallback, errorCallback) {
-  this.sessionWatcher.extendTime();
-	url = this.baseUrl + url;
-	var data = undefined;
-	if (method == 'GET') {
-    var serializedParams = this.$httpParamSerializer(params);
-    if (params != undefined && serializedParams.length > 0) {
-      url += ((url.indexOf('?') === -1) ? '?' : '&') + serializedParams;
-    }
-  } else {
-    data = this.$httpParamSerializer({json: JSON.stringify(params)});
-  }
-	// Send
-	this.$http({
-		method: method,
-		url: url,
-		headers: {
-		  'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-		},
-		data: data
-	}).then(function(response) {
-			if (!response.data.error) {
-				successCallback(response.data);
-			} else {
-				console.log('error: ' + response.data.error);
-				console.log('StackTrace: ' + response.data.stackTrace);
-				console.log('Request params: ' + response.data.requestParams);
-				console.log('Query String: ' + response.data.queryString);
-				errorCallback(response.data.error);
-			}
-		},
-		function(response) {
-		  console.log('Status code: ' + response.status);
-		  if (response.status == 401) {
-		    document.location.href = 'login.html';
-		  }
-			errorCallback(response.data.error);
-		});
+	this.performRequest('DELETE', id, undefined, success, error);
 };

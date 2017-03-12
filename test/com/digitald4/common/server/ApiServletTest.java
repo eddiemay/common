@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
@@ -25,7 +24,7 @@ public class ApiServletTest {
 	@Mock JSONService teamService = mock(JSONService.class);
 	@Mock JSONService playerService = mock(JSONService.class);
 
-	private ApiServlet apiServlet;
+	private ApiServiceServlet apiServlet;
 
 	private static JSONObject lakers;
 	private static JSONObject clippers;
@@ -106,7 +105,7 @@ public class ApiServletTest {
 
 	@Before
 	public void setup() throws Exception {
-		apiServlet = new ApiServlet()
+		apiServlet = new ApiServiceServlet()
 				.addService("team", teamService)
 				.addService("player", playerService);
 		when(teamService.performAction(eq("get"), any(JSONObject.class)))

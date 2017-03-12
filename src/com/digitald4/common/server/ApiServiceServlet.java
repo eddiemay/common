@@ -14,7 +14,6 @@ import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class ApiServlet extends HttpServlet {
+public class ApiServiceServlet extends HttpServlet {
 	private DBConnector connector;
 	private Map<String, JSONService> services = new HashMap<>();
 	protected UserStore userStore;
@@ -77,7 +76,7 @@ public class ApiServlet extends HttpServlet {
 		return "xmlhttprequest".equalsIgnoreCase(request.getHeader("X-Requested-With"));
 	}
 
-	protected ApiServlet addService(String entity, JSONService service) {
+	protected ApiServiceServlet addService(String entity, JSONService service) {
 		services.put(entity, service);
 		return this;
 	}
@@ -94,7 +93,6 @@ public class ApiServlet extends HttpServlet {
 				}
 				if (service.requiresLogin(action) && !checkLogin(request, response)) return;
 				json = service.performAction(action, jsonRequest);
-				// throw new UnsupportedOperationException("Need to error");
 			} catch (Exception e) {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				json = new JSONObject()
@@ -105,9 +103,6 @@ public class ApiServlet extends HttpServlet {
 						.put("queryString", request.getQueryString());
 				e.printStackTrace();
 			} finally {
-				if (json instanceof JSONObject) {
-					((JSONObject) json).put("requestParams", "" + request.getParameterMap().keySet());
-				}
 				response.setContentType("application/json");
 				response.setHeader("Cache-Control", "no-cache, must-revalidate");
 				response.getWriter().println(json);

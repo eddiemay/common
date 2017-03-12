@@ -1,6 +1,7 @@
 com.digitald4.common.module = angular.module('DD4Common', [])
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
-    .service('restService', com.digitald4.common.ApiConnector)
+    .service('restService', com.digitald4.common.JSONConnector)
+    .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('userService', com.digitald4.common.UserService)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .controller('LoginCtrl', com.digitald4.common.LoginCtrl)
@@ -200,5 +201,102 @@ com.digitald4.common.module.directive('myDirective', function($compile) {
 
       $compile(textField)($scope.$parent);
     }
+  };
+});
+
+com.digitald4.common.module.controller('TableCtrl', com.digitald4.common.TableCtrl);
+
+com.digitald4.common.module.directive('dd4Table', function() {
+  return {
+    restrict: 'A',
+    replace: true,
+    transclude: true,
+    scope: {metadata: '=dd4Table'},
+    controller: 'TableCtrl as tableCtrl',
+    templateUrl: 'js/html/dd4table.html',
+    compile: function() {
+      return {
+        post: function(scope, element, attributes) {
+          scope.$watch('loading', function(loading) {
+            if (loading) {
+              return;
+            }
+            setTimeout(function() {
+              var table = $(element.find('table'));
+              //table.dataTable();
+              oTable = table.dataTable({
+                //"bSort": false,
+
+                /*
+                 * We set specific options for each columns here. Some columns contain raw data to enable correct sorting, so we convert it for display
+                 * @url http://www.datatables.net/usage/columns
+                 */
+                /*aoColumns: [
+                  { bSortable: false},	// No sorting for this columns, as it only contains checkboxes
+                  { sType: 'string' },
+                  { sType: 'string' },
+                  { sType: 'string' },
+                  { sType: 'string' },
+                  { sType: 'string' }
+                ],*/
+
+                "aoColumnDefs": [
+                  { "bSortable": false, "aTargets": [ 0 ] }
+                ],
+
+                //"order": [[ 1, "asc" ]],
+
+
+                /*
+                 * Set DOM structure for table controls
+                 * @url http://www.datatables.net/examples/basic_init/dom.html
+                 */
+                sDom: '<"block-controls"<"controls-buttons"p>>rti<"block-footer clearfix"l>',
+
+                /*
+                 * Callback to apply template setup
+                 */
+                fnDrawCallback: function() {
+                  table.parent().applyTemplateSetup();
+                },
+                fnInitComplete: function() {
+                  table.parent().applyTemplateSetup();
+                }
+              });
+
+              // Sorting arrows behaviour
+              table.find('thead .sort-up').click(function(event) {
+                // Stop link behaviour
+                event.preventDefault();
+
+                // Find column index
+                var column = table.closest('th'),
+                  columnIndex = column.parent().children().index(column.get(0));
+
+                // Send command
+                oTable.fnSort([[columnIndex, 'asc']]);
+
+                // Prevent bubbling
+                return false;
+              });
+              table.find('thead .sort-down').click(function(event) {
+                // Stop link behaviour
+                event.preventDefault();
+
+                // Find column index
+                var column = table.closest('th'),
+                  columnIndex = column.parent().children().index(column.get(0));
+
+                // Send command
+                oTable.fnSort([[columnIndex, 'desc']]);
+
+                // Prevent bubbling
+                return false;
+              });
+            }, 500);
+          });
+        }
+      }
+    },
   };
 });

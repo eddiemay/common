@@ -1,5 +1,8 @@
 package com.digitald4.common.server;
 
+import static com.digitald4.common.server.JSONService.convertToJSON;
+import static com.digitald4.common.server.JSONService.transformJSONRequest;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
@@ -14,16 +17,13 @@ import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import com.googlecode.protobuf.format.JsonFormat.ParseException;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import org.json.JSONObject;
 
 public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMessage>
 		implements ProtoService<T>, JSONService {
@@ -43,8 +43,8 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 					try {
 						switch (field.getJavaType()) {
 							case ENUM:
-								builder.setField(field,
-										field.getEnumType().findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
+								builder.setField(field, field.getEnumType()
+										.findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
 								break;
 							default:
 								builder.setField(field, entry.getValue());
@@ -66,8 +66,9 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 				FieldDescriptor field = internalDescriptor.findFieldByName(entry.getKey().getName());
 				if (field != null) {
 					switch (field.getJavaType()) {
-						case ENUM: builder.setField(field,
-								field.getEnumType().findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
+						case ENUM:
+							builder.setField(field, field.getEnumType()
+									.findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
 							break;
 						default: builder.setField(field, entry.getValue());
 					}
@@ -108,7 +109,7 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 	public T create(CreateRequest request) throws DD4StorageException {
 		Message.Builder builder = type.toBuilder();
 		try {
-			JsonFormat.merge(request.getProto().replaceAll(",\"\\$\\$hashKey\":\"object:\\d+\"", ""), builder);
+			JsonFormat.merge(request.getProto(), builder);
 		} catch (ParseException e) {
 			throw new DD4StorageException("Error creating object: " + e.getMessage(), e);
 		}
@@ -131,27 +132,10 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 			@Override
 			public I apply(I internal) {
 				Message.Builder builder = internal.toBuilder();
-				for (UpdateRequest.Update update : request.getUpdateList()) {
-					FieldDescriptor field = internalDescriptor.findFieldByName(update.getProperty());
-					String value = update.getValue();
-					switch (field.getJavaType()) {
-						case BOOLEAN: builder.setField(field, Boolean.valueOf(value)); break;
-						case DOUBLE: builder.setField(field, Double.valueOf(value)); break;
-						case ENUM: builder.setField(field, field.getEnumType().findValueByNumber(Integer.valueOf(value))); break;
-						case FLOAT: builder.setField(field, Float.valueOf(value)); break;
-						case INT: builder.setField(field, Integer.valueOf(value)); break;
-						case LONG: builder.setField(field, Long.valueOf(value)); break;
-						case MESSAGE:
-							try {
-								builder.clearField(field);
-								JsonFormat.merge("{\"" + field.getName() + "\": " + value + "}", builder);
-							} catch (ParseException e) {
-								e.printStackTrace();
-							}
-							break;
-						case BYTE_STRING:
-						case STRING: builder.setField(field, value); break;
-					}
+				try {
+					JsonFormat.merge(request.getProto(), builder);
+				} catch (ParseException e) {
+					throw new RuntimeException("Error updating object", e);
 				}
 				return (I) builder.build();
 			}
@@ -164,20 +148,20 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 	}
 
 	@Override
-	public Object performAction(String action, JSONObject jsonRequest)
-			throws DD4StorageException, JSONException, ParseException {
+	public Object performAction(String action, JSONObject jsonRequest) throws DD4StorageException, ParseException {
 		switch (action) {
-			case "create": return JSONService.convertToJSON(create(
-					JSONService.transformJSONRequest(CreateRequest.getDefaultInstance(), jsonRequest)));
-			case "get": return JSONService.convertToJSON(get(
-					JSONService.transformJSONRequest(GetRequest.getDefaultInstance(), jsonRequest)));
-			case "list": return JSONService.convertToJSON(list(
-					JSONService.transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
-			case "update": return JSONService.convertToJSON(update(
-					JSONService.transformJSONRequest(UpdateRequest.getDefaultInstance(), jsonRequest)));
-			case "delete": return JSONService.convertToJSON(delete(
-					JSONService.transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest)));
-			default: throw new DD4StorageException("Invalid action: " + action);
+			case "create":
+				return convertToJSON(create(transformJSONRequest(CreateRequest.getDefaultInstance(), jsonRequest)));
+			case "get":
+				return convertToJSON(get(transformJSONRequest(GetRequest.getDefaultInstance(), jsonRequest)));
+			case "list":
+				return convertToJSON(list(transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
+			case "update":
+				return convertToJSON(update(transformJSONRequest(UpdateRequest.getDefaultInstance(), jsonRequest)));
+			case "delete":
+				return convertToJSON(delete(transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest)));
+			default:
+				throw new DD4StorageException("Invalid action: " + action);
 		}
 	}
 

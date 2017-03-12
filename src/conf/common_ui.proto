@@ -53,11 +53,7 @@ message CreateRequest {
 
 message UpdateRequest {
 	optional int32 id = 1;
-  message Update {
-	  optional string property = 1;
-	  optional string value = 2;
-  }
-  repeated Update update = 2;
+  optional string proto = 2;
 }
 
 message LoginRequest {
