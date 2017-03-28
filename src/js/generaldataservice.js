@@ -11,6 +11,9 @@ com.digitald4.common.GeneralDataService.prototype.refresh = function() {
     var hash = {};
     for (var x = 0; x < generalDatas.length; x++) {
       var generalData = generalDatas[x];
+      if (generalData.data) {
+        generalData.data = JSON.parse(generalData.data);
+      }
       generalData.generalDatas = [];
       hash[generalData.id] = generalData;
     }

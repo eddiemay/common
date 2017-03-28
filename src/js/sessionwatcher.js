@@ -7,7 +7,7 @@ com.digitald4.common.SessionWatcher = function() {
     if (Date.now() > this.expiration) {
       document.location.href = 'login.html';
     } else {
-      console.log(((this.expiration - Date.now()) / 1000) + ' seconds remainning in session.')
+      console.log(((this.expiration - Date.now()) / 1000) + ' seconds remainning in session.');
     }
   }.bind(this), ONE_MINUTE);
 

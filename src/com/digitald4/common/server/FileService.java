@@ -4,7 +4,7 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
-import com.digitald4.common.storage.GenericDAOStore;
+import com.digitald4.common.storage.DAOStore;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.ByteString;
 import org.json.JSONObject;
@@ -27,11 +27,11 @@ import javax.servlet.http.Part;
 public class FileService implements JSONService {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
-	private final GenericDAOStore<DataFile> dataFileStore;
+	private final DAOStore<DataFile> dataFileStore;
 	private final Provider<HttpServletRequest> requestProvider;
 	private final Provider<HttpServletResponse> responseProvider;
 
-	public FileService(GenericDAOStore<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
+	public FileService(DAOStore<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
 										 Provider<HttpServletResponse> responseProvider) {
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;
@@ -41,6 +41,9 @@ public class FileService implements JSONService {
 	private static final Function<Part, DataFile> converter = new Function<Part, DataFile>() {
 		@Override
 		public DataFile apply(Part filePart) {
+			if (filePart == null) {
+				throw new RuntimeException("Part is null");
+			}
 			try (InputStream filecontent = filePart.getInputStream();
 					 ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
 
@@ -51,22 +54,21 @@ public class FileService implements JSONService {
 				while ((read = filecontent.read(bytes)) != -1) {
 					buffer.write(bytes, 0, read);
 				}
+				String fileName = getFileName(filePart);
+				// LOGGER.log(Level.INFO, "File {0} being uploaded.", fileName);
 				byte[] data = buffer.toByteArray();
-				DataFile df = DataFile.newBuilder()
-						.setName(getFileName(filePart))
-						.setType(DataFile.FileType.MISC)
+				return DataFile.newBuilder()
+						.setName(fileName)
+						.setType(fileName.substring(fileName.length() - 4))
 						.setSize(data.length)
 						.setData(ByteString.copyFrom(data))
 						.build();
-				LOGGER.log(Level.INFO, "File {0} being uploaded.", df.getName());
-				return df;
-			} catch (Exception e) {
+			} catch (IOException e) {
 				e.printStackTrace();
-				LOGGER.log(Level.SEVERE, "Problems during file upload. Error: {0}",
-						new Object[]{e.getMessage()});
+				LOGGER.log(Level.SEVERE, "Problems during file upload. Error: {0}", e.getMessage());
 				throw new RuntimeException("You either did not specify a file to upload or are "
 						+ "trying to upload a file to a protected or nonexistent "
-						+ "location.", e);
+						+ "location. " + e.getMessage(), e);
 			}
 		}
 	};
@@ -100,13 +102,13 @@ public class FileService implements JSONService {
 
 	private static String getFileName(final Part part) {
 		final String partHeader = part.getHeader("content-disposition");
-		LOGGER.log(Level.INFO, "Part Header = {0}", partHeader);
+		// LOGGER.log(Level.INFO, "Part Header = {0}", partHeader);
 		for (String content : part.getHeader("content-disposition").split(";")) {
 			if (content.trim().startsWith("filename")) {
 				return content.substring(content.indexOf('=') + 1).trim().replace("\"", "");
 			}
 		}
-		return null;
+		throw new RuntimeException("No filename");
 	}
 
 
@@ -116,25 +118,25 @@ public class FileService implements JSONService {
 	}
 
 	@Override
-	public Object performAction(String action, JSONObject json) throws Exception {
+	public Object performAction(String action, JSONObject request) throws Exception {
 		switch (action) {
 			case "create":
 				return create(requestProvider.get());
-			case "get":
-				DataFile df = get(JSONService.transformJSONRequest(GetRequest.getDefaultInstance(), json));
-				HttpServletResponse response = responseProvider.get();
-				byte[] bytes = df.getData().toByteArray();
-				response.setContentType("application/" + df.getType());
-				response.setHeader("Cache-Control", "no-cache, must-revalidate");
-				response.setContentLength(bytes.length);
-				response.getOutputStream().write(bytes);
-				return null;
 			case "update":
 				return update(requestProvider.get());
 			case "delete":
 				return JSONService.convertToJSON(delete(
-						JSONService.transformJSONRequest(DeleteRequest.getDefaultInstance(), json)));
+						JSONService.transformJSONRequest(DeleteRequest.getDefaultInstance(), request)));
+			case "get":
+			default:
+				DataFile df = get(JSONService.transformJSONRequest(GetRequest.getDefaultInstance(), request));
+				HttpServletResponse response = responseProvider.get();
+				byte[] bytes = df.getData().toByteArray();
+				response.setContentType("application/" + (df.hasType() ? df.getType() : "pdf"));
+				response.setHeader("Cache-Control", "no-cache, must-revalidate");
+				response.setContentLength(bytes.length);
+				response.getOutputStream().write(bytes);
+				return null;
 		}
-		return null;
 	}
 }

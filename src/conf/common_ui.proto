@@ -21,17 +21,11 @@ message GPSAddress {
 	optional string unit = 4;
 }
 
-message DataFileUI {
+message DataFile {
   required int32 id = 1;
   required string name = 2;
-  enum FileType {
-    UNSPECIFIED = 0;
-    MISC = 1;
-    PDF = 2;
-  }
-  required FileType type = 3;
+  optional string type = 3;
   optional int32 size = 4;
-  optional bytes data = 5;
 }
 
 message GetRequest {
@@ -65,7 +59,7 @@ message DeleteRequest {
 	optional int32 id = 1;
 }
 
-message GeneralDataUI {
+message GeneralData {
   optional int32 id = 1;
   optional int32 group_id = 2;
   optional int32 in_group_id = 3;
@@ -76,7 +70,7 @@ message GeneralDataUI {
   optional string data = 8;
 }
 
-message UserUI {
+message User {
 	optional int32 id = 1;
 
 	enum UserType {

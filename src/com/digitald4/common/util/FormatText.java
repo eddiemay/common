@@ -238,7 +238,7 @@ public class FormatText {
 		return cal.get(Calendar.DAY_OF_WEEK);
 	}
 
-	public static String formatTime(Calendar cal){
+	public static String formatTime(Calendar cal) {
 		if(cal==null)
 			return "00:00";
 		return USER_TIME.format(cal.getTime());
@@ -249,6 +249,10 @@ public class FormatText {
 			return null;
 		}
 		return USER_TIME.format(dateTime.toDate());
+	}
+
+	public static String formatTime(long dateTime) {
+		return formatTime(new DateTime(dateTime));
 	}
 	
 	public static String formatCurrency(double dollarAmount) {
@@ -282,13 +286,17 @@ public class FormatText {
 		}
 		return dateformat.format(date);
 	}
+
+	public static String formatDate(long date) {
+		return formatDate(new DateTime(date));
+	}
 	
 	public static String formatDate(Calendar date) {
-		return formatDate(date,USER_DATETIME);
+		return formatDate(date, USER_DATETIME);
 	}
 	
 	public static String formatDate(Date date) {
-		return formatDate(date,USER_DATE);
+		return formatDate(date, USER_DATE);
 	}
 	
 	public static Date parseDate(String value) throws ParseException {

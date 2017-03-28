@@ -1,6 +1,6 @@
 package com.digitald4.common.exception;
 
-public class DD4StorageException extends Exception {
+public class DD4StorageException extends RuntimeException {
 	
 	public DD4StorageException(String message) {
 		super(message);

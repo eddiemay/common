@@ -5,6 +5,7 @@ import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+import org.json.JSONObject;
 
 public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
@@ -117,39 +119,33 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 		return DELETE_FUNC.applyWithRetries(id);
 	}
 	
-	static void setObject(PreparedStatement ps, int index, FieldDescriptor field, Object value)
+	private void setObject(PreparedStatement ps, int index, T t, FieldDescriptor field, Object value)
 			throws SQLException {
 		if ("".equals(value)) {
 			value = null;
 		}
 		if (field != null) {
-			switch (field.getJavaType()) {
-				case ENUM: if (value instanceof EnumValueDescriptor) {
-					ps.setObject(index, ((EnumValueDescriptor) value).getNumber());
-				} else {
-					ps.setObject(index, Integer.valueOf(value.toString()));
-				} break;
-				case LONG: ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString())))); break;
-				case MESSAGE: {
-					if (field.isRepeated()) {
-						StringBuffer json = new StringBuffer()
-							.append("[");
-						boolean first = true;
-						for (Message message : (List<Message>) value) {
-							if (!first) {
-								json.append(",");
-							} else {
-								first = false;
-							}
-							json.append(JsonFormat.printToString(message));
+			if (field.isRepeated() || field.isMapField()) {
+				JSONObject json = new JSONObject(JsonFormat.printToString(t));
+				ps.setString(index, json.get(field.getName()).toString());
+			} else {
+				switch (field.getJavaType()) {
+					case ENUM:
+						if (value instanceof EnumValueDescriptor) {
+							ps.setObject(index, ((EnumValueDescriptor) value).getNumber());
+						} else {
+							ps.setObject(index, Integer.valueOf(value.toString()));
 						}
-						json.append("]");
-						ps.setString(index, json.toString());
-					} else {
+						break;
+					case LONG:
+						ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString()))));
+						break;
+					case MESSAGE:
 						ps.setString(index, JsonFormat.printToString((Message) value));
-					}
-				} break;
-				default: ps.setObject(index, value);
+						break;
+					default:
+						ps.setObject(index, value);
+				}
 			}
 		} else {
 			System.out.println("******************************************Field is null for: " + value);
@@ -160,12 +156,12 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	protected List<T> process(ResultSet rs) throws SQLException {
 		List<T> results = new ArrayList<T>();
 		while (rs.next()) {
-			results.add(parseFromRS(rs));
+			results.add(parseFromResultSet(rs));
 		}
 		return results;
 	}
 	
-	private T parseFromRS(ResultSet rs) throws SQLException {
+	private T parseFromResultSet(ResultSet rs) throws SQLException {
 		ResultSetMetaData rsmd = rs.getMetaData();
 		Message.Builder builder = type.newBuilderForType();
 		for (int i = 1; i <= rsmd.getColumnCount(); i++) {
@@ -177,14 +173,16 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 					if (field == null) {
 						field = descriptor.findFieldByName(columnName.substring(0, columnName.length() - 2));
 					}
-					if (field.getJavaType() == JavaType.ENUM) {
+					if (field.isRepeated() || field.getJavaType() == JavaType.MESSAGE) {
+						JsonFormat.merge("{\"" + field.getName() + "\": " + rs.getString(i) + "}", builder);
+					} else if (field.getJavaType() == JavaType.ENUM) {
 						value = field.getEnumType().findValueByNumber(rs.getInt(i));
 						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.LONG) {
 						value = rs.getTimestamp(i).getTime();
 						builder.setField(field, value);
-					} else if (field.getJavaType() == JavaType.MESSAGE) {
-						JsonFormat.merge("{\"" + field.getName() + "\": " + rs.getString(i) + "}", builder);
+					} else if (field.getJavaType() == JavaType.BYTE_STRING) {
+						builder.setField(field, ByteString.copyFrom(rs.getBytes(i)));
 					} else {
 						builder.setField(field, value);
 					}
@@ -218,7 +216,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 					 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 				int index = 1;
 				for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
-					setObject(ps, index++, entry.getKey(), entry.getValue());
+					setObject(ps, index++, t, entry.getKey(), entry.getValue());
 				}
 				ps.executeUpdate();
 				ResultSet rs = ps.getGeneratedKeys();
@@ -273,7 +271,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 					 PreparedStatement ps = con.prepareStatement(sql)) {
 				int p = 1;
 				for (QueryParam param : params) {
-					setObject(ps, p++, descriptor.findFieldByName(param.getColumn()), param.getValue());
+					setObject(ps, p++, null, descriptor.findFieldByName(param.getColumn()), param.getValue());
 				}
 				ResultSet rs = ps.executeQuery();
 				List<T> results = process(rs);
@@ -341,7 +339,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 						 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 					int index = 1;
 					for (Map.Entry<FieldDescriptor, Object> entry : modified) {
-						setObject(ps, index++, entry.getKey(), entry.getValue());
+						setObject(ps, index++, updated, entry.getKey(), entry.getValue());
 					}
 					ps.setInt(index, id);
 					ps.executeUpdate();

@@ -3,10 +3,12 @@ package com.digitald4.common.server;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
+import com.digitald4.common.proto.DD4Protos;
+import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
-import com.digitald4.common.proto.DD4UIProtos.GeneralDataUI;
+import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.storage.DAOProtoSQLImpl;
 import com.digitald4.common.storage.GenericDAOStore;
 import com.digitald4.common.storage.UserStore;
@@ -31,44 +33,37 @@ import org.json.JSONObject;
 
 
 public class ApiServiceServlet extends HttpServlet {
-	private DBConnector connector;
-	private Map<String, JSONService> services = new HashMap<>();
-	protected UserStore userStore;
-	protected UserService userService;
-	protected ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
-	protected ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
-	protected ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
+	private final DBConnector connector;
+	private final Map<String, JSONService> services = new HashMap<>();
+	protected final GenericDAOStore<GeneralData> generalDataStore;
+	protected final UserStore userStore;
+	protected final UserService userService;
+	protected final GenericDAOStore<DataFile> dataFileStore;
+	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
+	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
+	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
 	private Emailer emailer;
 	
-	public void init() throws ServletException {
-		DBConnector dbConnector = getDBConnector();
+	public ApiServiceServlet() {
+		//ServletContext sc = getServletContext();
+		connector = new DBConnectorThreadPoolImpl(
+				"org.gjt.mm.mysql.Driver", //sc.getInitParameter("dbdriver"),
+				"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true", //sc.getInitParameter("dburl"),
+				"iisosnet_user", //sc.getInitParameter("dbuser"),
+				"getSchooled85" //sc.getInitParameter("dbpass")
+		);
 
-		addService("general_data", new DualProtoService<>(GeneralDataUI.class, new GenericDAOStore<>(
-				new DAOProtoSQLImpl<>(GeneralData.class, dbConnector, null, "general_data"))));
+		generalDataStore = new GenericDAOStore<>(new DAOProtoSQLImpl<>(GeneralData.class, connector, null, "general_data"));
+		addService("general_data", new DualProtoService<>(DD4UIProtos.GeneralData.class, generalDataStore));
 
-		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, dbConnector, "V_USER"));
+		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, connector, "V_USER"));
 		addService("user", userService = new UserService(userStore, requestProvider));
+
+		dataFileStore = new GenericDAOStore<>(new DAOProtoSQLImpl<>(DataFile.class, connector, null, "data_file"));
+		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
 	}
-	
+
 	public DBConnector getDBConnector() throws ServletException {
-		if (connector == null) {
-			synchronized (this) {
-				if (connector == null) {
-					ServletContext sc = getServletContext();
-					try {
-						System.out.println("*********** Loading driver");
-						connector = new DBConnectorThreadPoolImpl(
-								sc.getInitParameter("dbdriver"), 
-								sc.getInitParameter("dburl"), 
-								sc.getInitParameter("dbuser"), 
-								sc.getInitParameter("dbpass"));
-					} catch(Exception e) {
-						System.out.println("****************** error connecting to database ****************");
-						throw new ServletException(e);
-					}
-				}
-			}
-		}
 		return connector;
 	}
 	
@@ -81,7 +76,8 @@ public class ApiServiceServlet extends HttpServlet {
 		return this;
 	}
 
-	protected void processRequest(String entity, String action, JSONObject jsonRequest, HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	protected void processRequest(String entity, String action, JSONObject jsonRequest,
+																HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		requestProvider.set(request);
 		responseProvider.set(response);
 		try {
@@ -94,18 +90,21 @@ public class ApiServiceServlet extends HttpServlet {
 				if (service.requiresLogin(action) && !checkLogin(request, response)) return;
 				json = service.performAction(action, jsonRequest);
 			} catch (Exception e) {
-				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				throw new ServletException(e);
+				/*response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				json = new JSONObject()
 						.put("error", e.getMessage())
 						.put("stackTrace", formatStackTrace(e))
 						.put("requestParams", "" + request.getParameterMap().keySet())
 						.put("jsonRequest", jsonRequest.toString())
 						.put("queryString", request.getQueryString());
-				e.printStackTrace();
+				e.printStackTrace();*/
 			} finally {
-				response.setContentType("application/json");
-				response.setHeader("Cache-Control", "no-cache, must-revalidate");
-				response.getWriter().println(json);
+				if (json != null) {
+					response.setContentType("application/json");
+					response.setHeader("Cache-Control", "no-cache, must-revalidate");
+					response.getWriter().println(json);
+				}
 			}
 		} catch (Exception e) {
 			throw new ServletException(e);
@@ -224,8 +223,9 @@ public class ApiServiceServlet extends HttpServlet {
 						while (value.charAt(pos) >= '<' && value.charAt(pos) <= '>') {
 							pos++;
 						}
+						String col = entry.getKey();
 						parameters.put(new JSONObject()
-								.put("column", entry.getKey())
+								.put("column", col.endsWith("_1") || col.endsWith("_2") ? col.substring(0, col.length() - 2) : col)
 								.put("operan", pos > 0 ? value.substring(0, pos) : "=")
 								.put("value", value.substring(pos)));
 					}
