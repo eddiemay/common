@@ -1,6 +1,6 @@
 package com.digitald4.common.server;
 
-import com.digitald4.common.storage.DAOStore;
+import com.digitald4.common.storage.Store;
 import com.google.protobuf.GeneratedMessage;
 
 import java.util.function.UnaryOperator;
@@ -14,7 +14,7 @@ public class SingleProtoService<T extends GeneratedMessage> extends DualProtoSer
 		}
 	};
 
-	public SingleProtoService(DAOStore<T> store) {
+	public SingleProtoService(Store<T> store) {
 		super(store.getType(), store);
 	}
 

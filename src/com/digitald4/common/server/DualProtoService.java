@@ -9,7 +9,7 @@ import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
-import com.digitald4.common.storage.DAOStore;
+import com.digitald4.common.storage.Store;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -29,7 +29,7 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 		implements ProtoService<T>, JSONService {
 	
 	private final T type;
-	private final DAOStore<I> store;
+	private final Store<I> store;
 	private final Descriptor internalDescriptor;
 	private final Descriptor externalDescriptor;
 	
@@ -78,7 +78,7 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 		}
 	};
 	
-	public DualProtoService(Class<T> c, DAOStore<I> store) {
+	public DualProtoService(Class<T> c, Store<I> store) {
 		try {
 			this.type = (T) c.getMethod("getDefaultInstance").invoke(null);
 		} catch (IllegalAccessException | IllegalArgumentException
@@ -90,7 +90,7 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 		this.internalDescriptor = store.getType().getDescriptorForType();
 	}
 
-	protected DualProtoService(T type, DAOStore<I> store) {
+	protected DualProtoService(T type, Store<I> store) {
 		this.type = type;
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;

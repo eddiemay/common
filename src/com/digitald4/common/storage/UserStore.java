@@ -1,9 +1,7 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4Protos.User.UserType;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
 import com.digitald4.common.util.Calculate;
 
@@ -13,7 +11,7 @@ import java.util.function.UnaryOperator;
 
 import org.joda.time.DateTime;
 
-public class UserStore extends GenericDAOStore<User> {
+public class UserStore extends GenericStore<User> {
 	public UserStore(DAO<User> dao) {
 		super(dao);
 	}

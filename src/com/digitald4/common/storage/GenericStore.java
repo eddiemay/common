@@ -6,11 +6,11 @@ import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-public class GenericDAOStore<T> implements DAOStore<T> {
+public class GenericStore<T> implements Store<T> {
 
 	private final DAO<T> dao;
 	
-	public GenericDAOStore(DAO<T> dao) {
+	public GenericStore(DAO<T> dao) {
 		this.dao = dao;
 	}
 	

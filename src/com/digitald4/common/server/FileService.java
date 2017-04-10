@@ -4,7 +4,7 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
-import com.digitald4.common.storage.DAOStore;
+import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.ByteString;
 import org.json.JSONObject;
@@ -27,11 +27,11 @@ import javax.servlet.http.Part;
 public class FileService implements JSONService {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
-	private final DAOStore<DataFile> dataFileStore;
+	private final Store<DataFile> dataFileStore;
 	private final Provider<HttpServletRequest> requestProvider;
 	private final Provider<HttpServletResponse> responseProvider;
 
-	public FileService(DAOStore<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
+	public FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
 										 Provider<HttpServletResponse> responseProvider) {
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;

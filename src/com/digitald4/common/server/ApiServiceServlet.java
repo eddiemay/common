@@ -3,14 +3,14 @@ package com.digitald4.common.server;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
 import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.storage.DAOProtoSQLImpl;
-import com.digitald4.common.storage.GenericDAOStore;
+import com.digitald4.common.storage.GeneralDataStore;
+import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Pair;
@@ -35,10 +35,10 @@ import org.json.JSONObject;
 public class ApiServiceServlet extends HttpServlet {
 	private final DBConnectorThreadPoolImpl connector;
 	private final Map<String, JSONService> services = new HashMap<>();
-	protected final GenericDAOStore<GeneralData> generalDataStore;
+	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
 	protected final UserService userService;
-	protected final GenericDAOStore<DataFile> dataFileStore;
+	protected final GenericStore<DataFile> dataFileStore;
 	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
@@ -47,13 +47,13 @@ public class ApiServiceServlet extends HttpServlet {
 	public ApiServiceServlet() {
 		connector = new DBConnectorThreadPoolImpl();
 
-		generalDataStore = new GenericDAOStore<>(new DAOProtoSQLImpl<>(GeneralData.class, connector, null, "general_data"));
+		generalDataStore = new GeneralDataStore(new DAOProtoSQLImpl<>(GeneralData.class, connector, null, "general_data"));
 		addService("general_data", new DualProtoService<>(DD4UIProtos.GeneralData.class, generalDataStore));
 
 		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, connector, "V_USER"));
 		addService("user", userService = new UserService(userStore, requestProvider));
 
-		dataFileStore = new GenericDAOStore<>(new DAOProtoSQLImpl<>(DataFile.class, connector, null, "data_file"));
+		dataFileStore = new GenericStore<>(new DAOProtoSQLImpl<>(DataFile.class, connector, null, "data_file"));
 		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
 	}
 
