@@ -1,0 +1,18 @@
+<span>
+  <label data-ng-if="$ctrl.label">{{$ctrl.label}}</label>
+  <input data-ng-if="$ctrl.type == 'TEXT'" type="text" data-ng-model="$ctrl.ngModel" data-on-change="$ctrl.onChange()"/>
+  <input data-ng-if="$ctrl.type == 'ACK_TEXT'" type="checkbox" data-ng-model="$ctrl.ack"/>
+  <input data-ng-if="$ctrl.type == 'ACK_TEXT'" data-ng-show="$ctrl.ack" type="text" data-ng-model="$ctrl.ngModel"
+         data-on-change="$ctrl.onChange()"/>
+  <dd4-multi-check data-ng-if="$ctrl.type == 'MULTI_CHECK'"
+                   data-options="$ctrl.options" data-ng-model="$ctrl.ngModel" data-on-update="$ctrl.onChange()">
+  </dd4-multi-check>
+  <div data-ng-if="$ctrl.type == 'RADIO'">
+      <span data-ng-repeat="option in $ctrl.options">
+      <input type="radio" name="{{$ctrl.name}}" value="{{option.id}}" data-ng-model="$ctrl.ngModel"
+             data-on-change="$ctrl.onChange()"/>{{option.name}}
+    </span>
+  </div>
+  <textarea data-ng-if="$ctrl.type == 'TEXTAREA'" data-ng-model="$ctrl.ngModel" data-on-change="$ctrl.onChange()">
+  </textarea>
+</span>

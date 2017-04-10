@@ -4,13 +4,79 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .service('userService', com.digitald4.common.UserService)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .controller('LoginCtrl', com.digitald4.common.LoginCtrl)
-    .controller('UserCtrl', com.digitald4.common.UserCtrl);
+    .controller('UserCtrl', com.digitald4.common.UserCtrl)
+    .component('dd4Input', {
+      templateUrl: 'js/html/dd4input.html',
+      controller: function() {
+        if (this.ngModel) {
+          this.ack = true;
+        }
+      },
+      bindings: {
+        label: '@',
+        type: '@',
+        name: '@',
+        options: '<',
+        ngModel: '=',
+        onChange: '&'
+      }
+    })
+    .directive('dd4Time', function() {
+      return {
+        restrict: 'E',
+        scope: {
+          label: '@',
+          ngModel: '=',
+          onUpdate: '&'
+        },
+        template: '<span><label data-ng-if="$ctrl.label">{{$ctrl.label}}</label>'
+            + '<input type="text" value="{{ngModel | date:\'HH:mm\'}}" data-on-change="handleChange()" size="5"></span>',
+        link: function(scope, element, attrs) {
+          var textField = $('input', element);
+          scope.handleChange = function() {
+            scope.$parent.$eval(attrs.ngModel + ' = ' + new Date('01/01/1979 ' + textField.val()).getTime());
+            scope.onUpdate();
+          };
+        }
+      };
+    })
+    .directive('dd4MultiCheck', function($compile) {
+      return {
+        restrict: 'E',
+        scope: {
+          label: '@',
+          options: '<',
+          ngModel: '=',
+          onUpdate: '&'
+        },
+        template: '<span><label data-ng-if="label">{{label}}</label>'
+            + '  <span data-ng-repeat="option in options">'
+            + '    <input type="checkbox" data-ng-model="option.selected" data-ng-change="handleChange()"/>{{option.name}}'
+            + '</span></span>',
+        link: function(scope, element, attrs) {
+          scope.$watch('ngModel', function(selected) {
+            for (var i = 0; i < scope.options.length; i++) {
+              scope.options[i].selected = selected.indexOf(scope.options[i].id) >= 0;
+            }
+          });
+          scope.handleChange = function() {
+            scope.$parent.$eval(attrs.ngModel + ' = []');
+            var selected = scope.$parent.$eval(attrs.ngModel);
+            for (var i = 0; i < scope.options.length; i++) {
+              if (scope.options[i].selected) {
+                selected.push(scope.options[i].id);
+              }
+            }
+            scope.onUpdate();
+          };
+        }
+      }
+    });
 
 com.digitald4.common.module.directive('onChange', function() {
   return function(scope, element, attrs) {
   	var startingValue = element.val();
   	element.bind('blur', function() {
-  		// console.log('evaluating: ' + startingValue + ' vs ' + element.val());
   		if (startingValue != element.val()) {
   			scope.$apply(attrs.onChange);
   			startingValue = element.val();
@@ -34,6 +100,7 @@ com.digitald4.common.module.directive('dd4Address', function($compile) {
   return {
     restrict: 'AE',
     scope: {
+      label: '@',
       ngModel: '='
     },
     template: '<span><label data-ng-if="label">{{label}}</label>' +
@@ -46,7 +113,7 @@ com.digitald4.common.module.directive('dd4Address', function($compile) {
 
       if (typeof(google) != 'undefined') {
         google.maps.event.addDomListener(window, 'load', addMapAutoComplete(textField[0], function(place) {
-          if (typeof(gpsAdress) == 'undefined') {
+          if (typeof(gpsAddress) == 'undefined') {
             scope.$parent.$eval(attrs.ngModel + ' = {}');
             gpsAddress = scope.$parent.$eval(attrs.ngModel);
           }
@@ -177,30 +244,6 @@ com.digitald4.common.module.directive('dd4Timepicker', function($compile) {
       $compile(textField)(scope.$parent);
     }
   }
-});
-
-com.digitald4.common.module.directive('myDirective', function($compile) {
-  return {
-    restrict: 'AE',
-    scope: {
-      ngModel: '='
-    },
-    template: '<div class="some"><label for="{{id}}">{{label}}</label>' +
-      '<input id="{{id}}" ng-model="value"></div>',
-    replace: true,
-    require: 'ngModel',
-    link: function($scope, elem, attr, ctrl) {
-      $scope.label = attr.ngModel;
-      $scope.id = attr.ngModel;
-      console.debug(attr.ngModel);
-      console.debug($scope.$parent.$eval(attr.ngModel));
-      var textField = $('input', elem).
-        attr('ng-model', attr.ngModel).
-        val($scope.$parent.$eval(attr.ngModel));
-
-      $compile(textField)($scope.$parent);
-    }
-  };
 });
 
 com.digitald4.common.module.controller('TableCtrl', com.digitald4.common.TableCtrl);

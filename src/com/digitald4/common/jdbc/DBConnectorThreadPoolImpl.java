@@ -11,9 +11,16 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 
 public class DBConnectorThreadPoolImpl implements DBConnector {
 	
-	private final PoolingDataSource dataSource;
+	private PoolingDataSource dataSource;
+
+	public DBConnectorThreadPoolImpl() {
+	}
 	
 	public DBConnectorThreadPoolImpl(String dbDriver, String url, String user, String password) {
+		connect(dbDriver, url, user, password);
+	}
+
+	public void connect(String dbDriver, String url, String user, String password) {
 		//
 		// First, we'll need a ObjectPool that serves as the
 		// actual pool of connections.
@@ -52,7 +59,6 @@ public class DBConnectorThreadPoolImpl implements DBConnector {
 		// passing in the object pool we created.
 		//
 		dataSource = new PoolingDataSource(connectionPool);
-
 	}
 
 	@Override

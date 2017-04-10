@@ -33,7 +33,7 @@ import org.json.JSONObject;
 
 
 public class ApiServiceServlet extends HttpServlet {
-	private final DBConnector connector;
+	private final DBConnectorThreadPoolImpl connector;
 	private final Map<String, JSONService> services = new HashMap<>();
 	protected final GenericDAOStore<GeneralData> generalDataStore;
 	protected final UserStore userStore;
@@ -45,13 +45,7 @@ public class ApiServiceServlet extends HttpServlet {
 	private Emailer emailer;
 	
 	public ApiServiceServlet() {
-		//ServletContext sc = getServletContext();
-		connector = new DBConnectorThreadPoolImpl(
-				"org.gjt.mm.mysql.Driver", //sc.getInitParameter("dbdriver"),
-				"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true", //sc.getInitParameter("dburl"),
-				"iisosnet_user", //sc.getInitParameter("dbuser"),
-				"getSchooled85" //sc.getInitParameter("dbpass")
-		);
+		connector = new DBConnectorThreadPoolImpl();
 
 		generalDataStore = new GenericDAOStore<>(new DAOProtoSQLImpl<>(GeneralData.class, connector, null, "general_data"));
 		addService("general_data", new DualProtoService<>(DD4UIProtos.GeneralData.class, generalDataStore));
@@ -61,6 +55,14 @@ public class ApiServiceServlet extends HttpServlet {
 
 		dataFileStore = new GenericDAOStore<>(new DAOProtoSQLImpl<>(DataFile.class, connector, null, "data_file"));
 		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
+	}
+
+	public void init() {
+		ServletContext sc = getServletContext();
+		connector.connect(sc.getInitParameter("dbdriver"),
+				sc.getInitParameter("dburl"),
+				sc.getInitParameter("dbuser"),
+				sc.getInitParameter("dbpass"));
 	}
 
 	public DBConnector getDBConnector() throws ServletException {
@@ -89,9 +91,8 @@ public class ApiServiceServlet extends HttpServlet {
 				}
 				if (service.requiresLogin(action) && !checkLogin(request, response)) return;
 				json = service.performAction(action, jsonRequest);
-			} catch (Exception e) {
-				throw new ServletException(e);
-				/*response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			/*} catch (Exception e) {
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				json = new JSONObject()
 						.put("error", e.getMessage())
 						.put("stackTrace", formatStackTrace(e))

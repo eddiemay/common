@@ -29,6 +29,7 @@ package com.googlecode.protobuf.format;
 */
 
 
+import com.sun.xml.internal.xsom.impl.scd.Iterators;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
@@ -44,12 +45,14 @@ import java.util.regex.Pattern;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.MapEntry;
 import com.google.protobuf.Message;
 import com.google.protobuf.UnknownFieldSet;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumDescriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import java.util.stream.Collectors;
 
 /**
  * Provide ascii text parsing and formatting support for proto2 instances. The implementation
@@ -171,7 +174,18 @@ public class JsonFormat {
         }
 
 
-        if (field.isRepeated()) {
+        if (field.isMapField()) {
+					generator.print("{");
+					for (Iterator<?> iter = ((List<?>) value).iterator(); iter.hasNext();) {
+						MapEntry<?, ?> mapEntry = (MapEntry<?, ?>) iter.next();
+						generator.print(mapEntry.getKey() + ": ");
+						printFieldValue(mapEntry.getDescriptorForType().findFieldByName("value"), mapEntry.getValue(), generator);
+						if (iter.hasNext()) {
+							generator.print(", ");
+						}
+					}
+					generator.print("}");
+				} else if (field.isRepeated()) {
             // Repeated field. Print each element.
             generator.print("[");
             for (Iterator<?> iter = ((List<?>) value).iterator(); iter.hasNext();) {
@@ -190,7 +204,7 @@ public class JsonFormat {
     }
 
     private static void printFieldValue(FieldDescriptor field, Object value, JsonGenerator generator) throws IOException {
-        switch (field.getType()) {
+    		switch (field.getType()) {
             case INT32:
             case INT64:
             case SINT32:
@@ -970,6 +984,31 @@ public class JsonFormat {
         }
     }
 
+	/**
+	 * Parse a single field from {@code tokenizer} and merge it into {@code builder}. If a ',' is
+	 * detected after the field ends, the next field will be parsed automatically
+	 */
+	protected static void handleMapValue(Tokenizer tokenizer,
+																			ExtensionRegistry extensionRegistry,
+																			MapEntry.Builder builder) throws ParseException {
+		Descriptor type = builder.getDescriptorForType();
+		FieldDescriptor field = type.findFieldByNumber(2);
+		ExtensionRegistry.ExtensionInfo extension = null;
+		boolean unknown = false;
+
+		tokenizer.consume(":");
+		boolean array = tokenizer.tryConsume("[");
+
+		if (array) {
+			while (!tokenizer.tryConsume("]")) {
+				handleValue(tokenizer, extensionRegistry, builder, field, extension, unknown);
+				tokenizer.tryConsume(",");
+			}
+		} else {
+			handleValue(tokenizer, extensionRegistry, builder, field, extension, unknown);
+		}
+	}
+
     private static void handleMissingField(Tokenizer tokenizer,
                                            ExtensionRegistry extensionRegistry,
                                            Message.Builder builder) throws ParseException {
@@ -1013,17 +1052,19 @@ public class JsonFormat {
                                     boolean unknown) throws ParseException {
 
         Object value = null;
-        if (field.getJavaType() == FieldDescriptor.JavaType.MESSAGE) {
+        if (field.isMapField()) {
+						handleMap(tokenizer, extensionRegistry, builder, field);
+				} else if (field.getJavaType() == FieldDescriptor.JavaType.MESSAGE) {
             value = handleObject(tokenizer, extensionRegistry, builder, field, extension, unknown);
         } else {
             value = handlePrimitive(tokenizer, field);
         }
         if (value != null) {
-            if (field.isRepeated()) {
-                builder.addRepeatedField(field, value);
-            } else {
-                builder.setField(field, value);
-            }
+						if (field.isRepeated()) {
+								builder.addRepeatedField(field, value);
+						} else {
+								builder.setField(field, value);
+						}
         }
     }
 
@@ -1149,6 +1190,40 @@ public class JsonFormat {
 
         return subBuilder.build();
     }
+
+	private static void handleMap(Tokenizer tokenizer,
+																		 ExtensionRegistry extensionRegistry,
+																		 Message.Builder builder,
+																		 FieldDescriptor field) throws ParseException {
+
+		tokenizer.consume("{");
+		String endToken = "}";
+
+		while (!tokenizer.tryConsume(endToken)) {
+			if (tokenizer.atEnd()) {
+				throw tokenizer.parseException("Expected \"" + endToken + "\".");
+			}
+
+			List<MapEntry> list = ((List<MapEntry>) builder.getField(field))
+					.stream()
+					.collect(Collectors.toList());
+			String key = tokenizer.consumeIdentifier();
+			MapEntry.Builder subBuilder = (MapEntry.Builder) builder.newBuilderForField(field);
+			subBuilder.setKey(key);
+			handleMapValue(tokenizer, extensionRegistry, subBuilder);
+			boolean found = false;
+			for (int i = 0; i < list.size(); i++) {
+				if (list.get(i).getKey().toString().equals(key)) {
+					builder.setRepeatedField(field, i, subBuilder.build());
+					found = true;
+				}
+			}
+			if (!found) {
+				builder.addRepeatedField(field, subBuilder.build());
+			}
+			tokenizer.tryConsume(",");
+		}
+	}
 
     // =================================================================
     // Utility functions
