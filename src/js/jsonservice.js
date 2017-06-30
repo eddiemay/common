@@ -17,14 +17,14 @@ com.digitald4.common.JSONService.prototype.service;
  * @param {!function(!Object)} success The call back function to call after a successful submission.
  * @param {!function(!Object)} error The call back function to call after a submission error.
  */
-com.digitald4.common.JSONService.prototype.performRequest = function(method, requestParams, body, success, error) {
+com.digitald4.common.JSONService.prototype.performRequest = function(method, requestParams, request, success, error) {
   var url = [];
   var id;
   if (typeof(requestParams) == 'object') {
     for (var prop in requestParams) {
       if (prop == 'id') {
         id = requestParams[prop];
-      } else {
+      } else if (requestParams[prop]) {
         url.push(prop.indexOf('_id') == -1 ? prop : prop.substring(0, prop.length - 3) + 's');
         url.push(requestParams[prop]);
       }
@@ -36,12 +36,13 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, req
   if (id) {
     url.push(id);
   }
+  var customAction = undefined;
   if (typeof(method) == 'object') {
-    url.push(method[0]);
+    customAction = method[0];
     method = method[1] || 'GET';
   }
 
-  this.apiConnector.performRequest(method, url.join('/'), body, success, error);
+  this.apiConnector.performRequest(method, url.join('/') + (customAction ? ':' + customAction : ''), request, success, error);
 };
 
 com.digitald4.common.JSONService.prototype.get = function(id, success, error) {

@@ -5,10 +5,6 @@ com.digitald4.common.ApiConnector = function($http, $httpParamSerializer, sessio
 	this.sessionWatcher = sessionWatcher;
 };
 
-com.digitald4.common.ApiConnector.prototype.baseUrl;
-com.digitald4.common.ApiConnector.prototype.$http;
-com.digitald4.common.ApiConnector.prototype.$httpParamSerializer;
-
 com.digitald4.common.ApiConnector.prototype.performRequest =
 		function(method, url, params, successCallback, errorCallback) {
   this.sessionWatcher.extendTime();

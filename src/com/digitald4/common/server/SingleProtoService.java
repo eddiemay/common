@@ -1,18 +1,12 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.storage.Store;
-import com.google.protobuf.GeneratedMessage;
-
+import com.google.protobuf.GeneratedMessageV3;
 import java.util.function.UnaryOperator;
 
-public class SingleProtoService<T extends GeneratedMessage> extends DualProtoService<T, T> {
+public class SingleProtoService<T extends GeneratedMessageV3> extends DualProtoService<T, T> {
 
-	private final UnaryOperator<T> converter = new UnaryOperator<T>() {
-		@Override
-		public T apply(T t) {
-			return t;
-		}
-	};
+	private final UnaryOperator<T> converter = t -> t;
 
 	public SingleProtoService(Store<T> store) {
 		super(store.getType(), store);

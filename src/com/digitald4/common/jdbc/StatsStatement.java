@@ -39,7 +39,7 @@ public class StatsStatement implements Statement,StatsSQL {
 	}
 	
 	public long getExecutionTime(){
-		return getExecutionEndTime()-getExecutionStartTime();
+		return getExecutionEndTime() - getExecutionStartTime();
 	}
 	
 	public long getCloseTime(){
@@ -47,11 +47,11 @@ public class StatsStatement implements Statement,StatsSQL {
 	}
 	
 	public long getResultSetTime(){
-		return getCloseTime()-getExecutionEndTime();
+		return getCloseTime() - getExecutionEndTime();
 	}
 	
 	public long getTotalTime(){
-		return getCloseTime()-getInitTime();
+		return getCloseTime() - getInitTime();
 	}
 
 	@Override

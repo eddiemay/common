@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package common;
+
+option java_package = "com.digitald4.common.proto";
+option java_outer_classname = "DD4Protos";
+
+message GeneralData {
+	int32 id = 1;
+	int32 group_id = 2;
+	int32 in_group_id = 3;
+	string name = 4;
+	double rank = 5;
+	bool active = 6;
+	string description = 7;
+	string data = 8;
+}
+
+message DataFile {
+	int32 id = 1;
+  string name = 2;
+	string type = 3;
+	int32 size = 4;
+	bytes data = 5;
+}
+
+message User {
+	int32 id = 1;
+
+	enum UserType {
+		UNSPECIFIED = 0;
+		ADMIN = 1;
+		STANDARD = 2;
+	}
+	UserType type = 2;
+	string user_name = 3;
+	string email = 4;
+	string first_name = 5;
+	string last_name = 6;
+  string full_name = 7;
+	bool disabled = 8;
+	bool read_only = 9;
+	string notes = 10;
+	int64 last_login = 11;
+
+  // This should not be put into the UI model.
+  string password = 12;
+}
+
+message Company {
+  string name = 1;
+  string website = 2;
+  string slogan = 3;
+  string description = 4;
+  string ipAddress = 5;
+  string email = 6;
+  string paypal = 7;
+  string statCounterID = 8;
+  string statCounterPart = 9;
+  string container = 10;
+  string address = 11;
+  string phone = 12;
+  string fax = 13;
+  string reportFooter = 14;
+}

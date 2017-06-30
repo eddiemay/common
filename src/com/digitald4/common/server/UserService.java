@@ -12,9 +12,6 @@ import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 
-/**
- * Created by eddiemay on 9/24/16.
- */
 public class UserService extends DualProtoService<DD4UIProtos.User, DD4Protos.User> {
 
 	private final UserStore userStore;
@@ -48,10 +45,9 @@ public class UserService extends DualProtoService<DD4UIProtos.User, DD4Protos.Us
 	public Object performAction(String action, JSONObject jsonRequest)
 			throws DD4StorageException, JSONException, ParseException {
 		switch (action) {
-			case "active": return JSONService.convertToJSON(getActive());
-			case "login": return JSONService.convertToJSON(login(
-					JSONService.transformJSONRequest(LoginRequest.getDefaultInstance(), jsonRequest)));
-			case "logout": return JSONService.convertToJSON(logout());
+			case "active": return convertToJSON(getActive());
+			case "login": return convertToJSON(login(transformJSONRequest(LoginRequest.getDefaultInstance(), jsonRequest)));
+			case "logout": return convertToJSON(logout());
 			default: return super.performAction(action, jsonRequest);
 		}
 	}

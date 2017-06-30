@@ -2,7 +2,7 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Calculate;
 
 import java.security.NoSuchAlgorithmException;
@@ -18,12 +18,12 @@ public class UserStore extends GenericStore<User> {
 	
 	public User getBy(String login, String password) throws DD4StorageException {
 		List<User> users = get(
-				QueryParam.newBuilder()
+				Filter.newBuilder()
 						.setColumn(login.contains("@") ? "email" : "user_name")
 						.setOperan("=")
 						.setValue(login)
 						.build(),
-				QueryParam.newBuilder()
+				Filter.newBuilder()
 						.setColumn("password")
 						.setOperan("=")
 						.setValue(encodePassword(password))

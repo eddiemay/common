@@ -23,18 +23,18 @@ import java.util.concurrent.Executor;
 
 public class StatsConnection implements Connection {
 	private Connection con;
-	private Hashtable<String,StatsSQLImp> statementHash = new Hashtable<String,StatsSQLImp>();
+	private Hashtable<String,StatsSQLImpl> statementHash = new Hashtable<String,StatsSQLImpl>();
 	
 	public void addStatement(StatsSQL tSQL){
 		String sql = tSQL.getSQL();
-		StatsSQLImp set = statementHash.get(sql);
+		StatsSQLImpl set = statementHash.get(sql);
 		if(set == null){
-			set = new StatsSQLImp(sql);
+			set = new StatsSQLImpl(sql);
 			statementHash.put(sql,set);
 		}
 		set.processStatement(tSQL);
 	}
-	public Collection<StatsSQLImp> getTimedSQLStatements(){
+	public Collection<StatsSQLImpl> getTimedSQLStatements(){
 		return statementHash.values();
 	}
 	

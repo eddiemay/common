@@ -1,8 +1,5 @@
 package com.digitald4.common.server;
 
-import static com.digitald4.common.server.JSONService.convertToJSON;
-import static com.digitald4.common.server.JSONService.transformJSONRequest;
-
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
@@ -14,6 +11,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import com.googlecode.protobuf.format.JsonFormat.ParseException;
@@ -23,9 +21,12 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
-public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMessage>
+public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedMessageV3>
 		implements ProtoService<T>, JSONService {
 	
 	private final T type;
@@ -106,7 +107,12 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 	}
 
 	@Override
-	public T create(CreateRequest request) throws DD4StorageException {
+	public JSONObject create(JSONObject jsonRequest) {
+		return convertToJSON(create(transformJSONRequest(CreateRequest.getDefaultInstance(), jsonRequest)));
+	}
+
+	@Override
+	public T create(CreateRequest request) {
 		Message.Builder builder = type.toBuilder();
 		try {
 			JsonFormat.merge(request.getProto(), builder);
@@ -117,13 +123,28 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 	}
 
 	@Override
-	public T get(GetRequest request) throws DD4StorageException {
+	public JSONObject get(JSONObject jsonRequest) {
+		return convertToJSON(get(transformJSONRequest(GetRequest.getDefaultInstance(), jsonRequest)));
+	}
+
+	@Override
+	public T get(GetRequest request) {
 		return getConverter().apply(store.get(request.getId()));
 	}
 
 	@Override
+	public JSONArray list(JSONObject jsonRequest) {
+		return convertToJSON(list(transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
+	}
+
+	@Override
 	public List<T> list(ListRequest request) throws DD4StorageException {
-		return store.get(request.getQueryParamList()).stream().map(getConverter()).collect(Collectors.toList());
+		return store.get(request.getFilterList()).stream().map(getConverter()).collect(Collectors.toList());
+	}
+
+	@Override
+	public JSONObject update(JSONObject jsonRequest) {
+		return convertToJSON(update(transformJSONRequest(UpdateRequest.getDefaultInstance(), jsonRequest)));
 	}
 
 	@Override
@@ -143,7 +164,12 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 	}
 
 	@Override
-	public boolean delete(DeleteRequest request) throws DD4StorageException {
+	public boolean delete(JSONObject jsonRequest) {
+		return delete(transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest));
+	}
+
+	@Override
+	public boolean delete(DeleteRequest request) {
 		return store.delete(request.getId());
 	}
 
@@ -151,15 +177,15 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 	public Object performAction(String action, JSONObject jsonRequest) throws DD4StorageException, ParseException {
 		switch (action) {
 			case "create":
-				return convertToJSON(create(transformJSONRequest(CreateRequest.getDefaultInstance(), jsonRequest)));
+				return create(jsonRequest);
 			case "get":
-				return convertToJSON(get(transformJSONRequest(GetRequest.getDefaultInstance(), jsonRequest)));
+				return get(jsonRequest);
 			case "list":
-				return convertToJSON(list(transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
+				return list(jsonRequest);
 			case "update":
-				return convertToJSON(update(transformJSONRequest(UpdateRequest.getDefaultInstance(), jsonRequest)));
+				return update(jsonRequest);
 			case "delete":
-				return convertToJSON(delete(transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest)));
+				return delete(jsonRequest);
 			default:
 				throw new DD4StorageException("Invalid action: " + action);
 		}
@@ -167,5 +193,36 @@ public class DualProtoService<T extends GeneratedMessage, I extends GeneratedMes
 
 	public boolean requiresLogin(String action) {
 		return true;
+	}
+
+	public static <R extends Message> R transformJSONRequest(R msgRequest, HttpServletRequest request) {
+		return transformJSONRequest(msgRequest, new JSONObject(request.getParameterMap().values().iterator().next()[0]));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <R extends Message> R transformJSONRequest(R msgRequest, JSONObject json) {
+		R.Builder builder = msgRequest.toBuilder();
+		try {
+			JsonFormat.merge(json.toString(), builder);
+		} catch (ParseException e) {
+			throw new RuntimeException(e);
+		}
+		return (R) builder.build();
+	}
+
+	public static JSONArray convertToJSON(List<? extends Message> items) {
+		JSONArray array = new JSONArray();
+		for (Message item : items) {
+			array.put(convertToJSON(item));
+		}
+		return array;
+	}
+
+	public static JSONObject convertToJSON(Message item) {
+		return new JSONObject(JsonFormat.printToString(item));
+	}
+
+	public static JSONObject convertToJSON(boolean bool) throws JSONException {
+		return new JSONObject(bool);
 	}
 }

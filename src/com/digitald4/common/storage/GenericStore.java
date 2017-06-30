@@ -1,7 +1,7 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 
 import java.util.List;
 import java.util.function.UnaryOperator;
@@ -40,12 +40,12 @@ public class GenericStore<T> implements Store<T> {
 	}
 	
 	@Override
-	public List<T> get(QueryParam... params) throws DD4StorageException {
+	public List<T> get(Filter... params) throws DD4StorageException {
 		return dao.get(params);
 	}
 	
 	@Override
-	public List<T> get(List<QueryParam> params) throws DD4StorageException {
+	public List<T> get(List<Filter> params) throws DD4StorageException {
 		return dao.get(params);
 	}
 	

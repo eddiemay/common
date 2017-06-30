@@ -29,6 +29,7 @@ package com.googlecode.protobuf.format;
 */
 
 
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.sun.xml.internal.xsom.impl.scd.Iterators;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -1209,7 +1210,12 @@ public class JsonFormat {
 					.collect(Collectors.toList());
 			String key = tokenizer.consumeIdentifier();
 			MapEntry.Builder subBuilder = (MapEntry.Builder) builder.newBuilderForField(field);
-			subBuilder.setKey(key);
+			FieldDescriptor keyField = subBuilder.getDescriptorForType().findFieldByName("key");
+			if (keyField.getJavaType() == JavaType.INT) {
+				subBuilder.setKey(Integer.parseInt(key));
+			} else {
+				subBuilder.setKey(key);
+			}
 			handleMapValue(tokenizer, extensionRegistry, subBuilder);
 			boolean found = false;
 			for (int i = 0; i < list.size(); i++) {

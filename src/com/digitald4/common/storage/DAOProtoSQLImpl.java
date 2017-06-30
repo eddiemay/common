@@ -2,15 +2,15 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnector;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
-import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.json.JSONObject;
 
-public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
+public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
 	private static final String SELECT_SQL = "SELECT * FROM {TABLE} WHERE id=?;";
 	private static final String UPDATE_SQL = "UPDATE {TABLE} SET {SETS} WHERE id=?;";
@@ -91,17 +91,17 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 	}
 	
 	@Override
-	public List<T> get(QueryParam... params) throws DD4StorageException {
-		List<QueryParam> list = new ArrayList<>();
-		for (QueryParam param : params) {
-			list.add(param);
+	public List<T> get(Filter... filters) throws DD4StorageException {
+		List<Filter> list = new ArrayList<>();
+		for (Filter filter : filters) {
+			list.add(filter);
 		}
 		return get(list);
 	}
 	
 	@Override
-	public List<T> get(List<QueryParam> params) {
-		return GET_COLL_FUNC.applyWithRetries(params);
+	public List<T> get(List<Filter> filters) {
+		return GET_COLL_FUNC.applyWithRetries(filters);
 	}
 	
 	@Override
@@ -251,27 +251,27 @@ public class DAOProtoSQLImpl<T extends GeneratedMessage> implements DAO<T> {
 		}
 	};
 
-	private final RetryableFunction<List<QueryParam>, List<T>> GET_COLL_FUNC =
-			new RetryableFunction<List<QueryParam>, List<T>>() {
+	private final RetryableFunction<List<Filter>, List<T>> GET_COLL_FUNC =
+			new RetryableFunction<List<Filter>, List<T>>() {
 		@Override
-		public List<T> apply(List<QueryParam> params) {
+		public List<T> apply(List<Filter> filters) {
 			String columns = "";
-			for (QueryParam param : params) {
+			for (Filter filter : filters) {
 				if (columns.length() > 0) {
 					columns += " AND ";
 				}
-				columns += param.getColumn() + " " + param.getOperan() + " ?";
+				columns += filter.getColumn() + " " + filter.getOperan() + " ?";
 			}
 			String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", getView())
 					.replaceAll("\\{COLUMNS\\}", columns);
-			if (params.size() == 0) {
+			if (filters.size() == 0) {
 				sql = sql.replaceAll(" WHERE ", "");
 			}
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql)) {
 				int p = 1;
-				for (QueryParam param : params) {
-					setObject(ps, p++, null, descriptor.findFieldByName(param.getColumn()), param.getValue());
+				for (Filter filter : filters) {
+					setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 				}
 				ResultSet rs = ps.executeQuery();
 				List<T> results = process(rs);

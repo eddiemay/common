@@ -10,7 +10,7 @@ import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.google.protobuf.GeneratedMessage;
 
-public interface ProtoService<T extends GeneratedMessage> {
+public interface ProtoService<T> {
 
 	T create(CreateRequest request) throws DD4StorageException;
 	
@@ -21,4 +21,6 @@ public interface ProtoService<T extends GeneratedMessage> {
 	T update(UpdateRequest request) throws DD4StorageException;
 	
 	boolean delete(DeleteRequest request) throws DD4StorageException;
+
+	boolean requiresLogin(String action);
 }

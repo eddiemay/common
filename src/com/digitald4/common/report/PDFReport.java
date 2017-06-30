@@ -1,8 +1,7 @@
 package com.digitald4.common.report;
 
-import java.io.ByteArrayOutputStream;
-
-import com.digitald4.common.model.Company;
+import com.digitald4.common.proto.DD4Protos.Company;
+import com.digitald4.common.util.Provider;
 import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -14,10 +13,13 @@ import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
+import java.io.ByteArrayOutputStream;
 
 public abstract class PDFReport {
 	private Image logo;
-	public PDFReport() {
+	private final Provider<Company> companyProvider;
+	public PDFReport(Provider<Company> companyProvider) {
+		this.companyProvider = companyProvider;
 	}
 	
 	public abstract String getTitle();
@@ -75,7 +77,7 @@ public abstract class PDFReport {
 	}
 	
 	public Company getCompany() {
-		return Company.get();
+		return companyProvider.get();
 	}
 	
 	public Paragraph getReportTitle() {

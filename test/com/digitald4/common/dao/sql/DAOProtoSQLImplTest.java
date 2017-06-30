@@ -11,7 +11,7 @@ import org.junit.Test;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.QueryParam;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 
 public class DAOProtoSQLImplTest {
 
@@ -31,12 +31,12 @@ public class DAOProtoSQLImplTest {
 		try {
 			user = dao.create(user);
 			List<User> users = dao.get(
-					QueryParam.newBuilder()
+					Filter.newBuilder()
 							.setColumn("last_login")
 							.setOperan(">")
 							.setValue(String.valueOf(new DateTime("2005-06-02").getMillis()))
 							.build(),
-					QueryParam.newBuilder()
+					Filter.newBuilder()
 							.setColumn("last_login")
 							.setOperan(">")
 							.setValue(String.valueOf(new DateTime("2005-07-11").getMillis()))

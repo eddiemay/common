@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package common;
+
+option java_package = "com.digitald4.common.proto";
+option java_outer_classname = "DD4UIProtos";
+
+enum DateRange {
+  UNSPECIFIED = 0;
+  DAY = 1;
+  WEEK = 2;
+  MONTH = 3;
+  CAL_MONTH = 4;
+  YEAR = 5;
+}
+
+message GPSAddress {
+  string address = 1;
+	double latitude = 2;
+	double longitude = 3;
+	string unit = 4;
+}
+
+message DataFile {
+  int32 id = 1;
+  string name = 2;
+  string type = 3;
+  int32 size = 4;
+}
+
+message GetRequest {
+	int32 id = 1;
+}
+
+message ListRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+	message Filter {
+		string column = 1;
+    string operan = 2;
+    string value = 3;
+	}
+	repeated Filter filter = 3;
+  message OrderBy {
+    string column = 1;
+    bool desc = 2;
+  }
+  repeated OrderBy order_by = 4;
+}
+
+message ListResponse {
+  repeated string items = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+message CreateRequest {
+	string proto = 1;
+}
+
+message UpdateRequest {
+	int32 id = 1;
+  string proto = 2;
+}
+
+message DeleteRequest {
+	int32 id = 1;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message User {
+  int32 id = 1;
+
+	enum UserType {
+		UNSPECIFIED = 0;
+		ADMIN = 1;
+		STANDARD = 2;
+	}
+	UserType type = 2;
+	string user_name = 3;
+	string email = 4;
+	string first_name = 5;
+	string last_name = 6;
+  string full_name = 7;
+	bool disabled = 8;
+	bool read_only = 9;
+	string notes = 10;
+	int64 last_login = 11;
+}

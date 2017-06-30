@@ -7,7 +7,6 @@ import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
-import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.storage.DAOProtoSQLImpl;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.digitald4.common.storage.GenericStore;
@@ -43,17 +42,17 @@ public class ApiServiceServlet extends HttpServlet {
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
 	private Emailer emailer;
-	
+
 	public ApiServiceServlet() {
 		connector = new DBConnectorThreadPoolImpl();
 
-		generalDataStore = new GeneralDataStore(new DAOProtoSQLImpl<>(GeneralData.class, connector, null, "general_data"));
-		addService("general_data", new DualProtoService<>(DD4UIProtos.GeneralData.class, generalDataStore));
+		generalDataStore = new GeneralDataStore(new DAOProtoSQLImpl<>(GeneralData.class, connector));
+		addService("general_data", new SingleProtoService<>(generalDataStore));
 
 		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, connector, "V_USER"));
 		addService("user", userService = new UserService(userStore, requestProvider));
 
-		dataFileStore = new GenericStore<>(new DAOProtoSQLImpl<>(DataFile.class, connector, null, "data_file"));
+		dataFileStore = new GenericStore<>(new DAOProtoSQLImpl<>(DataFile.class, connector));
 		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
 	}
 
@@ -65,12 +64,8 @@ public class ApiServiceServlet extends HttpServlet {
 				sc.getInitParameter("dbpass"));
 	}
 
-	public DBConnector getDBConnector() throws ServletException {
+	protected DBConnector getDBConnector() throws ServletException {
 		return connector;
-	}
-	
-	public static boolean isAjax(HttpServletRequest request) {
-		return "xmlhttprequest".equalsIgnoreCase(request.getHeader("X-Requested-With"));
 	}
 
 	protected ApiServiceServlet addService(String entity, JSONService service) {
@@ -140,7 +135,7 @@ public class ApiServiceServlet extends HttpServlet {
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		Pair<EntityKey, JSONObject> pair = parseRequest(request);
 		EntityKey entityKey = pair.getLeft();
-		String action = entityKey.action != null ? pair.getLeft().action : "delete";
+		String action = entityKey.action != null ? entityKey.action : "delete";
 		processRequest(entityKey.entity, action, pair.getRight(), request, response);
 	}
 
@@ -158,40 +153,35 @@ public class ApiServiceServlet extends HttpServlet {
 	private List<EntityKey> getEntitykeys(HttpServletRequest request) {
 		/* /entity
 			/entity/id
-			/entity/action
-			/entity/id/action
+			/entity:action
+			/entity/id:action
 
 			/pentity/id/entity
 			/pentity/id/entity/id
-			/pentity/id/entity/action
-			/pentity/id/entity/id/action
+			/pentity/id/entity:action
+			/pentity/id/entity/id:action
 
 			/pentity/id/pentity/id/entity
 			/pentity/id/pentity/id/entity/id
-			/pentity/id/pentity/id/entity/action
-			/pentity/id/pentity/id/entity/id/action
+			/pentity/id/pentity/id/entity:action
+			/pentity/id/pentity/id/entity/id:action
 		 */
 		List<EntityKey> entityGroups = new ArrayList<>();
 		String url = request.getRequestURL().toString();
 		String subUrl = url.substring(url.indexOf("/api/") + 5);
+		String customAction = null;
+		if (subUrl.contains(":")) {
+			customAction = subUrl.substring(subUrl.indexOf(":") + 1);
+			subUrl = subUrl.substring(0, subUrl.indexOf(":"));
+		}
 		String[] parts = subUrl.split("/");
-		int i;
-		for (i = 0; i < parts.length - 1; i++) {
+		for (int i = 0; i < parts.length; i++) {
 			String part = parts[i];
-			String entityName = part.substring(0, part.length() -1);
+			String entityName = part.substring(0, part.length() - 1);
 			entityName = services.containsKey(entityName) ? entityName : part;
-			entityGroups.add(new EntityKey(entityName, (i + 1 < parts.length - 1) ? parts[++i] : null));
+			entityGroups.add(new EntityKey(entityName, (i + 1 < parts.length) ? parts[++i] : null));
 		}
-
-		// Now figure out if the last part is an entity, id or action.
-		String lastPart = parts[parts.length - 1];
-		if (services.containsKey(lastPart.substring(0, lastPart.length() -1))) {
-			entityGroups.add(new EntityKey(lastPart.substring(0, lastPart.length() -1), null));
-		} else if (lastPart.charAt(0) >= '1' && lastPart.charAt(0) <= '9') {
-			entityGroups.get(entityGroups.size() - 1).key = lastPart;
-		} else {
-			entityGroups.get(entityGroups.size() - 1).action = lastPart;
-		}
+		entityGroups.get(entityGroups.size() - 1).action = customAction;
 		return entityGroups;
 	}
 
@@ -216,7 +206,7 @@ public class ApiServiceServlet extends HttpServlet {
 				json.put(column, entitykey.key);
 			}
 
-			JSONArray parameters = json.has("query_param") ? json.getJSONArray("query_param") : new JSONArray();
+			JSONArray parameters = json.has("filter") ? json.getJSONArray("filter") : new JSONArray();
 			for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
 				if (!entry.getKey().equals("json")) {
 					for (String value : entry.getValue()) {
@@ -233,7 +223,7 @@ public class ApiServiceServlet extends HttpServlet {
 				}
 			}
 			if (parameters.length() > 0) {
-				json.put("query_param", parameters);
+				json.put("filter", parameters);
 			}
 			return Pair.of(entity, json);
 		} catch (JSONException e) {
@@ -282,13 +272,5 @@ public class ApiServiceServlet extends HttpServlet {
 	
 	public boolean checkAdminLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		return checkLogin(request, response, UserType.ADMIN);
-	}
-	
-	public static String formatStackTrace(Exception e) {
-		String out = "";
-		for (StackTraceElement elem : e.getStackTrace()) {
-			out += elem + "\n";
-		}
-		return out;
 	}
 }

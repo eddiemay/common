@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ApiServletTest {
-	@Mock JSONService teamService = mock(JSONService.class);
-	@Mock JSONService playerService = mock(JSONService.class);
+	@Mock private JSONService teamService = mock(JSONService.class);
+	@Mock private JSONService playerService = mock(JSONService.class);
 
 	private ApiServiceServlet apiServlet;
 
@@ -284,6 +284,6 @@ public class ApiServletTest {
 	@Test
 	public void testTransformToProto() throws Exception {
 		JSONObject getJSON = new JSONObject().put("id", "4");
-		DD4UIProtos.GetRequest getProto = JSONService.transformJSONRequest(DD4UIProtos.GetRequest.getDefaultInstance(), getJSON);
+		DD4UIProtos.GetRequest getProto = DualProtoService.transformJSONRequest(DD4UIProtos.GetRequest.getDefaultInstance(), getJSON);
 	}
 }
