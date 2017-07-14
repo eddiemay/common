@@ -175,16 +175,11 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	@Override
 	public JSONObject performAction(String action, JSONObject jsonRequest) throws DD4StorageException {
 		switch (action) {
-			case "create":
-				return create(jsonRequest);
-			case "get":
-				return get(jsonRequest);
-			case "list":
-				return list(jsonRequest);
-			case "update":
-				return update(jsonRequest);
-			case "delete":
-				return delete(jsonRequest);
+			case "create": return create(jsonRequest);
+			case "get": return get(jsonRequest);
+			case "list": return list(jsonRequest);
+			case "update": return update(jsonRequest);
+			case "delete": return delete(jsonRequest);
 			default:
 				throw new DD4StorageException("Invalid action: " + action);
 		}
@@ -220,7 +215,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 
 	public static final Function<Message, JSONObject> messageToJSON = msg -> new JSONObject(JsonFormat.printToString(msg));
 
-	public final Function<ListResponse<T>, JSONObject> listToJSON = response -> new JSONObject()
+	public static final Function<ListResponse<? extends Message>, JSONObject> listToJSON = response -> new JSONObject()
 			.put("total_size", response.getTotalSize())
 			.put("items", response.getItemsList().stream()
 					.map(messageToJSON)
