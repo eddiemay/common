@@ -1,9 +1,7 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
-
-import java.util.List;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import java.util.function.UnaryOperator;
 
 public class GenericStore<T> implements Store<T> {
@@ -30,27 +28,17 @@ public class GenericStore<T> implements Store<T> {
 	}
 
 	@Override
+	public ListResponse<T> list(ListRequest listRequest) throws DD4StorageException {
+		return dao.list(listRequest);
+	}
+
+	@Override
 	public T update(int id, UnaryOperator<T> updater) throws DD4StorageException {
 		return dao.update(id, updater);
 	}
 
 	@Override
-	public boolean delete(int id) throws DD4StorageException {
-		return dao.delete(id);
-	}
-	
-	@Override
-	public List<T> get(Filter... params) throws DD4StorageException {
-		return dao.get(params);
-	}
-	
-	@Override
-	public List<T> get(List<Filter> params) throws DD4StorageException {
-		return dao.get(params);
-	}
-	
-	@Override
-	public List<T> getAll() throws DD4StorageException {
-		return dao.getAll();
+	public void delete(int id) throws DD4StorageException {
+		dao.delete(id);
 	}
 }

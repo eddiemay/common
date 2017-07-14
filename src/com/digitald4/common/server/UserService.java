@@ -6,8 +6,7 @@ import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Provider;
-import com.googlecode.protobuf.format.JsonFormat.ParseException;
-import org.json.JSONException;
+import com.google.protobuf.Empty;
 import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +16,7 @@ public class UserService extends DualProtoService<DD4UIProtos.User, DD4Protos.Us
 	private final UserStore userStore;
 	private final Provider<HttpServletRequest> requestProvider;
 
-	public UserService(UserStore userStore, Provider<HttpServletRequest> requestProvider) {
+	UserService(UserStore userStore, Provider<HttpServletRequest> requestProvider) {
 		super(DD4UIProtos.User.class, userStore);
 		this.userStore = userStore;
 		this.requestProvider = requestProvider;
@@ -36,14 +35,13 @@ public class UserService extends DualProtoService<DD4UIProtos.User, DD4Protos.Us
 		return false;
 	}
 
-	public boolean logout() throws DD4StorageException {
+	public Empty logout() throws DD4StorageException {
 		requestProvider.get().getSession().setAttribute("puser", null);
-		return true;
+		return Empty.getDefaultInstance();
 	}
 
 	@Override
-	public Object performAction(String action, JSONObject jsonRequest)
-			throws DD4StorageException, JSONException, ParseException {
+	public JSONObject performAction(String action, JSONObject jsonRequest) {
 		switch (action) {
 			case "active": return convertToJSON(getActive());
 			case "login": return convertToJSON(login(transformJSONRequest(LoginRequest.getDefaultInstance(), jsonRequest)));

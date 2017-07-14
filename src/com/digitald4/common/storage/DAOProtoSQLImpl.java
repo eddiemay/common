@@ -2,6 +2,7 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnector;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
@@ -26,16 +27,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import org.json.JSONObject;
 
 public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
-	private static final String SELECT_SQL = "SELECT * FROM {TABLE} WHERE id=?;";
-	private static final String UPDATE_SQL = "UPDATE {TABLE} SET {SETS} WHERE id=?;";
-	private static final String DELETE_SQL = "DELETE FROM {TABLE} WHERE id=?;";
-	private static final String QUERY_SQL = "SELECT * FROM {TABLE} WHERE {COLUMNS};";
-	private static final String GET_ALL_SQL = "SELECT * FROM {TABLE};";
-	
+	private static final String SELECT_SQL = "SELECT * FROM ";
+	private static final String WHERE_ID = " WHERE id=?;";
+	private static final String UPDATE_SQL = "UPDATE {TABLE} SET {SETS}" + WHERE_ID;
+	private static final String DELETE_SQL = "DELETE FROM {TABLE}" + WHERE_ID;
+	private static final String WHERE_SQL = " WHERE ";
+	private static final String ORDER_BY_SQL = " ORDER BY ";
+	private static final String LIMIT_SQL = " LIMIT ";
+	private static final String COUNT_SQL = "SELECT COUNT(*) FROM ";
+
 	private final T type;
 	private final Descriptor descriptor; 
 	private final DBConnector connector;
@@ -91,22 +96,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 	}
 	
 	@Override
-	public List<T> get(Filter... filters) throws DD4StorageException {
-		List<Filter> list = new ArrayList<>();
-		for (Filter filter : filters) {
-			list.add(filter);
-		}
-		return get(list);
-	}
-	
-	@Override
-	public List<T> get(List<Filter> filters) {
-		return GET_COLL_FUNC.applyWithRetries(filters);
-	}
-	
-	@Override
-	public List<T> getAll() throws DD4StorageException {
-		return GET_ALL_FUNC.applyWithRetries(true);
+	public ListResponse<T> list(ListRequest listRequest) {
+		return GET_COLL_FUNC.applyWithRetries(listRequest);
 	}
 	
 	@Override
@@ -115,8 +106,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 	}
 	
 	@Override
-	public boolean delete(int id) {
-		return DELETE_FUNC.applyWithRetries(id);
+	public void delete(int id) {
+		DELETE_FUNC.applyWithRetries(id);
 	}
 	
 	private void setObject(PreparedStatement ps, int index, T t, FieldDescriptor field, Object value)
@@ -233,15 +224,14 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 	private final RetryableFunction<Integer, T> GET_BY_ID_FUNC = new RetryableFunction<Integer, T>() {
 		@Override
 		public T apply(Integer id) {
-			String sql = SELECT_SQL.replaceAll("\\{TABLE\\}", getView());
+			String sql = SELECT_SQL + getView() + WHERE_ID;
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql);) {
 				ps.setInt(1, id);
 				T result = null;
 				ResultSet rs = ps.executeQuery();
-				List<T> results = process(rs);
-				if (!results.isEmpty()) {
-					result = results.get(0);
+				if (rs.next()) {
+					result = parseFromResultSet(rs);
 				}
 				rs.close();
 				return result;
@@ -251,46 +241,55 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		}
 	};
 
-	private final RetryableFunction<List<Filter>, List<T>> GET_COLL_FUNC =
-			new RetryableFunction<List<Filter>, List<T>>() {
+	private final RetryableFunction<ListRequest, ListResponse<T>> GET_COLL_FUNC =
+			new RetryableFunction<ListRequest, ListResponse<T>>() {
 		@Override
-		public List<T> apply(List<Filter> filters) {
-			String columns = "";
-			for (Filter filter : filters) {
-				if (columns.length() > 0) {
-					columns += " AND ";
-				}
-				columns += filter.getColumn() + " " + filter.getOperan() + " ?";
+		public ListResponse<T> apply(ListRequest listRequest) {
+			StringBuffer sql = new StringBuffer(SELECT_SQL).append(getView());
+			String where = "";
+			String countSql = null;
+			if (listRequest.getFilterCount() > 0) {
+				sql.append(where = WHERE_SQL + String.join(" AND ", listRequest.getFilterList().stream()
+						.map(filter -> filter.getColumn() + " " + filter.getOperan() + " ?")
+						.collect(Collectors.toList())));
 			}
-			String sql = QUERY_SQL.replaceAll("\\{TABLE\\}", getView())
-					.replaceAll("\\{COLUMNS\\}", columns);
-			if (filters.size() == 0) {
-				sql = sql.replaceAll(" WHERE ", "");
+			if (listRequest.getOrderByCount() > 0) {
+				sql.append(ORDER_BY_SQL).append(String.join(",", listRequest.getOrderByList().stream()
+						.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
+						.collect(Collectors.toList())));
 			}
+			if (listRequest.getPageSize() > 0) {
+				sql.append(LIMIT_SQL)
+						.append((listRequest.getPageToken() > 0 ? listRequest.getPageSize() + "," : "")
+						+ String.valueOf(listRequest.getPageSize()));
+				countSql = COUNT_SQL + getView() + where;
+			}
+			sql.append(";");
 			try (Connection con = connector.getConnection();
-					 PreparedStatement ps = con.prepareStatement(sql)) {
+					 PreparedStatement ps = con.prepareStatement(sql.toString())) {
 				int p = 1;
-				for (Filter filter : filters) {
+				for (Filter filter : listRequest.getFilterList()) {
 					setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 				}
 				ResultSet rs = ps.executeQuery();
 				List<T> results = process(rs);
 				rs.close();
-				return results;
-			} catch (SQLException e) {
-				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
-			}
-		}
-	};
-
-	private final RetryableFunction<Boolean, List<T>> GET_ALL_FUNC = new RetryableFunction<Boolean, List<T>>() {
-		@Override
-		public List<T> apply(Boolean Void) {
-			String sql = GET_ALL_SQL.replaceAll("\\{TABLE\\}", getView());
-			try (Connection con = connector.getConnection();
-					 PreparedStatement ps = con.prepareStatement(sql);
-					 ResultSet rs = ps.executeQuery();) {
-				return process(rs);
+				int count = results.size();
+				if (countSql != null) {
+					PreparedStatement ps2 = con.prepareStatement(countSql);
+					p = 1;
+					for (Filter filter : listRequest.getFilterList()) {
+						setObject(ps2, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
+					}
+					rs = ps2.executeQuery();
+					count = rs.getInt(1);
+					rs.close();
+					ps2.close();
+				}
+				return ListResponse.<T>newBuilder()
+						.addAllItems(results)
+						.setTotalSize(count)
+						.build();
 			} catch (SQLException e) {
 				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 			}

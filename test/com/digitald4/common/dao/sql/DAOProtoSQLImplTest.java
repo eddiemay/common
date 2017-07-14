@@ -2,6 +2,7 @@ package com.digitald4.common.dao.sql;
 
 import static org.junit.Assert.*;
 
+import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import java.util.List;
 
 import com.digitald4.common.storage.DAOProtoSQLImpl;
@@ -30,17 +31,17 @@ public class DAOProtoSQLImplTest {
 				.build();
 		try {
 			user = dao.create(user);
-			List<User> users = dao.get(
-					Filter.newBuilder()
+			List<User> users = dao.list(ListRequest.newBuilder()
+					.addFilter(Filter.newBuilder()
 							.setColumn("last_login")
 							.setOperan(">")
-							.setValue(String.valueOf(new DateTime("2005-06-02").getMillis()))
-							.build(),
-					Filter.newBuilder()
+							.setValue(String.valueOf(new DateTime("2005-06-02").getMillis())))
+					.addFilter(Filter.newBuilder()
 							.setColumn("last_login")
 							.setOperan(">")
 							.setValue(String.valueOf(new DateTime("2005-07-11").getMillis()))
-							.build());
+							.build())
+					.build()).getItemsList();
 			assertEquals(1, users.size());
 			DateTime lastLogin = new DateTime(users.get(0).getLastLogin());
 			assertEquals(2005, lastLogin.getYear());

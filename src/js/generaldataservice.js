@@ -7,7 +7,8 @@ com.digitald4.common.GeneralDataService.prototype.jsonService;
 com.digitald4.common.GeneralDataService.prototype.generalDataHash = {};
 
 com.digitald4.common.GeneralDataService.prototype.refresh = function() {
-  this.jsonService.list([], function(generalDatas) {
+  this.jsonService.list({}, function(listResponse) {
+    var generalDatas = listResponse.item;
     var hash = {};
     for (var x = 0; x < generalDatas.length; x++) {
       var generalData = generalDatas[x];

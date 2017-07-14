@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
+import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 
 import com.digitald4.common.util.FormatText;
@@ -1054,7 +1055,7 @@ public class JSONObject {
      * @throws JSONException
      */
     public JSONObject put(String key, Collection<?> value) throws JSONException {
-        this.put(key, new JSONArray(value));
+        this.put(key, new JSONArray((Collection<?>) value));
         return this;
     }
 

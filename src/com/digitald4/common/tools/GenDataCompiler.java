@@ -2,6 +2,7 @@ package com.digitald4.common.tools;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.storage.DAO;
 
 import java.io.BufferedWriter;
@@ -12,9 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by eddiemay on 8/21/16.
- */
 public class GenDataCompiler {
 	private static final String JAVA_DECLARATION = "package com.digitald4.%s.storage;\n\npublic class GenData {\n";
 	private static final String JAVA_ENTRY = "\tpublic static final int %s = %d;\n";
@@ -35,7 +33,7 @@ public class GenDataCompiler {
 
 	public void compile() throws DD4StorageException {
 		Map<Integer, List<GeneralData>> hash = new HashMap<>();
-		List<GeneralData> generalDatas = dao.getAll();
+		List<GeneralData> generalDatas = dao.list(ListRequest.getDefaultInstance()).getItemsList();
 		for (GeneralData generalData : generalDatas) {
 			List<GeneralData> children = hash.get(generalData.getGroupId());
 			if (children == null) {

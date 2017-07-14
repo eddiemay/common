@@ -149,10 +149,10 @@ public class JSONArray {
      * Construct a JSONArray from a Collection.
      * @param collection     A Collection.
      */
-    public JSONArray(Collection<Object> collection) {
+    public JSONArray(Collection<?> collection) {
         this.myArrayList = new ArrayList<Object>();
         if (collection != null) {
-            Iterator<Object> iter = collection.iterator();
+            Iterator<?> iter = collection.iterator();
             while (iter.hasNext()) {
                 this.myArrayList.add(JSONObject.wrap(iter.next()));
             }
@@ -172,8 +172,7 @@ public class JSONArray {
                 this.put(JSONObject.wrap(Array.get(array, i)));
             }
         } else {
-            throw new JSONException(
-"JSONArray initial value should be a string or collection or array.");
+            throw new JSONException("JSONArray initial value should be a string or collection or array.");
         }
     }
 

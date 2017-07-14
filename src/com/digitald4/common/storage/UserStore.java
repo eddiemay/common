@@ -2,13 +2,11 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.User;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Calculate;
-
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.function.UnaryOperator;
-
 import org.joda.time.DateTime;
 
 public class UserStore extends GenericStore<User> {
@@ -17,35 +15,31 @@ public class UserStore extends GenericStore<User> {
 	}
 	
 	public User getBy(String login, String password) throws DD4StorageException {
-		List<User> users = get(
-				Filter.newBuilder()
-						.setColumn(login.contains("@") ? "email" : "user_name")
-						.setOperan("=")
-						.setValue(login)
-						.build(),
-				Filter.newBuilder()
-						.setColumn("password")
-						.setOperan("=")
-						.setValue(encodePassword(password))
-						.build());
+		List<User> users = list(
+				ListRequest.newBuilder()
+						.addFilter(Filter.newBuilder()
+								.setColumn(login.contains("@") ? "email" : "user_name")
+								.setOperan("=")
+								.setValue(login))
+						.addFilter(Filter.newBuilder()
+								.setColumn("password")
+								.setOperan("=")
+								.setValue(encodePassword(password)))
+								.build())
+				.getItemsList();
 		if (users.isEmpty()) {
 			return null;
 		}
 		return users.get(0);
 	}
 
-	public User updateLastLogin(User user) throws DD4StorageException {
-		return update(user.getId(), new UnaryOperator<User>() {
-			@Override
-			public User apply(User user) {
-				return user.toBuilder()
-						.setLastLogin(DateTime.now().getMillis())
-						.build();
-			}
-		});
+	public User updateLastLogin(User user_) throws DD4StorageException {
+		return update(user_.getId(), user -> user.toBuilder()
+				.setLastLogin(DateTime.now().getMillis())
+				.build());
 	}
 
-	public static String encodePassword(String password) {
+	private static String encodePassword(String password) {
 		try {
 			return Calculate.md5(password);
 		} catch (NoSuchAlgorithmException nsae) {

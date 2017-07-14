@@ -6,6 +6,7 @@ com.digitald4.common.JSONService = function(proto, apiConnector) {
 com.digitald4.common.JSONService.prototype.apiConnector;
 com.digitald4.common.JSONService.prototype.service;
 
+
 /**
  * Performs the specified request.
  *
@@ -45,19 +46,51 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, req
   this.apiConnector.performRequest(method, url.join('/') + (customAction ? ':' + customAction : ''), request, success, error);
 };
 
+
+/**
+* Gets an object from the data store by id.
+*
+* @param {number} id The unique id of the object to restrieve.
+* @param {!function(!Object)} success The call back function to call after a successful submission.
+* @param {!function(!Object)} error The call back function to call after a submission error.
+*/
 com.digitald4.common.JSONService.prototype.get = function(id, success, error) {
 	this.performRequest('GET', id, undefined, success, error);
 };
 
-com.digitald4.common.JSONService.prototype.list = function(filter, success, error) {
-	this.performRequest('GET', undefined, filter, success, error);
+
+/**
+* Gets a list of objects from the data store.
+*
+* @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
+* @param {!function(!Object)} success The call back function to call after a successful submission.
+* @param {!function(!Object)} error The call back function to call after a submission error.
+*/
+com.digitald4.common.JSONService.prototype.list = function(listOptions, success, error) {
+  this.performRequest('GET', undefined, listOptions, success, error);
 };
 
+
+/**
+* Creates a new object.
+*
+* @param {Object} proto The object to create.
+* @param {!function(!Object)} success The call back function to call after a successful submission.
+* @param {!function(!Object)} error The call back function to call after a submission error.
+*/
 com.digitald4.common.JSONService.prototype.create = function(proto, success, error) {
   proto.$$hashKey = undefined;
 	this.performRequest('POST', undefined, {proto: JSON.stringify(proto)}, success, error);
 };
 
+
+/**
+* Updates an object in the data store.
+*
+* @param {Object} proto The object to update.
+* @param {!function(!Object)} success The call back function to call after a successful submission.
+* @param {!function(!Object)} error The call back function to call after a submission error.
+*/
 com.digitald4.common.JSONService.prototype.update = function(proto, props, success, error) {
 	var updated = {};
 	for (var p = 0; p < props.length; p++) {
@@ -66,6 +99,14 @@ com.digitald4.common.JSONService.prototype.update = function(proto, props, succe
 	this.performRequest('POST', proto.id, {proto: JSON.stringify(updated)}, success, error);
 };
 
+
+/**
+* Deletes an object from the data store.
+*
+* @param {number} id The id of the object to delete.
+* @param {!function(!Object)} success The call back function to call after a successful submission.
+* @param {!function(!Object)} error The call back function to call after a submission error.
+*/
 com.digitald4.common.JSONService.prototype.Delete = function(id, success, error) {
 	this.performRequest('DELETE', id, undefined, success, error);
 };

@@ -6,24 +6,22 @@ import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
+import com.digitald4.common.storage.ListResponse;
 import com.digitald4.common.storage.Store;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.Empty;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.format.JsonFormat;
 import com.googlecode.protobuf.format.JsonFormat.ParseException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedMessageV3>
@@ -133,13 +131,13 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public JSONArray list(JSONObject jsonRequest) {
-		return convertToJSON(list(transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
+	public JSONObject list(JSONObject jsonRequest) {
+		return listToJSON.apply(list(transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
 	}
 
 	@Override
-	public List<T> list(ListRequest request) throws DD4StorageException {
-		return store.get(request.getFilterList()).stream().map(getConverter()).collect(Collectors.toList());
+	public ListResponse<T> list(ListRequest request) throws DD4StorageException {
+		return toListResponse(store.list(request));
 	}
 
 	@Override
@@ -164,17 +162,18 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public boolean delete(JSONObject jsonRequest) {
-		return delete(transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest));
+	public JSONObject delete(JSONObject jsonRequest) {
+		return convertToJSON(delete(transformJSONRequest(DeleteRequest.getDefaultInstance(), jsonRequest)));
 	}
 
 	@Override
-	public boolean delete(DeleteRequest request) {
-		return store.delete(request.getId());
+	public Empty delete(DeleteRequest request) {
+		store.delete(request.getId());
+		return Empty.getDefaultInstance();
 	}
 
 	@Override
-	public Object performAction(String action, JSONObject jsonRequest) throws DD4StorageException, ParseException {
+	public JSONObject performAction(String action, JSONObject jsonRequest) throws DD4StorageException {
 		switch (action) {
 			case "create":
 				return create(jsonRequest);
@@ -195,6 +194,15 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		return true;
 	}
 
+	public ListResponse<T> toListResponse(ListResponse<I> response) {
+		return ListResponse.<T>newBuilder()
+				.addAllItems(response.getItemsList().stream()
+						.map(getConverter())
+						.collect(Collectors.toList()))
+				.setTotalSize(response.getTotalSize())
+				.build();
+	}
+
 	public static <R extends Message> R transformJSONRequest(R msgRequest, HttpServletRequest request) {
 		return transformJSONRequest(msgRequest, new JSONObject(request.getParameterMap().values().iterator().next()[0]));
 	}
@@ -210,19 +218,19 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		return (R) builder.build();
 	}
 
-	public static JSONArray convertToJSON(List<? extends Message> items) {
-		JSONArray array = new JSONArray();
-		for (Message item : items) {
-			array.put(convertToJSON(item));
-		}
-		return array;
-	}
+	public static final Function<Message, JSONObject> messageToJSON = msg -> new JSONObject(JsonFormat.printToString(msg));
 
-	public static JSONObject convertToJSON(Message item) {
+	public final Function<ListResponse<T>, JSONObject> listToJSON = response -> new JSONObject()
+			.put("total_size", response.getTotalSize())
+			.put("items", response.getItemsList().stream()
+					.map(messageToJSON)
+					.collect(Collectors.toList()));
+
+	public static final JSONObject convertToJSON(Message item) {
 		return new JSONObject(JsonFormat.printToString(item));
 	}
 
-	public static JSONObject convertToJSON(boolean bool) throws JSONException {
+	public static final JSONObject convertToJSON(boolean bool) {
 		return new JSONObject(bool);
 	}
 }

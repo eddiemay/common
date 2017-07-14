@@ -1,14 +1,11 @@
 package com.digitald4.common.server;
 
-import static com.digitald4.common.server.DualProtoService.transformJSONRequest;
-
 import com.digitald4.common.proto.DD4Protos.DataFile;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
+import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.ByteString;
 import com.googlecode.protobuf.format.JsonFormat;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -25,7 +22,7 @@ import javax.servlet.http.Part;
 /**
  * Service for handling the uploading, retrieving, replacing and deleting of files.
  */
-public class FileService implements JSONService {
+public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile> {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
 	private final Store<DataFile> dataFileStore;
@@ -34,6 +31,7 @@ public class FileService implements JSONService {
 
 	FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
 							Provider<HttpServletResponse> responseProvider) {
+		super(DD4UIProtos.DataFile.class, dataFileStore);
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;
 		this.responseProvider = responseProvider;
@@ -46,14 +44,6 @@ public class FileService implements JSONService {
 		} catch (ServletException | IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	@Override
-	public JSONArray list(JSONObject request) {
-		JSONArray array = new JSONArray();
-		dataFileStore.get(transformJSONRequest(ListRequest.getDefaultInstance(), request).getFilterList())
-				.forEach(dataFile -> array.put(toJSON.apply(dataFile)));
-		return array;
 	}
 
 	public JSONObject get(JSONObject request) {
@@ -87,10 +77,6 @@ public class FileService implements JSONService {
 		}
 	}
 
-	public boolean delete(JSONObject request) {
-		return dataFileStore.delete(request.getInt("id"));
-	}
-
 	private static String getFileName(final Part part) {
 		for (String content : part.getHeader("content-disposition").split(";")) {
 			if (content.trim().startsWith("filename")) {
@@ -106,7 +92,7 @@ public class FileService implements JSONService {
 	}
 
 	@Override
-	public Object performAction(String action, JSONObject request) {
+	public JSONObject performAction(String action, JSONObject request) {
 		switch (action) {
 			case "create":
 				return create(request);
@@ -114,6 +100,8 @@ public class FileService implements JSONService {
 				return update(request);
 			case "delete":
 				return delete(request);
+			case "list":
+				return list(request);
 			case "get":
 			default:
 				return get(request);
