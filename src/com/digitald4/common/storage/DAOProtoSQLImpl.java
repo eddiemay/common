@@ -13,8 +13,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
-import com.googlecode.protobuf.format.JsonFormat;
-
+import com.google.protobuf.util.JsonFormat;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -117,7 +116,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		}
 		if (field != null) {
 			if (field.isRepeated() || field.isMapField()) {
-				JSONObject json = new JSONObject(JsonFormat.printToString(t));
+				JSONObject json = new JSONObject(JsonFormat.printer().print(t));
 				ps.setString(index, json.get(field.getName()).toString());
 			} else {
 				switch (field.getJavaType()) {
@@ -132,7 +131,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 						ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString()))));
 						break;
 					case MESSAGE:
-						ps.setString(index, JsonFormat.printToString((Message) value));
+						ps.setString(index, JsonFormat.printer().print((Message) value));
 						break;
 					default:
 						ps.setObject(index, value);
@@ -165,7 +164,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 						field = descriptor.findFieldByName(columnName.substring(0, columnName.length() - 2));
 					}
 					if (field.isRepeated() || field.getJavaType() == JavaType.MESSAGE) {
-						JsonFormat.merge("{\"" + field.getName() + "\": " + rs.getString(i) + "}", builder);
+						JsonFormat.parser().ignoringUnknownFields()
+								.merge("{\"" + field.getName() + "\": " + rs.getString(i) + "}", builder);
 					} else if (field.getJavaType() == JavaType.ENUM) {
 						value = field.getEnumType().findValueByNumber(rs.getInt(i));
 						builder.setField(field, value);
@@ -287,7 +287,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 					ps2.close();
 				}
 				return ListResponse.<T>newBuilder()
-						.addAllItems(results)
+						.addAllResult(results)
 						.setTotalSize(count)
 						.build();
 			} catch (SQLException e) {
@@ -332,7 +332,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 			if (sets.isEmpty()) {
 				System.out.println("Nothing changed, returning");
 			} else {
-				String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getView())
+				String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getTable())
 						.replaceAll("\\{SETS\\}", sets);
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {

@@ -280,10 +280,4 @@ public class ApiServletTest {
 		apiServlet.doGet(request, response);
 		verify(writer, times(2)).println(new Integer(-3));
 	}
-
-	@Test
-	public void testTransformToProto() throws Exception {
-		JSONObject getJSON = new JSONObject().put("id", "4");
-		DD4UIProtos.GetRequest getProto = DualProtoService.transformJSONRequest(DD4UIProtos.GetRequest.getDefaultInstance(), getJSON);
-	}
 }

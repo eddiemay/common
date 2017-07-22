@@ -3,9 +3,6 @@ com.digitald4.common.JSONService = function(proto, apiConnector) {
 	this.service = proto + 's';
 };
 
-com.digitald4.common.JSONService.prototype.apiConnector;
-com.digitald4.common.JSONService.prototype.service;
-
 
 /**
  * Performs the specified request.
@@ -13,7 +10,7 @@ com.digitald4.common.JSONService.prototype.service;
  * @param {string | array} method The HTTP method to use for the request. If this is a custom action then action, method
  *   as an array i.e. ['summary', 'post']. If the method is GET then method can be left off of array.
  * @param {string | number | Object} requestParams The request parameters to use to build the url. If standard url this
- *  can simplily be the id of the item being requested. If an object id should be .id of that object.
+ *  can simply be the id of the item being requested. If an object id should be .id of that object.
  * @param {Object} request The body information to send to the server.
  * @param {!function(!Object)} success The call back function to call after a successful submission.
  * @param {!function(!Object)} error The call back function to call after a submission error.
@@ -62,12 +59,29 @@ com.digitald4.common.JSONService.prototype.get = function(id, success, error) {
 /**
 * Gets a list of objects from the data store.
 *
+* @param {string | number | Object} requestParams The request parameters to use to build the url. If standard url this
+*  can simply be the id of the item being requested. If an object id should be .id of that object.
+* @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
+* @param {!function(!Object)} success The call back function to call after a successful submission.
+* @param {!function(!Object)} error The call back function to call after a submission error.
+*/
+com.digitald4.common.JSONService.prototype.list_ = function(requestParams, listOptions, success, error) {
+  this.performRequest('GET', requestParams, listOptions, function(response) {
+    response.result = response.result || [];
+    success(response);
+  }, error);
+};
+
+
+/**
+* Gets a list of objects from the data store.
+*
 * @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
 * @param {!function(!Object)} success The call back function to call after a successful submission.
 * @param {!function(!Object)} error The call back function to call after a submission error.
 */
 com.digitald4.common.JSONService.prototype.list = function(listOptions, success, error) {
-  this.performRequest('GET', undefined, listOptions, success, error);
+  this.list_(undefined, listOptions, success, error);
 };
 
 
@@ -80,7 +94,7 @@ com.digitald4.common.JSONService.prototype.list = function(listOptions, success,
 */
 com.digitald4.common.JSONService.prototype.create = function(proto, success, error) {
   proto.$$hashKey = undefined;
-	this.performRequest('POST', undefined, {proto: JSON.stringify(proto)}, success, error);
+	this.performRequest('POST', undefined, {proto: proto}, success, error);
 };
 
 
@@ -96,7 +110,7 @@ com.digitald4.common.JSONService.prototype.update = function(proto, props, succe
 	for (var p = 0; p < props.length; p++) {
 	  updated[props[p]] = proto[props[p]];
 	}
-	this.performRequest('POST', proto.id, {proto: JSON.stringify(updated)}, success, error);
+	this.performRequest('POST', proto.id, {proto: updated, updateMask: props.join()}, success, error);
 };
 
 

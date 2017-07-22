@@ -1,6 +1,7 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
@@ -8,14 +9,18 @@ import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.storage.ListResponse;
 import com.digitald4.common.storage.Store;
+import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Empty;
 import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.googlecode.protobuf.format.JsonFormat;
-import com.googlecode.protobuf.format.JsonFormat.ParseException;
+import com.google.protobuf.util.FieldMaskUtil;
+import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.util.JsonFormat.Parser;
+import com.google.protobuf.util.JsonFormat.Printer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.function.Function;
@@ -31,6 +36,8 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	private final Store<I> store;
 	private final Descriptor internalDescriptor;
 	private final Descriptor externalDescriptor;
+	private final Parser jsonParser;
+	private final Printer jsonPrinter;
 	
 	private final Function<I, T> converter = new Function<I, T>() {
 		@Override
@@ -87,6 +94,11 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;
 		this.internalDescriptor = store.getType().getDescriptorForType();
+
+		JsonFormat.TypeRegistry registry =
+				JsonFormat.TypeRegistry.newBuilder().add(externalDescriptor).build();
+		jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
+		jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 	}
 
 	protected DualProtoService(T type, Store<I> store) {
@@ -94,6 +106,11 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;
 		this.internalDescriptor = store.getType().getDescriptorForType();
+
+		JsonFormat.TypeRegistry registry =
+				JsonFormat.TypeRegistry.newBuilder().add(externalDescriptor).build();
+		jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
+		jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 	}
 	
 	public Function<I, T> getConverter() {
@@ -111,13 +128,12 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 
 	@Override
 	public T create(CreateRequest request) {
-		Message.Builder builder = type.toBuilder();
 		try {
-			JsonFormat.merge(request.getProto(), builder);
-		} catch (ParseException e) {
-			throw new DD4StorageException("Error creating object: " + e.getMessage(), e);
+			T t = request.getProto().unpack((Class<T>) type.getClass());
+			return getConverter().apply(store.create(getReverseConverter().apply(t)));
+		} catch (InvalidProtocolBufferException e) {
+			throw new RuntimeException(e);
 		}
-		return getConverter().apply(store.create(getReverseConverter().apply((T) builder.build())));
 	}
 
 	@Override
@@ -132,11 +148,11 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 
 	@Override
 	public JSONObject list(JSONObject jsonRequest) {
-		return listToJSON.apply(list(transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
+		return convertToJSON(list(transformJSONRequest(ListRequest.getDefaultInstance(), jsonRequest)));
 	}
 
 	@Override
-	public ListResponse<T> list(ListRequest request) throws DD4StorageException {
+	public DD4UIProtos.ListResponse list(ListRequest request) throws DD4StorageException {
 		return toListResponse(store.list(request));
 	}
 
@@ -152,8 +168,9 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 			public I apply(I internal) {
 				Message.Builder builder = internal.toBuilder();
 				try {
-					JsonFormat.merge(request.getProto(), builder);
-				} catch (ParseException e) {
+					T t = request.getProto().unpack((Class<T>) type.getClass());
+					FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder);
+				} catch (InvalidProtocolBufferException e) {
 					throw new RuntimeException("Error updating object", e);
 				}
 				return (I) builder.build();
@@ -189,40 +206,33 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		return true;
 	}
 
-	public ListResponse<T> toListResponse(ListResponse<I> response) {
-		return ListResponse.<T>newBuilder()
-				.addAllItems(response.getItemsList().stream()
+	public DD4UIProtos.ListResponse toListResponse(ListResponse<I> response) {
+		return DD4UIProtos.ListResponse.newBuilder()
+				.addAllResult(response.getResultList().stream()
 						.map(getConverter())
+						.map(Any::pack)
 						.collect(Collectors.toList()))
 				.setTotalSize(response.getTotalSize())
 				.build();
 	}
 
-	public static <R extends Message> R transformJSONRequest(R msgRequest, HttpServletRequest request) {
+	public <R extends Message> R transformJSONRequest(R msgRequest, HttpServletRequest request) {
 		return transformJSONRequest(msgRequest, new JSONObject(request.getParameterMap().values().iterator().next()[0]));
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <R extends Message> R transformJSONRequest(R msgRequest, JSONObject json) {
+	public <R extends Message> R transformJSONRequest(R msgRequest, JSONObject json) {
 		R.Builder builder = msgRequest.toBuilder();
-		try {
-			JsonFormat.merge(json.toString(), builder);
-		} catch (ParseException e) {
-			throw new RuntimeException(e);
+		if (json.has("proto")) {
+			json.getJSONObject("proto")
+					.put("@type", "type.googleapis.com/" + externalDescriptor.getFullName());
 		}
+		jsonParser.merge(json.toString(), builder);
 		return (R) builder.build();
 	}
 
-	public static final Function<Message, JSONObject> messageToJSON = msg -> new JSONObject(JsonFormat.printToString(msg));
-
-	public static final Function<ListResponse<? extends Message>, JSONObject> listToJSON = response -> new JSONObject()
-			.put("total_size", response.getTotalSize())
-			.put("items", response.getItemsList().stream()
-					.map(messageToJSON)
-					.collect(Collectors.toList()));
-
-	public static final JSONObject convertToJSON(Message item) {
-		return new JSONObject(JsonFormat.printToString(item));
+	public final JSONObject convertToJSON(Message item) {
+		return new JSONObject(jsonPrinter.print(item));
 	}
 
 	public static final JSONObject convertToJSON(boolean bool) {

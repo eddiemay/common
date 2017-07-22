@@ -41,7 +41,7 @@ public class DAOProtoSQLImplTest {
 							.setOperan(">")
 							.setValue(String.valueOf(new DateTime("2005-07-11").getMillis()))
 							.build())
-					.build()).getItemsList();
+					.build()).getResultList();
 			assertEquals(1, users.size());
 			DateTime lastLogin = new DateTime(users.get(0).getLastLogin());
 			assertEquals(2005, lastLogin.getYear());

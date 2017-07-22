@@ -26,7 +26,7 @@ public class UserStore extends GenericStore<User> {
 								.setOperan("=")
 								.setValue(encodePassword(password)))
 								.build())
-				.getItemsList();
+				.getResultList();
 		if (users.isEmpty()) {
 			return null;
 		}

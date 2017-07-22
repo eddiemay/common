@@ -4,14 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ListResponse<T> {
-	protected List<T> items = new ArrayList<>();
-	protected int totalSize;
+	private final List<T> results;
+	private final int totalSize;
 
-	private ListResponse() {
-	}
-
-	private ListResponse(List<T> items, int totalSize) {
-		this.items = items;
+	private ListResponse(List<T> results, int totalSize) {
+		this.results = results;
 		this.totalSize = totalSize;
 	}
 
@@ -19,32 +16,53 @@ public class ListResponse<T> {
 		return totalSize;
 	}
 
-	public List<T> getItemsList() {
-		return items;
+	public List<T> getResultList() {
+		return results;
 	}
 
-	public int getItemsCount() {
-		return items.size();
+	public int getResultCount() {
+		return results.size();
 	}
 
 	public static <T> Builder<T> newBuilder() {
 		return new Builder<T>();
 	}
 
-	public static class Builder<T> extends ListResponse<T> {
+	public static class Builder<T> {
+		protected List<T> results = new ArrayList<>();
+		protected int totalSize;
+
+		private Builder() {};
+
+		public int getTotalSize() {
+			return totalSize;
+		}
+
+		public List<T> getResultList() {
+			return results;
+		}
+
+		public int getResultCount() {
+			return results.size();
+		}
 
 		public Builder<T> setTotalSize(int totalSize) {
 			this.totalSize = totalSize;
 			return this;
 		}
 
-		public Builder<T> addAllItems(List<T> items) {
-			this.items.addAll(items);
+		public Builder<T> addResult(T result) {
+			this.results.add(result);
+			return this;
+		}
+
+		public Builder<T> addAllResult(List<T> results) {
+			this.results.addAll(results);
 			return this;
 		}
 
 		public ListResponse<T> build() {
-			return new ListResponse<T>(items, totalSize);
+			return new ListResponse<T>(getResultList(), getTotalSize());
 		}
 	}
 }

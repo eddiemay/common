@@ -10,7 +10,7 @@ com.digitald4.common.TableCtrl = function($scope, apiConnector) {
 com.digitald4.common.TableCtrl.prototype.refresh = function() {
   this.loading = this.scope.loading = true;
 	this.jsonService.list(this.metadata.filter, function(response) {
-	  this.entities = response.items;
+	  this.entities = response.result;
 	  this.loading = this.scope.loading = false;
 	}.bind(this), notify);
 };
