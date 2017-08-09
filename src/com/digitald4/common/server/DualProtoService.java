@@ -18,6 +18,7 @@ import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.FieldMaskUtil;
+import com.google.protobuf.util.FieldMaskUtil.MergeOptions;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
@@ -31,7 +32,11 @@ import org.json.JSONObject;
 
 public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedMessageV3>
 		implements ProtoService<T>, JSONService {
-	
+	private static final MergeOptions MERGE_OPTIONS = new MergeOptions();
+	static {
+		MERGE_OPTIONS.setReplaceRepeatedFields(true);
+	}
+
 	private final T type;
 	private final Store<I> store;
 	private final Descriptor internalDescriptor;
@@ -169,7 +174,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 				Message.Builder builder = internal.toBuilder();
 				try {
 					T t = request.getProto().unpack((Class<T>) type.getClass());
-					FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder);
+					FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder, MERGE_OPTIONS);
 				} catch (InvalidProtocolBufferException e) {
 					throw new RuntimeException("Error updating object", e);
 				}

@@ -9,5 +9,7 @@ import java.sql.SQLException;
  * caching feature of JDBC 2.0 is implemented to get the database connection.
  */
 public interface DBConnector {
-	public Connection getConnection() throws SQLException;
+	Connection getConnection() throws SQLException;
+
+	void connect(String dbDriver, String url, String user, String password);
 }

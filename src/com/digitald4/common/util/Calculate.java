@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.joda.time.DateTime;
 
 
@@ -60,6 +59,7 @@ public class Calculate {
 			return round(number,1);
 		return Math.round(number);
 	}
+
 	/**
 	 * 
 	 * @param n - Double to be rounded
@@ -203,6 +203,7 @@ public class Calculate {
 		cal.set(Calendar.MILLISECOND,0);
 		return cal;
 	}
+
 	/**
 	 * 
 	 * @return Calendar
@@ -216,6 +217,7 @@ public class Calculate {
 		cal.add(Calendar.DATE, -1);
 		return cal;
 	}
+
 	/**
 	 * 
 	 * @return Calendar
@@ -229,11 +231,10 @@ public class Calculate {
 		cal.add(Calendar.DATE, -1);
 		return cal;
 	}
+
 	/**
-	 * 
-	 * @param year
-	 * @param month
-	 * @param day
+	 * Returns the start of last week.
+	 *
 	 * @return Calendar
 	 */
 	public static Calendar getCalLastWeek(){
@@ -245,6 +246,7 @@ public class Calculate {
 		cal.add(Calendar.DATE, -8); // A week from Yesterday
 		return cal;
 	}
+
 	/**
 	 * 
 	 * @param year
@@ -255,6 +257,7 @@ public class Calculate {
 	public static Calendar getCal(int year, int month, int day){
 		return getCal(year,month,day,0,0,0);
 	}
+
 	/**
 	 * 
 	 * @param year
@@ -594,5 +597,9 @@ public class Calculate {
 			return 0;
 		}
 		return Double.parseDouble(input);
+	}
+
+	public static String or(String value, String nullCase) {
+		return value != null ? value : nullCase;
 	}
 }

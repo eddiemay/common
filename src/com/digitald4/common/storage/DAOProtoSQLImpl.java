@@ -250,7 +250,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 			String countSql = null;
 			if (listRequest.getFilterCount() > 0) {
 				sql.append(where = WHERE_SQL + String.join(" AND ", listRequest.getFilterList().stream()
-						.map(filter -> filter.getColumn() + " " + filter.getOperan() + " ?")
+						.map(filter -> filter.getColumn() + " " + (filter.getOperan().isEmpty() ? "=" : filter.getOperan()) + " ?")
 						.collect(Collectors.toList())));
 			}
 			if (listRequest.getOrderByCount() > 0) {
@@ -262,7 +262,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 				sql.append(LIMIT_SQL)
 						.append((listRequest.getPageToken() > 0 ? listRequest.getPageSize() + "," : "")
 						+ String.valueOf(listRequest.getPageSize()));
-				countSql = COUNT_SQL + getView() + where;
+				countSql = COUNT_SQL + getView() + where + ";";
 			}
 			sql.append(";");
 			try (Connection con = connector.getConnection();
@@ -282,7 +282,9 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 						setObject(ps2, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 					}
 					rs = ps2.executeQuery();
-					count = rs.getInt(1);
+					if (rs.next()) {
+						count = rs.getInt(1);
+					}
 					rs.close();
 					ps2.close();
 				}
@@ -342,8 +344,8 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 					}
 					ps.setInt(index, id);
 					ps.executeUpdate();
-				} catch (SQLException e) {
-					throw new RuntimeException("Error updating record: " + e.getMessage(), e);
+				} catch (Exception e) {
+					throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
 				}
 			}
 			return get(id);

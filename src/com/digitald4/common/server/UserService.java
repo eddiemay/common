@@ -1,7 +1,7 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4Protos;
+import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
 import com.digitald4.common.storage.UserStore;
@@ -11,7 +11,7 @@ import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 
-public class UserService extends DualProtoService<DD4UIProtos.User, DD4Protos.User> {
+public class UserService extends DualProtoService<DD4UIProtos.User, User> {
 
 	private final UserStore userStore;
 	private final Provider<HttpServletRequest> requestProvider;
@@ -23,11 +23,11 @@ public class UserService extends DualProtoService<DD4UIProtos.User, DD4Protos.Us
 	}
 
 	public DD4UIProtos.User getActive() throws DD4StorageException {
-		return getConverter().apply((DD4Protos.User) requestProvider.get().getSession(true).getAttribute("puser"));
+		return getConverter().apply((User) requestProvider.get().getSession(true).getAttribute("puser"));
 	}
 
 	public boolean login(LoginRequest loginRequest) throws DD4StorageException {
-		DD4Protos.User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
+		User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
 		if (user != null) {
 			requestProvider.get().getSession(true).setAttribute("puser", userStore.updateLastLogin(user));
 			return true;

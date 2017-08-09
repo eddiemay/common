@@ -14,7 +14,6 @@ import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
