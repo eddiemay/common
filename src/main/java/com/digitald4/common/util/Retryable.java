@@ -18,9 +18,8 @@ public abstract class Retryable<R, D> {
 		try {
 			return execute(data);
 		} catch (Exception e) {
-			e.printStackTrace();
 			if (failures++ < retryLimit) {
-				System.out.println("Retrying in 2 secs...");
+				System.out.println(e.getMessage() + ", Retrying in 2 secs...");
 				sleep(2000);
 				return run(data);
 			} else {

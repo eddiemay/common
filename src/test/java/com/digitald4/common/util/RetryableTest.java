@@ -13,7 +13,7 @@ public class RetryableTest {
 			public String execute(StringBuffer data) throws Exception {
 				if (data.length() == 0) {
 					data.append("done");
-					throw new IllegalArgumentException("");
+					throw new IllegalArgumentException("Retry test planned error");
 				}
 				return data.toString();
 			}
