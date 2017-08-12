@@ -186,7 +186,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		return (T) builder.build();
 	}
 
-	private final RetryableFunction<T, T> CREATE_FUNC =  new RetryableFunction<T, T>() {
+	private final RetryableFunction<T, T> CREATE_FUNC = new RetryableFunction<T, T>() {
 		@Override
 		public T apply(T t) {
 			String columns = "";

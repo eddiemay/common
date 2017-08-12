@@ -40,6 +40,11 @@
   <dependencies>
     <!-- Compile/runtime dependencies -->
     <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-datastore</artifactId>
+      <version>1.2.1</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>3.3.0-custom</version>
