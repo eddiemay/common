@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.digitald4.common.storage.DAOProtoSQLImpl;
 import org.joda.time.DateTime;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
@@ -16,7 +17,7 @@ import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 
 public class DAOProtoSQLImplTest {
 
-	@Test
+	@Test @Ignore
 	public void testDateQueryWithDatabase() throws Exception {
 		DAOProtoSQLImpl<User> dao = new DAOProtoSQLImpl<>(User.class,
 				new DBConnectorThreadPoolImpl("com.mysql.jdbc.Driver",
