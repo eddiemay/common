@@ -20,8 +20,6 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
-import com.google.protobuf.Timestamp;
-import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
@@ -43,7 +41,7 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 		}
 		this.descriptor = type.getDescriptorForType();
 		this.datastore = DatastoreOptions.getDefaultInstance().getService();
-		this.keyFactory = datastore.newKeyFactory().setKind(c.getName());
+		this.keyFactory = datastore.newKeyFactory().setKind(c.getSimpleName());
 	}
 
 	@Override
