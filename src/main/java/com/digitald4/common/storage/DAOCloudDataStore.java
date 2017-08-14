@@ -48,6 +48,9 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 
 	@Override
 	public T create(T t) {
+		Entity.Builder entity = Entity.newBuilder(datastore.allocateId(keyFactory.newKey()));
+		t.getAllFields()
+				.forEach((key, value) -> entity.set(key.getName(), String.valueOf(value)));
 		return toT.apply(datastore.put(toEntity.apply(t)));
 	}
 
