@@ -2,12 +2,15 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
+import com.google.cloud.datastore.Blob;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.EntityQuery;
 import com.google.cloud.datastore.FullEntity;
+import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.KeyFactory;
+import com.google.cloud.datastore.LatLng;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery.OrderBy;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
@@ -17,6 +20,8 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
+import com.google.protobuf.Timestamp;
+import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
@@ -50,8 +55,26 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 	public T create(T t) {
 		Entity.Builder entity = Entity.newBuilder(datastore.allocateId(keyFactory.newKey()));
 		t.getAllFields()
-				.forEach((key, value) -> entity.set(key.getName(), String.valueOf(value)));
+				.forEach((key, value) -> set(entity, key.getName(), value));
 		return toT.apply(datastore.put(entity.build()));
+	}
+
+	private static void set(Entity.Builder entity, String name, Object value) {
+		if (value instanceof Key) {
+			entity.set(name, (Key) value);
+		} else if (value instanceof Blob) {
+			entity.set(name, (Blob) value);
+		} else if (value instanceof Long) {
+			entity.set(name, (Long) value);
+		} else if (value instanceof Double) {
+			entity.set(name, (Double) value);
+		} else if (value instanceof LatLng) {
+			entity.set(name, (LatLng) value);
+		} else if (value instanceof Boolean) {
+			entity.set(name, (Boolean) value);
+		} else if (value instanceof FullEntity) {
+			entity.set(name, (FullEntity<?>) value);
+		}
 	}
 
 	@Override
