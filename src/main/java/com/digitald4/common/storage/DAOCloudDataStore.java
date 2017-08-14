@@ -2,6 +2,7 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
+import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.Blob;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
@@ -62,8 +63,10 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 			entity.set(name, (Key) value);
 		} else if (value instanceof Blob) {
 			entity.set(name, (Blob) value);
+		} else if (value instanceof String) {
+			entity.set(name, (String) value);
 		} else if (value instanceof Long) {
-			entity.set(name, (Long) value);
+			entity.set(name, Timestamp.of(new java.sql.Timestamp((Long) value)));
 		} else if (value instanceof Double) {
 			entity.set(name, (Double) value);
 		} else if (value instanceof LatLng) {
