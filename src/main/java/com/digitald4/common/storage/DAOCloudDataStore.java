@@ -7,7 +7,6 @@ import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.EntityQuery;
 import com.google.cloud.datastore.FullEntity;
-import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.KeyFactory;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery.OrderBy;
@@ -22,7 +21,6 @@ import com.google.protobuf.util.JsonFormat;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 
@@ -90,8 +88,8 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 
 	private Function<T, FullEntity> toEntity = t -> {
 		FullEntity.Builder entity = Entity.newBuilder();
-		t.getAllFields().entrySet()
-				.forEach(entry -> entity.set(entry.getKey().getName(), String.valueOf(entry.getValue())));
+		t.getAllFields()
+				.forEach((key, value) -> entity.set(key.getName(), String.valueOf(value)));
 		return entity.build();
 	};
 
