@@ -5,10 +5,10 @@ import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.EntityQuery;
+// import com.google.cloud.datastore.EntityQuery;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.KeyFactory;
-import com.google.cloud.datastore.Query;
+// import com.google.cloud.datastore.Query;
 // import com.google.cloud.datastore.StructuredQuery.OrderBy;
 // import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.protobuf.ByteString;
@@ -58,7 +58,7 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 
 	@Override
 	public ListResponse<T> list(ListRequest request) {
-		EntityQuery.Builder query = Query.newEntityQueryBuilder()
+		/* EntityQuery.Builder query = Query.newEntityQueryBuilder()
 				.setOffset(request.getPageToken())
 				.setLimit(request.getPageSize());
 		/* if (request.getFilterCount() > 0) {
@@ -66,10 +66,11 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 			query.setFilter(PropertyFilter.eq(filter.getColumn(), filter.getValue()));
 		}
 		request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
-						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn()))); */
+						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
 		ListResponse.Builder<T> listResponse = ListResponse.newBuilder();
 		datastore.run(query.build()).forEachRemaining(entity -> listResponse.addResult(toT.apply(entity)));
-		return listResponse.build();
+		return listResponse.build(); */
+		throw new UnsupportedOperationException("Unimplemeted");
 	}
 
 	@Override
