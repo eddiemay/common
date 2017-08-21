@@ -32,7 +32,7 @@ import org.json.JSONObject;
 
 public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedMessageV3>
 		implements ProtoService<T>, JSONService {
-	private static final MergeOptions MERGE_OPTIONS = new MergeOptions();
+	public static final MergeOptions MERGE_OPTIONS = new MergeOptions();
 	static {
 		MERGE_OPTIONS.setReplaceRepeatedFields(true);
 	}
