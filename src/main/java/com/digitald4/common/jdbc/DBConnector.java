@@ -11,5 +11,5 @@ import java.sql.SQLException;
 public interface DBConnector {
 	Connection getConnection() throws SQLException;
 
-	void connect(String dbDriver, String url, String user, String password);
+	DBConnector connect(String dbDriver, String url, String user, String password);
 }

@@ -1,18 +1,21 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4Protos.User.UserType;
-import com.digitald4.common.storage.DAOProtoSQLImpl;
+import com.digitald4.common.storage.DAOConnectorImpl;
+import com.digitald4.common.storage.DataConnector;
+import com.digitald4.common.storage.DataConnectorCloudDS;
+import com.digitald4.common.storage.DataConnectorSQLImpl;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Pair;
+import com.digitald4.common.util.Provider;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +34,12 @@ import org.json.JSONObject;
 
 
 public class ApiServiceServlet extends HttpServlet {
-	private final DBConnectorThreadPoolImpl connector;
+	public enum ServerType {TOMCAT, APPENGINE};
+	protected ServerType serverType;
+
 	private final Map<String, JSONService> services = new HashMap<>();
+	private DataConnector dataConnector;
+	protected final Provider<DataConnector> dataConnectorProvider = () -> dataConnector;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
 	protected final UserService userService;
@@ -43,28 +50,33 @@ public class ApiServiceServlet extends HttpServlet {
 	private Emailer emailer;
 
 	public ApiServiceServlet() {
-		connector = new DBConnectorThreadPoolImpl();
-
-		generalDataStore = new GeneralDataStore(new DAOProtoSQLImpl<>(GeneralData.class, connector));
+		generalDataStore = new GeneralDataStore(new DAOConnectorImpl<>(GeneralData.class, dataConnectorProvider));
 		addService("general_data", new SingleProtoService<>(generalDataStore));
 
-		userStore = new UserStore(new DAOProtoSQLImpl<>(User.class, connector, "V_USER"));
+		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider));
 		addService("user", userService = new UserService(userStore, requestProvider));
 
-		dataFileStore = new GenericStore<>(new DAOProtoSQLImpl<>(DataFile.class, connector));
+		dataFileStore = new GenericStore<>(new DAOConnectorImpl<>(DataFile.class, dataConnectorProvider));
 		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
 	}
 
 	public void init() {
 		ServletContext sc = getServletContext();
-		connector.connect(sc.getInitParameter("dbdriver"),
-				sc.getInitParameter("dburl"),
-				sc.getInitParameter("dbuser"),
-				sc.getInitParameter("dbpass"));
-	}
+		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
 
-	protected DBConnector getDBConnector() throws ServletException {
-		return connector;
+		if (serverType == ServerType.TOMCAT) {
+			// We use Tomcat with MySQL, so if Tomcat, MySQL
+			dataConnector = new DataConnectorSQLImpl(
+					new DBConnectorThreadPoolImpl()
+							.connect(sc.getInitParameter("dbdriver"),
+									sc.getInitParameter("dburl"),
+									sc.getInitParameter("dbuser"),
+									sc.getInitParameter("dbpass")))
+					.setView(User.class, "V_USER");
+		} else {
+			// We use CloudDataStore with AppEngine.
+			dataConnector = new DataConnectorCloudDS();
+		}
 	}
 
 	protected ApiServiceServlet addService(String entity, JSONService service) {

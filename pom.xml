@@ -90,6 +90,11 @@
       <artifactId>joda-time</artifactId>
       <version>2.9.9</version>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.persistence</groupId>
+      <artifactId>javax.persistence</artifactId>
+      <version>2.0.5</version>
+    </dependency>
 
     <!-- Runtime Dependencies -->
     <dependency>
@@ -114,6 +119,12 @@
   </dependencies>
     
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/js</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>com.github.os72</groupId>
@@ -141,7 +152,69 @@
           </execution>
         </executions>
       </plugin>
+      <!-- plugin>
+        <groupId>com.github.searls</groupId>
+        <artifactId>jasmine-maven-plugin</artifactId>
+        <version>1.3.1.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <sourceIncludes>
+            <include>**/jquery*</include>
+            <include>**/jasmine*</include>
+            <include>_bootstrap.js</include>
+            <include>sessionwatcher.js</include>
+          </sourceIncludes>
+          <jsSrcDir>src/main/js</jsSrcDir>
+          <jsTestSrcDir>src/test/js</jsTestSrcDir>
+        </configuration>
+      </plugin-->
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>yuicompressor-maven-plugin</artifactId>
+        <version>1.3.2</version>
+        <configuration>
+          <preProcessAggregates>true</preProcessAggregates>
+          <aggregations>
+            <aggregation>
+              <insertNewLine>true</insertNewLine>
+              <output>${basedir}/target/generated-sources/js/${project.artifactId}.js</output>
+              <inputDir>${basedir}/src/main/js</inputDir>
+              <includes>
+                <include>**/*.js</include>
+              </includes>
+              <excludes>
+                <exclude>**/*abc.js</exclude>
+                <exclude>**/compressed.css</exclude>
+              </excludes>
+            </aggregation>
+          </aggregations>
+          <excludes>
+            <exclude>**/*-min.js</exclude>
+            <exclude>**/*.min.js</exclude>
+            <exclude>**/*-min.css</exclude>
+            <exclude>**/*.min.css</exclude>
+          </excludes>
+          <jswarn>false</jswarn>
+          <nosuffix>false</nosuffix>
+          <sourceDirectory>${basedir}/target/generated-sources/js/</sourceDirectory>
+          <outputDirectory>${basedir}/target/${project.artifactId}-${project.version}/js</outputDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>compress_js_css</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compress</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
-    <outputDirectory>target/${project.artifactId}/WEB-INF/classes</outputDirectory>
   </build>
 </project>
