@@ -1,31 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="20ce0a39-29c9-426a-8dc9-39512c3f93c2" name="Default" comment="Removal of libs, tomcat and maven xml files">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.classpath" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.factorypath" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.project" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/Change.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/ChangeLog.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4Cache.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4CacheImplV2.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4EntityManager.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4EntityManagerFactory.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4EntityManagerImplV2.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4Hashtable.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4Parameter.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4ProviderUtil.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4SortedList.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4TypedQuery.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/DD4TypedQueryImplV2.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/Entity.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/EntityManagerHelper.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/Expression.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/PrimaryKey.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/PropertyCollection.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/jpa/ValueCollection.java" afterPath="" />
+    <list default="true" id="20ce0a39-29c9-426a-8dc9-39512c3f93c2" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/lib/protobuf-java-3.3.0-custom.jar" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dd4-common.iml" afterPath="$PROJECT_DIR$/dd4-common.iml" />
     </list>
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -38,7 +16,7 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="ApiServiceServlet.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="ApiServiceServlet.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/digitald4/common/server/ApiServiceServlet.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="525">
@@ -103,7 +81,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="install_local.sh" pinned="false" current-in-tab="false">
+      <file leaf-file-name="install_local.sh" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/install_local.sh">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="0">
@@ -545,7 +523,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503696529791</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Redeleted JPA, got rid of eclipse project files.">
+      <created>1503697065860</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1503697065860</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -595,7 +580,8 @@
     <MESSAGE value="Change modifier of MERGE_OPTIONS to be public for other code to use." />
     <MESSAGE value="DataConnector object created.&#10;Restored JPA files.&#10;Combinding and testing of js." />
     <MESSAGE value="Removal of libs, tomcat and maven xml files" />
-    <option name="LAST_COMMIT_MESSAGE" value="Removal of libs, tomcat and maven xml files" />
+    <MESSAGE value="Redeleted JPA, got rid of eclipse project files." />
+    <option name="LAST_COMMIT_MESSAGE" value="Redeleted JPA, got rid of eclipse project files." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -986,14 +972,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/install_local.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="15">
@@ -1041,6 +1019,14 @@
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/install_local.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
