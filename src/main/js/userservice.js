@@ -1,4 +1,4 @@
-com.digitald4.common.UserService = function(apiConnector) {
+com.digitald4.common.UserService = ['apiConnector', function(apiConnector) {
   var userService = new com.digitald4.common.JSONService('user', apiConnector);
 
   userService.login = function(username, password) {
@@ -16,5 +16,5 @@ com.digitald4.common.UserService = function(apiConnector) {
   userService.getActive = function(success, error) {
     this.performRequest(['active'], undefined, undefined, success, error);
   };
- return userService;
-};
+  return userService;
+}];

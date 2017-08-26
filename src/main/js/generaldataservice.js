@@ -1,12 +1,13 @@
-com.digitald4.common.GeneralDataService = function(apiConnector) {
+com.digitald4.common.GeneralDataServ = function(apiConnector) {
   this.jsonService = new com.digitald4.common.JSONService('general_data', apiConnector);
   this.refresh();
 };
 
-com.digitald4.common.GeneralDataService.prototype.jsonService;
-com.digitald4.common.GeneralDataService.prototype.generalDataHash = {};
+com.digitald4.common.GeneralDataService = ['apiConnector', com.digitald4.common.GeneralDataServ];
 
-com.digitald4.common.GeneralDataService.prototype.refresh = function() {
+com.digitald4.common.GeneralDataServ.prototype.generalDataHash = {};
+
+com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
   this.jsonService.list({}, function(listResponse) {
     var generalDatas = listResponse.result;
     var hash = {};
@@ -33,10 +34,10 @@ com.digitald4.common.GeneralDataService.prototype.refresh = function() {
   }.bind(this), notify);
 };
 
-com.digitald4.common.GeneralDataService.prototype.get = function(id) {
+com.digitald4.common.GeneralDataServ.prototype.get = function(id) {
   return this.generalDataHash[id] || {};
 };
 
-com.digitald4.common.GeneralDataService.prototype.list = function(groupId) {
+com.digitald4.common.GeneralDataServ.prototype.list = function(groupId) {
   return this.get(groupId).generalDatas;
 };

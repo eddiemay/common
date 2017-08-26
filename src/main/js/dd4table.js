@@ -1,4 +1,4 @@
-com.digitald4.common.TableCtrl = function($scope, apiConnector) {
+com.digitald4.common.TableController = function($scope, apiConnector) {
   this.scope = $scope;
 	this.metadata = $scope.metadata;
 	this.base = this.metadata.base;
@@ -7,7 +7,9 @@ com.digitald4.common.TableCtrl = function($scope, apiConnector) {
 	this.refresh();
 };
 
-com.digitald4.common.TableCtrl.prototype.refresh = function() {
+com.digitald4.common.TableCtrl = ['$scope', 'apiConnector', com.digitald4.common.TableController];
+
+com.digitald4.common.TableController.prototype.refresh = function() {
   this.loading = this.scope.loading = true;
 	this.jsonService.list(this.metadata.filter, function(response) {
 	  this.entities = response.result;
@@ -15,7 +17,7 @@ com.digitald4.common.TableCtrl.prototype.refresh = function() {
 	}.bind(this), notify);
 };
 
-com.digitald4.common.TableCtrl.prototype.update = function(entity, prop) {
+com.digitald4.common.TableController.prototype.update = function(entity, prop) {
   this.loading = this.scope.loading = true;
   var index = this.entities.indexOf(entity);
   this.jsonService.update(entity, [prop], function(entity) {

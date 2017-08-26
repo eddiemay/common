@@ -1,8 +1,8 @@
 com.digitald4.common.module = angular.module('DD4Common', [])
-    .service('sessionWatcher', com.digitald4.common.SessionWatcher)
     .service('apiConnector', com.digitald4.common.ApiConnector)
-    .service('userService', com.digitald4.common.UserService)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
+    .service('sessionWatcher', com.digitald4.common.SessionWatcher)
+    .service('userService', com.digitald4.common.UserService)
     .controller('LoginCtrl', com.digitald4.common.LoginCtrl)
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
     .component('dd4Input', {
@@ -127,7 +127,7 @@ com.digitald4.common.module.directive('dd4Address', function($compile) {
   }
 });
 
-com.digitald4.common.module.directive('dd4Datepicker', function($compile) {
+com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($compile) {
   return {
     restrict: 'AE',
     scope: {
@@ -209,7 +209,7 @@ com.digitald4.common.module.directive('dd4Datepicker', function($compile) {
       });
     }
   }
-});
+}]);
 
 
 
