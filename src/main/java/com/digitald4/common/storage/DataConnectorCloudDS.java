@@ -68,8 +68,10 @@ public class DataConnectorCloudDS implements DataConnector {
 			@Override
 			public ListResponse<T> apply(ListRequest request) {
 				EntityQuery.Builder query = Query.newEntityQueryBuilder()
-						.setOffset(request.getPageToken())
-						.setLimit(request.getPageSize());
+						.setOffset(request.getPageToken());
+				if (request.getPageSize() > 0) {
+					query.setLimit(request.getPageSize());
+				}
 				if (request.getFilterCount() > 0) {
 					Filter filter = request.getFilter(0);
 					query.setFilter(PropertyFilter.eq(filter.getColumn(), filter.getValue()));

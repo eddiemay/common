@@ -86,8 +86,10 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 	@Override
 	public ListResponse<T> list(ListRequest request) {
 		EntityQuery.Builder query = Query.newEntityQueryBuilder()
-				.setOffset(request.getPageToken())
-				.setLimit(request.getPageSize());
+				.setOffset(request.getPageToken());
+		if (request.getPageSize() > 0) {
+			query.setLimit(request.getPageSize());
+		}
 		if (request.getFilterCount() > 0) {
 			Filter filter = request.getFilter(0);
 			query.setFilter(PropertyFilter.eq(filter.getColumn(), filter.getValue()));
