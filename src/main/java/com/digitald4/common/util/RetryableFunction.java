@@ -4,9 +4,6 @@ import static java.lang.Thread.sleep;
 
 import java.util.function.Function;
 
-/**
- * Created by eddiemay on 12/9/16.
- */
 public abstract class RetryableFunction<T, R> implements Function<T, R> {
 	private final int tryLimit;
 
@@ -26,7 +23,7 @@ public abstract class RetryableFunction<T, R> implements Function<T, R> {
 			} catch (Exception e) {
 				e.printStackTrace();
 				if (++failures < tryLimit) {
-					System.out.println("Retrying in 2 secs...");
+					System.out.println("Retrying in .25 secs...");
 					pause();
 				} else {
 					throw e;
@@ -38,7 +35,7 @@ public abstract class RetryableFunction<T, R> implements Function<T, R> {
 
 	private void pause() {
 		try {
-			sleep(2000);
+			sleep(250);
 		} catch (InterruptedException ie) {
 			throw new RuntimeException(ie);
 		}
