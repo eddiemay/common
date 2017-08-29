@@ -257,8 +257,8 @@ public class ApiServiceServlet extends HttpServlet {
 	}
 	
 	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, int level) throws Exception {
-		HttpSession session = request.getSession(true);
-		User user = (User) session.getAttribute("puser");
+		HttpSession session = request.getSession();
+		User user = (User) session.getAttribute("user");
 		if (user == null || user.getId() == 0) {
 			String autoLoginId = getServletContext().getInitParameter("auto_login_id");
 			if (autoLoginId == null) {
@@ -266,7 +266,7 @@ public class ApiServiceServlet extends HttpServlet {
 				return false;
 			}
 			user = userStore.get(Integer.parseInt(autoLoginId));
-			session.setAttribute("puser", userStore.updateLastLogin(user));
+			session.setAttribute("user", userStore.updateLastLogin(user));
 		}
 		if (user.getTypeId() > level) {
 			response.setStatus(HttpServletResponse.SC_FORBIDDEN);

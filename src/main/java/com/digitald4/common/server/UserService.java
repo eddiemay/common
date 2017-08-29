@@ -30,12 +30,12 @@ public class UserService extends SingleProtoService<User> {
 		if (user == null) {
 			throw new DD4StorageException("Wrong username or password");
 		}
-		requestProvider.get().getSession(true).setAttribute("puser", userStore.updateLastLogin(user));
+		requestProvider.get().getSession().setAttribute("user", userStore.updateLastLogin(user));
 		return user;
 	}
 
 	private Empty logout() throws DD4StorageException {
-		requestProvider.get().getSession().setAttribute("puser", null);
+		requestProvider.get().getSession().setAttribute("user", null);
 		return Empty.getDefaultInstance();
 	}
 
@@ -50,6 +50,6 @@ public class UserService extends SingleProtoService<User> {
 	}
 
 	public boolean requiresLogin(String action) {
-		return !action.equals("login") && !action.equals("logout") && !action.equals("create");
+		return !action.equals("login") && !action.equals("logout") && !action.equals("create") && !action.equals("active");
 	}
 }
