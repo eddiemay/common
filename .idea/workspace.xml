@@ -39,8 +39,8 @@
       <file leaf-file-name="DataConnectorCloudDS.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="972">
-              <caret line="134" column="39" lean-forward="true" selection-start-line="134" selection-start-column="39" selection-end-line="134" selection-end-column="39" />
+            <state relative-caret-position="164">
+              <caret line="157" column="89" lean-forward="false" selection-start-line="157" selection-start-column="89" selection-end-line="157" selection-end-column="89" />
               <folding />
             </state>
           </provider>
@@ -848,7 +848,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503973541617</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Needed to set id on convert.">
+      <created>1503974708463</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1503974708463</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -906,7 +913,8 @@
     <MESSAGE value="Only set limit if it is greater than zero." />
     <MESSAGE value="Ability to signup in the frontend" />
     <MESSAGE value="DataStore needs kind for query" />
-    <option name="LAST_COMMIT_MESSAGE" value="DataStore needs kind for query" />
+    <MESSAGE value="Needed to set id on convert." />
+    <option name="LAST_COMMIT_MESSAGE" value="Needed to set id on convert." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1299,8 +1307,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="972">
-          <caret line="134" column="39" lean-forward="true" selection-start-line="134" selection-start-column="39" selection-end-line="134" selection-end-column="39" />
+        <state relative-caret-position="164">
+          <caret line="157" column="89" lean-forward="false" selection-start-line="157" selection-start-column="89" selection-end-line="157" selection-end-column="89" />
           <folding />
         </state>
       </provider>
