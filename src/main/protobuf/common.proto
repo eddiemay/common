@@ -26,13 +26,7 @@ message DataFile {
 
 message User {
 	int32 id = 1;
-
-	enum UserType {
-		UNSPECIFIED = 0;
-		ADMIN = 1;
-		STANDARD = 2;
-	}
-	UserType type = 2;
+	int32 type_id = 2;
 	string user_name = 3;
 	string email = 4;
 	string first_name = 5;

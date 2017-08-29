@@ -5,7 +5,6 @@ import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4Protos.User.UserType;
 import com.digitald4.common.storage.DAOConnectorImpl;
 import com.digitald4.common.storage.DataConnector;
 import com.digitald4.common.storage.DataConnectorCloudDS;
@@ -257,7 +256,7 @@ public class ApiServiceServlet extends HttpServlet {
     return (queryString == null) ? requestURL.toString() : requestURL.append('?').append(queryString).toString();
 	}
 	
-	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, UserType level) throws Exception {
+	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, int level) throws Exception {
 		HttpSession session = request.getSession(true);
 		User user = (User) session.getAttribute("puser");
 		if (user == null || user.getId() == 0) {
@@ -269,7 +268,7 @@ public class ApiServiceServlet extends HttpServlet {
 			user = userStore.get(Integer.parseInt(autoLoginId));
 			session.setAttribute("puser", userStore.updateLastLogin(user));
 		}
-		if (user.getType().getNumber() > level.getNumber()) {
+		if (user.getTypeId() > level) {
 			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 			return false;
 		}
@@ -278,10 +277,10 @@ public class ApiServiceServlet extends HttpServlet {
 	}
 
 	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		return checkLogin(request, response, UserType.STANDARD);
+		return checkLogin(request, response, 4);
 	}
 	
 	public boolean checkAdminLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		return checkLogin(request, response, UserType.ADMIN);
+		return checkLogin(request, response, 1);
 	}
 }

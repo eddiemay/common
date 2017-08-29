@@ -20,6 +20,10 @@ public class ListResponse<T> {
 		return results;
 	}
 
+	public Builder<T> toBuilder() {
+		return new Builder<>(results, totalSize);
+	}
+
 	public int getResultCount() {
 		return results.size();
 	}
@@ -33,6 +37,11 @@ public class ListResponse<T> {
 		protected int totalSize;
 
 		private Builder() {};
+
+		private Builder(List<T> results, int totalSize) {
+			this.results = results;
+			this.totalSize = totalSize;
+		};
 
 		public int getTotalSize() {
 			return totalSize;
@@ -58,6 +67,11 @@ public class ListResponse<T> {
 
 		public Builder<T> addAllResult(List<T> results) {
 			this.results.addAll(results);
+			return this;
+		}
+
+		public Builder<T> setResultList(List<T> results) {
+			this.results = results;
 			return this;
 		}
 

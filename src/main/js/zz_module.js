@@ -2,7 +2,23 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
-    .service('userService', com.digitald4.common.UserService)
+    .service('userService', ['apiConnector', function(apiConnector) {
+      var userService = new com.digitald4.common.JSONService('user', apiConnector);
+      userService.login = function(username, password) {
+        this.performRequest(['login', 'POST'], undefined, {username: username, password: password}, function() {
+          document.location.href = './';
+        }, notify);
+      };
+      userService.logout = function() {
+        this.performRequest(['logout'], undefined, undefined, function() {
+          document.location.href = "login.html";
+        }, notify);
+      };
+      userService.getActive = function(success, error) {
+        this.performRequest(['active'], undefined, undefined, success, error);
+      };
+      return userService;
+    }])
     .controller('LoginCtrl', com.digitald4.common.LoginCtrl)
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
     .component('dd4Input', {
