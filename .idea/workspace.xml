@@ -2,16 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="20ce0a39-29c9-426a-8dc9-39512c3f93c2" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/js/userservice.js" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/server/ApiServiceServlet.java" afterPath="$PROJECT_DIR$/src/main/java/com/digitald4/common/server/ApiServiceServlet.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/server/UserService.java" afterPath="$PROJECT_DIR$/src/main/java/com/digitald4/common/server/UserService.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/ListResponse.java" afterPath="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/ListResponse.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/UserStore.java" afterPath="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/UserStore.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/js/loginctrl.js" afterPath="$PROJECT_DIR$/src/main/js/loginctrl.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/js/zz_module.js" afterPath="$PROJECT_DIR$/src/main/js/zz_module.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/protobuf/common.proto" afterPath="$PROJECT_DIR$/src/main/protobuf/common.proto" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/protobuf/common_ui.proto" afterPath="$PROJECT_DIR$/src/main/protobuf/common_ui.proto" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java" afterPath="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java" />
     </list>
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -34,11 +26,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="loginctrl.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="loginctrl.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/js/loginctrl.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="120">
               <caret line="8" column="35" lean-forward="false" selection-start-line="8" selection-start-column="35" selection-end-line="8" selection-end-column="35" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="DataConnectorCloudDS.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="960">
+              <caret line="107" column="17" lean-forward="true" selection-start-line="107" selection-start-column="17" selection-end-line="107" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -125,16 +127,6 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="userctrl.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/js/userctrl.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="227">
-              <caret line="17" column="9" lean-forward="false" selection-start-line="17" selection-start-column="9" selection-end-line="17" selection-end-column="9" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
     </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
@@ -157,6 +149,7 @@
       <find>applyWithRetries</find>
       <find>${</find>
       <find>js</find>
+      <find>kind</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -199,7 +192,6 @@
         <option value="$PROJECT_DIR$/src/main/js/dd4table.js" />
         <option value="$PROJECT_DIR$/src/main/js/apiconnector.js" />
         <option value="$PROJECT_DIR$/src/main/java/com/digitald4/common/util/RetryableFunction.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DAOCloudDataStore.java" />
         <option value="$PROJECT_DIR$/src/main/js/userservice.js" />
         <option value="$PROJECT_DIR$/src/main/js/zz_module.js" />
@@ -212,6 +204,7 @@
         <option value="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/UserStore.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/digitald4/common/server/UserService.java" />
         <option value="$PROJECT_DIR$/src/main/js/loginctrl.js" />
+        <option value="$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java" />
       </list>
     </option>
   </component>
@@ -840,7 +833,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503867882133</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Ability to signup in the frontend">
+      <created>1503972370222</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1503972370222</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -896,7 +896,8 @@
     <MESSAGE value="Fixes to allow minification of javascript" />
     <MESSAGE value="Lowered retry time from 2 secs to a quarter of a second." />
     <MESSAGE value="Only set limit if it is greater than zero." />
-    <option name="LAST_COMMIT_MESSAGE" value="Only set limit if it is greater than zero." />
+    <MESSAGE value="Ability to signup in the frontend" />
+    <option name="LAST_COMMIT_MESSAGE" value="Ability to signup in the frontend" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1167,17 +1168,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="147">
-          <caret line="73" column="9" lean-forward="false" selection-start-line="70" selection-start-column="46" selection-end-line="73" selection-end-column="9" />
-          <folding>
-            <element signature="e#1623#1624#0" expanded="true" />
-            <element signature="e#1697#1698#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DAOCloudDataStore.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="202">
@@ -1294,6 +1284,14 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="8" column="35" lean-forward="false" selection-start-line="8" selection-start-column="35" selection-end-line="8" selection-end-column="35" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/digitald4/common/storage/DataConnectorCloudDS.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="960">
+          <caret line="107" column="17" lean-forward="true" selection-start-line="107" selection-start-column="17" selection-end-line="107" selection-end-column="17" />
           <folding />
         </state>
       </provider>

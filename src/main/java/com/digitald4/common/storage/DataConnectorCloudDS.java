@@ -68,6 +68,7 @@ public class DataConnectorCloudDS implements DataConnector {
 			@Override
 			public ListResponse<T> apply(ListRequest request) {
 				EntityQuery.Builder query = Query.newEntityQueryBuilder()
+						.setKind(c.getSimpleName())
 						.setOffset(request.getPageToken());
 				if (request.getPageSize() > 0) {
 					query.setLimit(request.getPageSize());
@@ -111,7 +112,7 @@ public class DataConnectorCloudDS implements DataConnector {
 	}
 
 	public <T extends GeneratedMessageV3> T getDefaultInstance(Class<?> c) {
-		T defaultInstance =    (T) defaultInstances.get(c);
+		T defaultInstance = (T) defaultInstances.get(c);
 		if (defaultInstance == null) {
 			try {
 				defaultInstance = (T) c.getMethod("getDefaultInstance").invoke(null);
