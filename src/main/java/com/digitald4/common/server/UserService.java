@@ -22,7 +22,7 @@ public class UserService extends SingleProtoService<User> {
 	}
 
 	private User getActive() throws DD4StorageException {
-		return getConverter().apply((User) requestProvider.get().getSession(true).getAttribute("puser"));
+		return getConverter().apply((User) requestProvider.get().getSession().getAttribute("user"));
 	}
 
 	private User login(LoginRequest loginRequest) throws DD4StorageException {
