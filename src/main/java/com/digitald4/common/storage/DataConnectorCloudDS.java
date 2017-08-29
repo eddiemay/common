@@ -125,13 +125,8 @@ public class DataConnectorCloudDS implements DataConnector {
 		return defaultInstance;
 	}
 
-	public KeyFactory getKeyFactory(Class<?> c) {
-		KeyFactory keyFactory = keyFactories.get(c);
-		if (keyFactory == null) {
-			keyFactory = datastore.newKeyFactory().setKind(c.getSimpleName());
-			keyFactories.put(c, keyFactory);
-		}
-		return keyFactory;
+	private KeyFactory getKeyFactory(Class<?> c) {
+		return keyFactories.computeIfAbsent(c, v -> datastore.newKeyFactory().setKind(c.getSimpleName()));
 	}
 
 	private static void set(Entity.Builder entity, String name, Object value) {
@@ -151,6 +146,8 @@ public class DataConnectorCloudDS implements DataConnector {
 			entity.set(name, (Boolean) value);
 		} else if (value instanceof FullEntity) {
 			entity.set(name, (FullEntity<?>) value);
+		} else {
+			entity.set(name, value.toString());
 		}
 	}
 
@@ -158,6 +155,7 @@ public class DataConnectorCloudDS implements DataConnector {
 		Message.Builder builder = getDefaultInstance(c).toBuilder();
 		entity.getNames();
 		Descriptor descriptor = builder.getDescriptorForType();
+		builder.setField(descriptor.findFieldByName("id"), entity.getKey().getId());
 		for (String columnName : entity.getNames()) {
 			Object value = entity.getValue(columnName);
 			if (value != null) {
@@ -183,5 +181,5 @@ public class DataConnectorCloudDS implements DataConnector {
 			}
 		}
 		return (T) builder.build();
-	};
+	}
 }
