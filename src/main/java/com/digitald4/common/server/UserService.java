@@ -50,6 +50,6 @@ public class UserService extends SingleProtoService<User> {
 	}
 
 	public boolean requiresLogin(String action) {
-		return !action.equals("login") && !action.equals("logout") && !action.equals("create");
+		return !action.equals("login") && !action.equals("logout") && !action.equals("create") && !action.equals("active");
 	}
 }
