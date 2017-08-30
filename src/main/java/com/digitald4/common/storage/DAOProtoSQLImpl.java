@@ -64,7 +64,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		this.descriptor = type.getDescriptorForType();
 		this.connector = connector;
 		this.table = table != null ? table : descriptor.getName();
-		this.view = view != null ? view : this.table;
+		this.view = view != null ? view : this.table + "View";
 	}
 	
 	@Override

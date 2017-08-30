@@ -65,13 +65,11 @@ public class ApiServiceServlet extends HttpServlet {
 
 		if (serverType == ServerType.TOMCAT) {
 			// We use Tomcat with MySQL, so if Tomcat, MySQL
-			dataConnector = new DataConnectorSQLImpl(
-					new DBConnectorThreadPoolImpl()
-							.connect(sc.getInitParameter("dbdriver"),
-									sc.getInitParameter("dburl"),
-									sc.getInitParameter("dbuser"),
-									sc.getInitParameter("dbpass")))
-					.setView(User.class, "V_USER");
+			dataConnector = new DataConnectorSQLImpl(new DBConnectorThreadPoolImpl()
+					.connect(sc.getInitParameter("dbdriver"),
+							sc.getInitParameter("dburl"),
+							sc.getInitParameter("dbuser"),
+							sc.getInitParameter("dbpass")));
 		} else {
 			// We use CloudDataStore with AppEngine.
 			dataConnector = new DataConnectorCloudDS();

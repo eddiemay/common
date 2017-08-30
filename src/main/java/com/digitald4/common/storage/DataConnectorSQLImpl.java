@@ -41,7 +41,6 @@ public class DataConnectorSQLImpl implements DataConnector {
 	private static final String COUNT_SQL = "SELECT COUNT(*) FROM ";
 
 	private final DBConnector connector;
-	private final Map<Class<?>, String> views = new HashMap<>();
 	private final Map<Class<?>, GeneratedMessageV3> defaultInstances = new HashMap<>();
 
 	public DataConnectorSQLImpl(DBConnector connector) {
@@ -262,17 +261,8 @@ public class DataConnectorSQLImpl implements DataConnector {
 		return c.getSimpleName();
 	}
 
-	public DataConnectorSQLImpl setView(Class<?> c, String view) {
-		views.put(c, view);
-		return this;
-	}
-
 	public String getView(Class<?> c) {
-		String view = views.get(c);
-		if (view == null) {
-			view = getTable(c);
-		}
-		return view;
+		return c.getSimpleName() + "View";
 	}
 
 	private <T extends GeneratedMessageV3> void setObject(PreparedStatement ps, int index, T t, FieldDescriptor field, Object value)

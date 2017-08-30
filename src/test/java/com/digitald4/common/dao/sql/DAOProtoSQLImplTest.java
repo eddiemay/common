@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4Protos.User.UserType;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 
 public class DAOProtoSQLImplTest {
@@ -27,7 +26,7 @@ public class DAOProtoSQLImplTest {
 				.setLastName("User")
 				.setUserName("testuser")
 				.setEmail("test@example.com")
-				.setType(UserType.STANDARD)
+				.setTypeId(4)
 				.setLastLogin(new DateTime("2005-06-18T19:30:15").getMillis())
 				.build();
 		try {
