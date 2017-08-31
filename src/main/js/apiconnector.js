@@ -1,14 +1,17 @@
-com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'sessionWatcher',
-    function($http, $httpParamSerializer, sessionWatcher) {
+com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalData', 'sessionWatcher',
+    function($http, $httpParamSerializer, globalData, sessionWatcher) {
 	this.baseUrl = 'api/';
 	this.$http = $http;
 	this.$httpParamSerializer = $httpParamSerializer;
+	this.globalData = globalData;
 	this.sessionWatcher = sessionWatcher;
 
 	this.performRequest = function(method, url, params, successCallback, errorCallback) {
 	  this.sessionWatcher.extendTime();
     url = this.baseUrl + url;
     var data = undefined;
+    // params = params || {};
+    // params.id_token = this.globalData.idToken;
     if (method == 'GET') {
       var serializedParams = this.$httpParamSerializer(params);
       if (params != undefined && serializedParams.length > 0) {
@@ -30,7 +33,7 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'sessionWa
     }, function(response) {
       console.log('Status code: ' + response.status);
       if (response.status == 401) {
-        document.location.href = 'login.html';
+        // document.location.href = 'login.html';
       } else {
         console.log('error: ' + response.data.error);
         console.log('StackTrace: ' + response.data.stackTrace);

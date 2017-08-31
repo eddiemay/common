@@ -265,8 +265,8 @@ public class DataConnectorSQLImpl implements DataConnector {
 		return c.getSimpleName() + "View";
 	}
 
-	private <T extends GeneratedMessageV3> void setObject(PreparedStatement ps, int index, T t, FieldDescriptor field, Object value)
-			throws SQLException {
+	private <T extends GeneratedMessageV3> void setObject(PreparedStatement ps, int index, T t, FieldDescriptor field,
+																												Object value) throws SQLException {
 		if ("".equals(value)) {
 			value = null;
 		}

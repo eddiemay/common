@@ -1,0 +1,103 @@
+<div class="special-page login-bg dark" style="
+    width: 34em;
+    margin-left: -17em;
+    margin-top: -15em;
+    position: absolute;
+    z-index: 89;
+    left: 50%;
+    top: 50%;">
+  <section id="message" data-ng-show="$ctrl.message">
+    <div class="block-border">
+      <div class="block-content no-title dark-bg">
+        <p class="mini-infos">{{$ctrl.message}}</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="login-block">
+    <div class="block-border">
+      <div class="block-content">
+        <h1>{{$ctrl.label}}</h1>
+        <div class="block-header">Please Login</div>
+        <a data-ng-if="$ctrl.allowSignup" href="#signup" data-ng-click="$ctrl.showSignUpDialog()">Sign Up</a>
+        <p class="message error no-margin" data-ng-show="$ctrl.errorMessage">{{$ctrl.errorMessage}}</p>
+        <div class="form with-margin">
+          <p class="inline-small-label">
+            <label for="email"><span class="big">Email Address</span></label>
+            <input type="text" id="email" class="full-width" data-ng-model="$ctrl.email"/>
+          </p>
+          <p class="inline-small-label">
+            <label for="password"><span class="big">Password</span></label>
+            <input type="password" id="password" class="full-width" data-ng-model="$ctrl.password"/>
+          </p>
+          <button class="float-right" data-ng-click="$ctrl.login()">Login</button>
+        </div>
+
+        <div class="form">
+          <fieldset class="grey-bg no-margin collapse">
+            <legend><a href="#">Lost password?</a></legend>
+            <p class="input-with-button">
+              <label for="recovery-mail">Enter your e-mail address</label>
+              <input type="text" id="recovery-mail" data-ng-model="$ctrl.email">
+              <button data-ng-click="$ctrl.recoverPassword()">Send</button>
+            </p>
+          </fieldset>
+        </div>
+      </div>
+    </div>
+
+    <div data-ng-show="$ctrl.signUpDialogShown" id="modal" style="display: block;">
+      <div class="modal-window block-border" style="display: block; left: 388px; top: 250px;">
+        <ul class="action-tabs right">
+          <li><a data-ng-click="$ctrl.closeSignUpDialog()" title="Close window">
+            <img src="images/icons/fugue/cross-circle.png" width="16" height="16">
+          </a></li>
+        </ul>
+        <div class="block-content form">
+          <h1>Sign Up</h1>
+          <div class="modal-content modal-scroll" style="min-width:200px; min-height:40px; height:150px; width:450px; max-width:500px;">
+            <fieldset class="white-bg">
+              <div class="error-block" data-ng-show="$ctrl.signUpError">
+                <p class="message error no-margin">{{$ctrl.signUpError}}</p>
+              </div>
+              <div>
+                <label>Email Address</label>
+                <input type="text" data-ng-model="$ctrl.email" class="full-width">
+              </div>
+              <div class="columns">
+                <div class="colx2-left">
+                  <label>First Name</label>
+                  <input type="text" data-ng-model="$ctrl.firstName"/>
+                </div>
+                <div class="colx2-right">
+                  <label>Last Name</label>
+                  <input type="text" data-ng-model="$ctrl.lastName"/>
+                </div>
+                <div class="colx2-left">
+                  <label>Password</label>
+                  <input type="password" data-ng-model="$ctrl.password"/>
+                </div>
+                <div class="colx2-right">
+                  <label>Retype Password</label>
+                  <input type="password" data-ng-model="$ctrl.retypePassword"/>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="block-footer align-right">
+            <button type="button" data-ng-click="$ctrl.processSignUp()">Ok</button>
+            <button type="button" data-ng-click="$ctrl.closeSignUpDialog()">Cancel</button>
+          </div>
+        </div>
+        <div class="modal-resize-tl"></div>
+        <div class="modal-resize-t"></div>
+        <div class="modal-resize-tr"></div>
+        <div class="modal-resize-r"></div>
+        <div class="modal-resize-br"></div>
+        <div class="modal-resize-b"></div>
+        <div class="modal-resize-bl"></div>
+        <div class="modal-resize-l"></div>
+      </div>
+    </div>
+  </section>
+</div>

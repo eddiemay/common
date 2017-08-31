@@ -1,25 +1,31 @@
 com.digitald4.common.module = angular.module('DD4Common', [])
+    .factory('globalData', function() {
+      return {};
+    })
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
     .service('userService', ['apiConnector', function(apiConnector) {
       var userService = new com.digitald4.common.JSONService('user', apiConnector);
-      userService.login = function(username, password) {
-        this.performRequest(['login', 'POST'], undefined, {username: username, password: password}, function() {
-          document.location.href = './';
-        }, notify);
+      userService.login = function(username, password, success, error) {
+        this.performRequest(['login', 'POST'], undefined, {username: username, password: password}, success, error);
       };
-      userService.logout = function() {
-        this.performRequest(['logout'], undefined, undefined, function() {
-          document.location.href = "login.html";
-        }, notify);
+      userService.logout = function(success, error) {
+        this.performRequest(['logout'], undefined, undefined, success, error);
       };
       userService.getActive = function(success, error) {
         this.performRequest(['active'], undefined, undefined, success, error);
       };
       return userService;
     }])
-    .controller('LoginCtrl', com.digitald4.common.LoginCtrl)
+    .controller('DD4AppCtrl', ['globalData', 'userService', function(globalData, userService) {
+      this.globalData = globalData;
+      this.logout = function() {
+        userService.logout(function() {
+          globalData.idToken = undefined;
+        }, notify);
+      };
+    }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
     .component('dd4Input', {
       templateUrl: 'js/html/dd4input.html',
@@ -35,6 +41,14 @@ com.digitald4.common.module = angular.module('DD4Common', [])
         options: '<',
         ngModel: '=',
         onChange: '&'
+      }
+    })
+    .component('dd4Login', {
+      templateUrl: 'js/html/login.html',
+      controller: com.digitald4.common.LoginCtrl,
+      bindings: {
+        label: '@',
+        allowSignup: '@',
       }
     })
     .directive('dd4Time', function() {
@@ -263,7 +277,6 @@ com.digitald4.common.module.directive('dd4Timepicker', function($compile) {
 });
 
 com.digitald4.common.module.controller('TableCtrl', com.digitald4.common.TableCtrl);
-
 com.digitald4.common.module.directive('dd4Table', function() {
   return {
     restrict: 'A',
