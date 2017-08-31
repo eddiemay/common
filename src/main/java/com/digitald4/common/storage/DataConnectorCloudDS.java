@@ -153,31 +153,27 @@ public class DataConnectorCloudDS implements DataConnector {
 
 	private <T extends GeneratedMessageV3> T convert(Class<?> c, Entity entity) {
 		Message.Builder builder = getDefaultInstance(c).toBuilder();
-		entity.getNames();
 		Descriptor descriptor = builder.getDescriptorForType();
 		builder.setField(descriptor.findFieldByName("id"), entity.getKey().getId().intValue());
 		for (String columnName : entity.getNames()) {
-			Object value = entity.getValue(columnName);
-			if (value != null) {
-				try {
-					FieldDescriptor field = descriptor.findFieldByName(columnName);
-					if (field.isRepeated() || field.getJavaType() == JavaType.MESSAGE) {
-						JsonFormat.parser().ignoringUnknownFields()
-								.merge("{\"" + field.getName() + "\": " + entity.getString(columnName) + "}", builder);
-					} else if (field.getJavaType() == JavaType.ENUM) {
-						value = field.getEnumType().findValueByNumber((int) entity.getLong(columnName));
-						builder.setField(field, value);
-					} else if (field.getJavaType() == JavaType.LONG) {
-						value = entity.getLong(columnName);
-						builder.setField(field, value);
-					} else if (field.getJavaType() == JavaType.BYTE_STRING) {
-						builder.setField(field, ByteString.copyFrom(entity.getBlob(columnName).toByteArray()));
-					} else {
-						builder.setField(field, value);
-					}
-				} catch (Exception e) {
-					System.out.println(e.getMessage() + " for column: " + columnName + ". value: " + value);
+			try {
+				FieldDescriptor field = descriptor.findFieldByName(columnName);
+				if (field.isRepeated() || field.getJavaType() == JavaType.MESSAGE) {
+					JsonFormat.parser().ignoringUnknownFields()
+							.merge("{\"" + field.getName() + "\": " + entity.getString(columnName) + "}", builder);
+				} else if (field.getJavaType() == JavaType.ENUM) {
+					builder.setField(field, field.getEnumType().findValueByNumber((int) entity.getLong(columnName)));
+				} else if (field.getJavaType() == JavaType.LONG) {
+					builder.setField(field, entity.getLong(columnName));
+				} else if (field.getJavaType() == JavaType.BYTE_STRING) {
+					builder.setField(field, ByteString.copyFrom(entity.getBlob(columnName).toByteArray()));
+				} else if (field.getJavaType() == JavaType.STRING) {
+					builder.setField(field, entity.getString(columnName));
+				} else if (field.getJavaType() == JavaType.INT) {
+					builder.setField(field, (int) entity.getLong(columnName));
 				}
+			} catch (Exception e) {
+				System.out.println(e.getMessage() + " for column: " + columnName + ". value: " + entity.getValue(columnName));
 			}
 		}
 		return (T) builder.build();
