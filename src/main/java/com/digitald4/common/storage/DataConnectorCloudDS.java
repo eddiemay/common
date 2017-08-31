@@ -154,6 +154,7 @@ public class DataConnectorCloudDS implements DataConnector {
 	private <T extends GeneratedMessageV3> T convert(Class<?> c, Entity entity) {
 		Message.Builder builder = getDefaultInstance(c).toBuilder();
 		Descriptor descriptor = builder.getDescriptorForType();
+		builder.setField(descriptor.findFieldByName("notes"), "id: " + entity.getKey().getId() + " name: " + entity.getKey().getName() + " kind: " + entity.getKey().getKind() + " entity: " + entity + " key: " + entity.getKey());
 		builder.setField(descriptor.findFieldByName("id"), entity.getKey().getId().intValue());
 		for (String columnName : entity.getNames()) {
 			try {
