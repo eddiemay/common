@@ -8,7 +8,8 @@ com.digitald4.common.LoginCtrl = ['userService', 'sessionWatcher', 'globalData',
 
 com.digitald4.common.LoginController.prototype.login = function() {
   this.userService.login(this.email, this.password, function(user) {
-    this.globalData.idToken = 5;
+    this.globalData.user = user;
+    this.globalData.idToken = user.idToken;
   }.bind(this), notify);
 };
 

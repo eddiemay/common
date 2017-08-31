@@ -26,18 +26,18 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 
 public class ApiServiceServlet extends HttpServlet {
 	public enum ServerType {TOMCAT, APPENGINE};
 	protected ServerType serverType;
 
 	private final Map<String, JSONService> services = new HashMap<>();
+	private final IdTokenResolver idTokenResolver;
 	private DataConnector dataConnector;
+	private Emailer emailer;
 	protected final Provider<DataConnector> dataConnectorProvider = () -> dataConnector;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
@@ -46,14 +46,16 @@ public class ApiServiceServlet extends HttpServlet {
 	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
-	private Emailer emailer;
+	private String autoLoginId;
 
 	public ApiServiceServlet() {
+		idTokenResolver = new IdTokenResolverDD4Impl();
+
 		generalDataStore = new GeneralDataStore(new DAOConnectorImpl<>(GeneralData.class, dataConnectorProvider));
 		addService("general_data", new SingleProtoService<>(generalDataStore));
 
 		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider));
-		addService("user", userService = new UserService(userStore, requestProvider));
+		addService("user", userService = new UserService(userStore, userProvider, idTokenResolver));
 
 		dataFileStore = new GenericStore<>(new DAOConnectorImpl<>(DataFile.class, dataConnectorProvider));
 		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
@@ -62,7 +64,7 @@ public class ApiServiceServlet extends HttpServlet {
 	public void init() {
 		ServletContext sc = getServletContext();
 		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
-
+		autoLoginId = getServletContext().getInitParameter("auto_login_id");
 		if (serverType == ServerType.TOMCAT) {
 			// We use Tomcat with MySQL, so if Tomcat, MySQL
 			dataConnector = new DataConnectorSQLImpl(new DBConnectorThreadPoolImpl()
@@ -83,6 +85,7 @@ public class ApiServiceServlet extends HttpServlet {
 
 	protected void processRequest(String entity, String action, JSONObject jsonRequest,
 																HttpServletRequest request, HttpServletResponse response) throws ServletException {
+		userProvider.set(idTokenResolver.resolve(request.getParameter("idToken")));
 		requestProvider.set(request);
 		responseProvider.set(response);
 		try {
@@ -216,7 +219,7 @@ public class ApiServiceServlet extends HttpServlet {
 
 			JSONArray parameters = json.has("filter") ? json.getJSONArray("filter") : new JSONArray();
 			for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-				if (!entry.getKey().equals("json")) {
+				if (!entry.getKey().equals("json") && !entry.getKey().equals("idToken")) {
 					for (String value : entry.getValue()) {
 						int pos = 0;
 						while (value.charAt(pos) >= '<' && value.charAt(pos) <= '>') {
@@ -255,22 +258,20 @@ public class ApiServiceServlet extends HttpServlet {
 	}
 	
 	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, int level) throws Exception {
-		HttpSession session = request.getSession();
-		User user = (User) session.getAttribute("user");
+		User user = userProvider.get();
 		if (user == null || user.getId() == 0) {
-			String autoLoginId = getServletContext().getInitParameter("auto_login_id");
 			if (autoLoginId == null) {
 				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 				return false;
 			}
 			user = userStore.get(Integer.parseInt(autoLoginId));
-			session.setAttribute("user", userStore.updateLastLogin(user));
+			((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
+			userProvider.set(user);
 		}
 		if (user.getTypeId() > level) {
 			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 			return false;
 		}
-		userProvider.set(user);
 		return true;
 	}
 

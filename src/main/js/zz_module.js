@@ -1,6 +1,6 @@
 com.digitald4.common.module = angular.module('DD4Common', [])
     .factory('globalData', function() {
-      return {};
+      return new com.digitald4.common.GlobalData();
     })
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('generalDataService', com.digitald4.common.GeneralDataService)

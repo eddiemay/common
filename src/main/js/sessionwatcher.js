@@ -1,31 +1,24 @@
 var ONE_MINUTE = 60000;
 var SESSION_TIME = 30 * ONE_MINUTE;
 
-com.digitald4.common.SessionWatcher = ['globalData', function(globalData) {
-  var expiration = 0;
+com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(globalData, userService) {
   var interval;
 
-  var startTimer = function() {
+  this.startTimer = function() {
     interval = setInterval(function() {
-      if (Date.now() > expiration) {
-        // TODO(eddiemay) Need to call logout on the server.
-        globalData.idToken = undefined;
+      if (Date.now() > globalData.expiration) {
+        userService.logout(function() {
+          globalData.idToken = undefined;
+        }, notify);
       } else {
-        console.log(((expiration - Date.now()) / 1000) + ' seconds remainning in session.');
+        console.log(((globalData.expiration - Date.now()) / 1000) + ' seconds remainning in session.');
       }
     }, ONE_MINUTE);
-  };
-
-  this.extendTime = function() {
-    if (expiration == 0) {
-      startTimer();
-    }
-    expiration = Date.now() + SESSION_TIME;
   };
 
   this.disable = function() {
     console.log("Disabling session watcher");
     clearInterval(interval);
-    expiration = 0;
+    globalData.expiration = 0;
   };
 }];

@@ -1,24 +1,22 @@
-com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalData', 'sessionWatcher',
-    function($http, $httpParamSerializer, globalData, sessionWatcher) {
+com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalData',
+    function($http, $httpParamSerializer, globalData) {
 	this.baseUrl = 'api/';
 	this.$http = $http;
 	this.$httpParamSerializer = $httpParamSerializer;
-	this.globalData = globalData;
-	this.sessionWatcher = sessionWatcher;
 
 	this.performRequest = function(method, url, params, successCallback, errorCallback) {
-	  this.sessionWatcher.extendTime();
+	  globalData.extendTime();
     url = this.baseUrl + url;
     var data = undefined;
-    // params = params || {};
-    // params.id_token = this.globalData.idToken;
     if (method == 'GET') {
+      params = params || {};
+      params.idToken = globalData.idToken;
       var serializedParams = this.$httpParamSerializer(params);
       if (params != undefined && serializedParams.length > 0) {
         url += ((url.indexOf('?') === -1) ? '?' : '&') + serializedParams;
       }
     } else {
-      data = this.$httpParamSerializer({json: JSON.stringify(params)});
+      data = this.$httpParamSerializer({json: JSON.stringify(params), idToken: globalData.idToken});
     }
     // Send
     this.$http({

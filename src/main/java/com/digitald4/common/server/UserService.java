@@ -8,21 +8,21 @@ import com.digitald4.common.util.Provider;
 import com.google.protobuf.Empty;
 import org.json.JSONObject;
 
-import javax.servlet.http.HttpServletRequest;
-
 public class UserService extends SingleProtoService<User> {
 
 	private final UserStore userStore;
-	private final Provider<HttpServletRequest> requestProvider;
+	private final Provider<User> userProvider;
+	private final IdTokenResolver idTokenResolver;
 
-	UserService(UserStore userStore, Provider<HttpServletRequest> requestProvider) {
+	UserService(UserStore userStore, Provider<User> userProvider, IdTokenResolver idTokenResolver) {
 		super(userStore);
 		this.userStore = userStore;
-		this.requestProvider = requestProvider;
+		this.userProvider = userProvider;
+		this.idTokenResolver = idTokenResolver;
 	}
 
 	private User getActive() throws DD4StorageException {
-		return getConverter().apply((User) requestProvider.get().getSession().getAttribute("user"));
+		return userProvider.get();
 	}
 
 	private User login(LoginRequest loginRequest) throws DD4StorageException {
@@ -30,12 +30,14 @@ public class UserService extends SingleProtoService<User> {
 		if (user == null) {
 			throw new DD4StorageException("Wrong username or password");
 		}
-		requestProvider.get().getSession().setAttribute("user", userStore.updateLastLogin(user));
-		return user;
+		return ((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
 	}
 
 	private Empty logout() throws DD4StorageException {
-		requestProvider.get().getSession().setAttribute("user", null);
+		User user = userProvider.get();
+		if (user != null) {
+			((IdTokenResolverDD4Impl) idTokenResolver).remove(user.getIdToken());
+		}
 		return Empty.getDefaultInstance();
 	}
 

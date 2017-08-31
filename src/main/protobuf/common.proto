@@ -39,6 +39,8 @@ message User {
 
   // This should not be put into the UI model.
   string password = 12;
+
+  string idToken = 13;
 }
 
 message Company {
