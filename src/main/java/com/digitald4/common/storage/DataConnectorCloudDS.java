@@ -188,7 +188,7 @@ public class DataConnectorCloudDS implements DataConnector {
 					JsonFormat.parser().ignoringUnknownFields()
 							.merge("{\"" + field.getName() + "\": " + entity.getString(columnName) + "}", builder);
 				} else if (field.getJavaType() == JavaType.ENUM) {
-					builder.setField(field, field.getEnumType().findValueByNumber((int) entity.getLong(columnName)));
+					builder.setField(field, field.getEnumType().findValueByName(entity.getString(columnName)));
 				} else if (field.getJavaType() == JavaType.LONG) {
 					builder.setField(field, entity.getLong(columnName));
 				} else if (field.getJavaType() == JavaType.BYTE_STRING) {
