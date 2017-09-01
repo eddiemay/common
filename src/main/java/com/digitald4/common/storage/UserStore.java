@@ -43,10 +43,9 @@ public class UserStore extends GenericStore<User> {
 	}
 
 	public User updateLastLogin(User user) throws DD4StorageException {
-		return user;
-		/* return update(user.getId(), user_ -> user_.toBuilder()
+		return update(user.getId(), user_ -> user_.toBuilder()
 				.setLastLogin(DateTime.now().getMillis())
-				.build()); */
+				.build());
 	}
 
 	public User getBy(String login, String password) throws DD4StorageException {

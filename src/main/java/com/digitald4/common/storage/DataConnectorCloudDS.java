@@ -137,7 +137,11 @@ public class DataConnectorCloudDS implements DataConnector {
 		} else if (value instanceof String) {
 			entity.set(name, (String) value);
 		} else if (value instanceof Long) {
-			entity.set(name, Timestamp.of(new java.sql.Timestamp((Long) value)));
+			if (name.endsWith("id")) {
+				entity.set(name, (Long) value);
+			} else {
+				entity.set(name, Timestamp.of(new java.sql.Timestamp((Long) value)));
+			}
 		} else if (value instanceof Double) {
 			entity.set(name, (Double) value);
 		} else if (value instanceof LatLng) {
