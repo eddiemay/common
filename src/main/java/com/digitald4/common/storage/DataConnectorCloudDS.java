@@ -130,6 +130,9 @@ public class DataConnectorCloudDS implements DataConnector {
 	}
 
 	private static void set(Entity.Builder entity, String name, Object value) {
+		if (name.equals("id")) {
+			return;
+		}
 		if (value instanceof Key) {
 			entity.set(name, (Key) value);
 		} else if (value instanceof Blob) {
