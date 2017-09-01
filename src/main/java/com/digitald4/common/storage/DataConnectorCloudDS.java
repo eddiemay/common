@@ -1,5 +1,6 @@
 package com.digitald4.common.storage;
 
+import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Pair;
@@ -74,8 +75,9 @@ public class DataConnectorCloudDS implements DataConnector {
 					query.setLimit(request.getPageSize());
 				}
 				if (request.getFilterCount() > 0) {
+					Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
 					Filter filter = request.getFilter(0);
-					query.setFilter(PropertyFilter.eq(filter.getColumn(), filter.getValue()));
+					query.setFilter(convertToFilter(filter, descriptor));
 				}
 				request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
 						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
@@ -84,6 +86,20 @@ public class DataConnectorCloudDS implements DataConnector {
 				return listResponse.build();
 			}
 		}.apply(listRequest);
+	}
+
+	private PropertyFilter convertToFilter(Filter filter, Descriptor descriptor) {
+		String columName = filter.getColumn();
+		FieldDescriptor field = descriptor.findFieldByName(columName);
+		if (field == null) {
+			throw new DD4StorageException("Unknown column: " + columName);
+		}
+		switch (field.getJavaType()) {
+			case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
+			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
+			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
+		}
+		return PropertyFilter.eq(columName, filter.getValue());
 	}
 
 	@Override
