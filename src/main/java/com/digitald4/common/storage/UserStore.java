@@ -23,7 +23,7 @@ public class UserStore extends GenericStore<User> {
 	}
 
 	@Override
-	public User get(int id) {
+	public User get(long id) {
 		return super.get(id).toBuilder().clearPassword().build();
 	}
 
@@ -35,19 +35,17 @@ public class UserStore extends GenericStore<User> {
 						.map(user -> user.toBuilder().clearPassword().build())
 						.collect(Collectors.toList()))
 				.build();
-
 	}
 
 	@Override
-	public User update(int id, UnaryOperator<User> updater) {
+	public User update(long id, UnaryOperator<User> updater) {
 		return super.update(id, updater).toBuilder().clearPassword().build();
 	}
 
-	public User updateLastLogin(User user_) throws DD4StorageException {
-		return user_;
-		/* return update(user_.getId(), user -> user.toBuilder()
+	public User updateLastLogin(User user) throws DD4StorageException {
+		return update(user.getId(), user_ -> user_.toBuilder()
 				.setLastLogin(DateTime.now().getMillis())
-				.build()); */
+				.build());
 	}
 
 	public User getBy(String login, String password) throws DD4StorageException {

@@ -8,11 +8,11 @@ public interface DataConnector {
 
 	<T extends GeneratedMessageV3> T create(T t);
 
-	<T extends GeneratedMessageV3> T get(Class<T> c, int id);
+	<T extends GeneratedMessageV3> T get(Class<T> c, long id);
 
 	<T extends GeneratedMessageV3> ListResponse<T> list(Class<T> c, ListRequest listRequest);
 
-	<T extends GeneratedMessageV3> T update(Class<T> c, int id, UnaryOperator<T> updater);
+	<T extends GeneratedMessageV3> T update(Class<T> c, long id, UnaryOperator<T> updater);
 
-	<T> void delete(Class<T> c, int id);
+	<T> void delete(Class<T> c, long id);
 }

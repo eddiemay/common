@@ -79,7 +79,7 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 	}
 
 	@Override
-	public T get(int id) {
+	public T get(long id) {
 		return toT.apply(datastore.get(keyFactory.newKey(id)));
 	}
 
@@ -102,12 +102,12 @@ public class DAOCloudDataStore<T extends GeneratedMessageV3> implements DAO<T> {
 	}
 
 	@Override
-	public T update(int id, UnaryOperator<T> updater) {
+	public T update(long id, UnaryOperator<T> updater) {
 		return toT.apply(datastore.put(toEntity.apply(updater.apply(get(id)))));
 	}
 
 	@Override
-	public void delete(int id) {
+	public void delete(long id) {
 		datastore.delete(keyFactory.newKey(id));
 	}
 

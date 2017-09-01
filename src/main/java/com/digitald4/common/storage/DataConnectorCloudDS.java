@@ -53,10 +53,10 @@ public class DataConnectorCloudDS implements DataConnector {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T get(Class<T> c, int id) {
-		return new RetryableFunction<Integer, T>() {
+	public <T extends GeneratedMessageV3> T get(Class<T> c, long id) {
+		return new RetryableFunction<Long, T>() {
 			@Override
-			public T apply(Integer id) {
+			public T apply(Long id) {
 				return convert(c, datastore.get(getKeyFactory(c).newKey(id)));
 			}
 		}.applyWithRetries(id);
@@ -87,10 +87,10 @@ public class DataConnectorCloudDS implements DataConnector {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T update(Class<T> c, int id, UnaryOperator<T> updater) {
-		return new RetryableFunction<Pair<Integer, UnaryOperator<T>>, T>() {
+	public <T extends GeneratedMessageV3> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+		return new RetryableFunction<Pair<Long, UnaryOperator<T>>, T>() {
 			@Override
-			public T apply(Pair<Integer, UnaryOperator<T>> pair) {
+			public T apply(Pair<Long, UnaryOperator<T>> pair) {
 				T t = updater.apply(get(c, id));
 				Entity.Builder entity = Entity.newBuilder(getKeyFactory(c).newKey(id));
 				t.getAllFields()
@@ -101,10 +101,10 @@ public class DataConnectorCloudDS implements DataConnector {
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, int id) {
-		new RetryableFunction<Integer, Boolean>() {
+	public <T> void delete(Class<T> c, long id) {
+		new RetryableFunction<Long, Boolean>() {
 			@Override
-			public Boolean apply(Integer id) {
+			public Boolean apply(Long id) {
 				datastore.delete(getKeyFactory(c).newKey(id));
 				return true;
 			}
@@ -154,8 +154,7 @@ public class DataConnectorCloudDS implements DataConnector {
 	private <T extends GeneratedMessageV3> T convert(Class<?> c, Entity entity) {
 		Message.Builder builder = getDefaultInstance(c).toBuilder();
 		Descriptor descriptor = builder.getDescriptorForType();
-		builder.setField(descriptor.findFieldByName("notes"), "id: " + entity.getKey().getId() + " intValue(): " + entity.getKey().getId().intValue() + " (int) longValue(): " + ((int) entity.getKey().getId().longValue()));
-		builder.setField(descriptor.findFieldByName("id"), entity.getKey().getId().intValue());
+		builder.setField(descriptor.findFieldByName("id"), entity.getKey().getId());
 		for (String columnName : entity.getNames()) {
 			try {
 				FieldDescriptor field = descriptor.findFieldByName(columnName);

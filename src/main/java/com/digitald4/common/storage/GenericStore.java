@@ -23,7 +23,7 @@ public class GenericStore<T> implements Store<T> {
 	}
 
 	@Override
-	public T get(int id) throws DD4StorageException {
+	public T get(long id) throws DD4StorageException {
 		return dao.get(id);
 	}
 
@@ -33,12 +33,12 @@ public class GenericStore<T> implements Store<T> {
 	}
 
 	@Override
-	public T update(int id, UnaryOperator<T> updater) throws DD4StorageException {
+	public T update(long id, UnaryOperator<T> updater) throws DD4StorageException {
 		return dao.update(id, updater);
 	}
 
 	@Override
-	public void delete(int id) throws DD4StorageException {
+	public void delete(long id) throws DD4StorageException {
 		dao.delete(id);
 	}
 }

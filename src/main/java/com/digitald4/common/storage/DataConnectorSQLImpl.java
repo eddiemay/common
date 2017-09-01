@@ -86,14 +86,14 @@ public class DataConnectorSQLImpl implements DataConnector {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T get(Class<T> c, int id) {
-		return new RetryableFunction<Integer, T>() {
+	public <T extends GeneratedMessageV3> T get(Class<T> c, long id) {
+		return new RetryableFunction<Long, T>() {
 			@Override
-			public T apply(Integer id) {
+			public T apply(Long id) {
 				String sql = SELECT_SQL + getView(c) + WHERE_ID;
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql);) {
-					ps.setInt(1, id);
+					ps.setLong(1, id);
 					T result = null;
 					ResultSet rs = ps.executeQuery();
 					if (rs.next()) {
@@ -169,11 +169,11 @@ public class DataConnectorSQLImpl implements DataConnector {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T update(Class<T> c, int id, UnaryOperator<T> updater) {
-		return new RetryableFunction<Pair<Integer, UnaryOperator<T>>, T>() {
+	public <T extends GeneratedMessageV3> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+		return new RetryableFunction<Pair<Long, UnaryOperator<T>>, T>() {
 			@Override
-			public T apply(Pair<Integer, UnaryOperator<T>> pair) {
-				int id = pair.getLeft();
+			public T apply(Pair<Long, UnaryOperator<T>> pair) {
+				long id = pair.getLeft();
 				UnaryOperator<T> updater = pair.getRight();
 				T orig = get(c, id);
 				T updated = updater.apply(orig);
@@ -213,7 +213,7 @@ public class DataConnectorSQLImpl implements DataConnector {
 						for (Map.Entry<FieldDescriptor, Object> entry : modified) {
 							setObject(ps, index++, updated, entry.getKey(), entry.getValue());
 						}
-						ps.setInt(index, id);
+						ps.setLong(index, id);
 						ps.executeUpdate();
 					} catch (Exception e) {
 						throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
@@ -225,14 +225,14 @@ public class DataConnectorSQLImpl implements DataConnector {
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, int id) {
-		if (!new RetryableFunction<Integer, Boolean>() {
+	public <T> void delete(Class<T> c, long id) {
+		if (!new RetryableFunction<Long, Boolean>() {
 			@Override
-			public Boolean apply(Integer id) {
+			public Boolean apply(Long id) {
 				String sql = DELETE_SQL.replaceAll("\\{TABLE\\}", getTable(c));
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql);) {
-					ps.setInt(1, id);
+					ps.setLong(1, id);
 					return ps.executeUpdate() > 0;
 				} catch (SQLException e) {
 					throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
@@ -284,7 +284,11 @@ public class DataConnectorSQLImpl implements DataConnector {
 						}
 						break;
 					case LONG:
-						ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString()))));
+						if (field.getName().endsWith("id")) {
+							ps.setObject(index, value);
+						} else {
+							ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString()))));
+						}
 						break;
 					case MESSAGE:
 						ps.setString(index, JsonFormat.printer().print((Message) value));
@@ -326,7 +330,9 @@ public class DataConnectorSQLImpl implements DataConnector {
 						value = field.getEnumType().findValueByNumber(rs.getInt(i));
 						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.LONG) {
-						value = rs.getTimestamp(i).getTime();
+						if (!columnName.endsWith("id")) {
+							value = rs.getTimestamp(i).getTime();
+						}
 						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.BYTE_STRING) {
 						builder.setField(field, ByteString.copyFrom(rs.getBytes(i)));

@@ -1,6 +1,5 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import java.util.function.UnaryOperator;
 
@@ -9,11 +8,11 @@ public interface DAO<T> {
 
 	T create(T t);
 	
-	T get(int id);
+	T get(long id);
 
 	ListResponse<T> list(ListRequest listRequest);
 	
-	T update(int id, UnaryOperator<T> updater);
+	T update(long id, UnaryOperator<T> updater);
 	
-	void delete(int id);
+	void delete(long id);
 }

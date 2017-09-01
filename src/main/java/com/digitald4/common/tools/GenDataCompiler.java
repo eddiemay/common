@@ -32,7 +32,7 @@ public class GenDataCompiler {
 	}
 
 	public void compile() throws DD4StorageException {
-		Map<Integer, List<GeneralData>> hash = new HashMap<>();
+		Map<Long, List<GeneralData>> hash = new HashMap<>();
 		List<GeneralData> generalDatas = dao.list(ListRequest.getDefaultInstance()).getResultList();
 		for (GeneralData generalData : generalDatas) {
 			List<GeneralData> children = hash.get(generalData.getGroupId());

@@ -31,7 +31,7 @@ public class DAOConnectorImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		return dataConnectorProvider.get().create(t);
 	}
 
-	public T get(int id) {
+	public T get(long id) {
 		return dataConnectorProvider.get().get(cls, id);
 	}
 
@@ -39,11 +39,11 @@ public class DAOConnectorImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		return dataConnectorProvider.get().list(cls, listRequest);
 	}
 
-	public T update(int id, UnaryOperator<T> updater) {
+	public T update(long id, UnaryOperator<T> updater) {
 		return dataConnectorProvider.get().update(cls, id, updater);
 	}
 
-	public void delete(int id) {
+	public void delete(long id) {
 		dataConnectorProvider.get().delete(cls, id);
 	}
 }

@@ -72,16 +72,12 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		return type;
 	}
 
-	public String getTable() {
+	private String getTable() {
 		return table;
 	}
 	
-	public String getView() {
+	private String getView() {
 		return view;
-	}
-	
-	public DBConnector getConnector() {
-		return connector;
 	}
 	
 	@Override
@@ -90,7 +86,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 	}
 	
 	@Override
-	public T get(int id) {
+	public T get(long id) {
 		return GET_BY_ID_FUNC.applyWithRetries(id);
 	}
 	
@@ -100,12 +96,12 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 	}
 	
 	@Override
-	public T update(int id, UnaryOperator<T> updater) {
+	public T update(long id, UnaryOperator<T> updater) {
 		return UPDATE_FUNC.applyWithRetries(Pair.of(id, updater));
 	}
 	
 	@Override
-	public void delete(int id) {
+	public void delete(long id) {
 		DELETE_FUNC.applyWithRetries(id);
 	}
 	
@@ -128,7 +124,11 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 						}
 						break;
 					case LONG:
-						ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString()))));
+						if (field.getName().endsWith("id")) {
+							ps.setObject(index, value);
+						} else {
+							ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString()))));
+						}
 						break;
 					case MESSAGE:
 						ps.setString(index, JsonFormat.printer().print((Message) value));
@@ -170,7 +170,9 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 						value = field.getEnumType().findValueByNumber(rs.getInt(i));
 						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.LONG) {
-						value = rs.getTimestamp(i).getTime();
+						if (!columnName.endsWith("id")) {
+							value = rs.getTimestamp(i).getTime();
+						}
 						builder.setField(field, value);
 					} else if (field.getJavaType() == JavaType.BYTE_STRING) {
 						builder.setField(field, ByteString.copyFrom(rs.getBytes(i)));
@@ -212,7 +214,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 				ps.executeUpdate();
 				ResultSet rs = ps.getGeneratedKeys();
 				if (rs.next()) {
-					return get(rs.getInt(1));
+					return get(rs.getLong(1));
 				}
 				return t;
 			} catch (SQLException e) {
@@ -221,13 +223,13 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		}
 	};
 
-	private final RetryableFunction<Integer, T> GET_BY_ID_FUNC = new RetryableFunction<Integer, T>() {
+	private final RetryableFunction<Long, T> GET_BY_ID_FUNC = new RetryableFunction<Long, T>() {
 		@Override
-		public T apply(Integer id) {
+		public T apply(Long id) {
 			String sql = SELECT_SQL + getView() + WHERE_ID;
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql);) {
-				ps.setInt(1, id);
+				ps.setLong(1, id);
 				T result = null;
 				ResultSet rs = ps.executeQuery();
 				if (rs.next()) {
@@ -298,11 +300,11 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		}
 	};
 
-	private final RetryableFunction<Pair<Integer, UnaryOperator<T>>, T> UPDATE_FUNC =
-			new RetryableFunction<Pair<Integer, UnaryOperator<T>>, T>() {
+	private final RetryableFunction<Pair<Long, UnaryOperator<T>>, T> UPDATE_FUNC =
+			new RetryableFunction<Pair<Long, UnaryOperator<T>>, T>() {
 		@Override
-		public T apply(Pair<Integer, UnaryOperator<T>> pair) {
-			int id = pair.getLeft();
+		public T apply(Pair<Long, UnaryOperator<T>> pair) {
+			long id = pair.getLeft();
 			UnaryOperator<T> updater = pair.getRight();
 			T orig = get(id);
 			T updated = updater.apply(orig);
@@ -342,7 +344,7 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 					for (Map.Entry<FieldDescriptor, Object> entry : modified) {
 						setObject(ps, index++, updated, entry.getKey(), entry.getValue());
 					}
-					ps.setInt(index, id);
+					ps.setLong(index, id);
 					ps.executeUpdate();
 				} catch (Exception e) {
 					throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
@@ -352,13 +354,13 @@ public class DAOProtoSQLImpl<T extends GeneratedMessageV3> implements DAO<T> {
 		}
 	};
 
-	private final RetryableFunction<Integer, Boolean> DELETE_FUNC = new RetryableFunction<Integer, Boolean>() {
+	private final RetryableFunction<Long, Boolean> DELETE_FUNC = new RetryableFunction<Long, Boolean>() {
 		@Override
-		public Boolean apply(Integer id) {
+		public Boolean apply(Long id) {
 			String sql = DELETE_SQL.replaceAll("\\{TABLE\\}", getTable());
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql);) {
-				ps.setInt(1, id);
+				ps.setLong(1, id);
 				return ps.executeUpdate() > 0;
 			} catch (SQLException e) {
 				throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
