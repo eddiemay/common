@@ -232,7 +232,9 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 			json.getJSONObject("proto")
 					.put("@type", "type.googleapis.com/" + externalDescriptor.getFullName());
 		}
+		System.out.println("JSON: " + json);
 		jsonParser.merge(json.toString(), builder);
+		System.out.println("Proto: " + builder.build());
 		return (R) builder.build();
 	}
 

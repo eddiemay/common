@@ -169,6 +169,8 @@ public class DataConnectorCloudDS implements DataConnector {
 			entity.set(name, (Boolean) value);
 		} else if (value instanceof FullEntity) {
 			entity.set(name, (FullEntity<?>) value);
+		} else if (value instanceof Enum) {
+			entity.set(name, value.toString());
 		} else {
 			entity.set(name, value.toString());
 		}
