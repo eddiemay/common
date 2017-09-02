@@ -111,6 +111,7 @@ public class DataConnectorCloudDS implements DataConnector {
 			case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
 			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
 			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
+			case BOOLEAN: return PropertyFilter.eq(columName, Boolean.valueOf(filter.getValue()));
 		}
 		return PropertyFilter.eq(columName, filter.getValue());
 	}
@@ -176,6 +177,8 @@ public class DataConnectorCloudDS implements DataConnector {
 			}
 		} else if (value instanceof Double) {
 			entity.set(name, (Double) value);
+		} else if (value instanceof Integer) {
+			entity.set(name, (Integer) value);
 		} else if (value instanceof LatLng) {
 			entity.set(name, (LatLng) value);
 		} else if (value instanceof Boolean) {
@@ -214,6 +217,8 @@ public class DataConnectorCloudDS implements DataConnector {
 					builder.setField(field, (int) entity.getLong(columnName));
 				} else if (field.getJavaType() == JavaType.BOOLEAN) {
 					builder.setField(field, entity.getBoolean(columnName));
+				} else if (field.getJavaType() == JavaType.DOUBLE) {
+					builder.setField(field, entity.getDouble(columnName));
 				} else if (field.getJavaType() == JavaType.FLOAT) {
 					builder.setField(field, (float) entity.getDouble(columnName));
 				}
