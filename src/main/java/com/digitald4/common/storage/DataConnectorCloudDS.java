@@ -16,6 +16,8 @@ import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.KeyFactory;
 import com.google.cloud.datastore.LatLng;
 import com.google.cloud.datastore.Query;
+import com.google.cloud.datastore.StructuredQuery;
+import com.google.cloud.datastore.StructuredQuery.CompositeFilter;
 import com.google.cloud.datastore.StructuredQuery.OrderBy;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.protobuf.ByteString;
@@ -27,8 +29,10 @@ import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public class DataConnectorCloudDS implements DataConnector {
 
@@ -76,8 +80,17 @@ public class DataConnectorCloudDS implements DataConnector {
 				}
 				if (request.getFilterCount() > 0) {
 					Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
-					Filter filter = request.getFilter(0);
-					query.setFilter(convertToFilter(filter, descriptor));
+					if (request.getFilterCount() == 1) {
+						Filter filter = request.getFilter(0);
+						query.setFilter(convertToPropertyFilter(filter, descriptor));
+					} else {
+						List<PropertyFilter> pfilters = request.getFilterList()
+								.stream()
+								.map(filter -> convertToPropertyFilter(filter, descriptor))
+								.collect(Collectors.toList());
+						query.setFilter(CompositeFilter.and(pfilters.get(0),
+								pfilters.subList(1, pfilters.size()).toArray(new PropertyFilter[pfilters.size() - 1])));
+					}
 				}
 				request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
 						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
@@ -88,7 +101,7 @@ public class DataConnectorCloudDS implements DataConnector {
 		}.apply(listRequest);
 	}
 
-	private PropertyFilter convertToFilter(Filter filter, Descriptor descriptor) {
+	private PropertyFilter convertToPropertyFilter(Filter filter, Descriptor descriptor) {
 		String columName = filter.getColumn();
 		FieldDescriptor field = descriptor.findFieldByName(columName);
 		if (field == null) {
