@@ -8,7 +8,7 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
 	  globalData.extendTime();
     url = this.baseUrl + url;
     var data = undefined;
-    if (method == 'GET') {
+    if (method == 'GET' || method == 'DELETE') {
       params = params || {};
       params.idToken = globalData.idToken;
       var serializedParams = this.$httpParamSerializer(params);
