@@ -199,6 +199,10 @@ public class DataConnectorCloudDS implements DataConnector {
 					builder.setField(field, entity.getString(columnName));
 				} else if (field.getJavaType() == JavaType.INT) {
 					builder.setField(field, (int) entity.getLong(columnName));
+				} else if (field.getJavaType() == JavaType.BOOLEAN) {
+					builder.setField(field, entity.getBoolean(columnName));
+				} else if (field.getJavaType() == JavaType.FLOAT) {
+					builder.setField(field, (float) entity.getDouble(columnName));
 				}
 			} catch (Exception e) {
 				System.out.println(e.getMessage() + " for column: " + columnName + ". value: " + entity.getValue(columnName));
