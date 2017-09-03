@@ -13,9 +13,6 @@ com.digitald4.common.LoginController.prototype.login = function() {
   }.bind(this), notify);
 };
 
-com.digitald4.common.LoginController.prototype.recoverPassword = function() {
-};
-
 com.digitald4.common.LoginController.prototype.showSignUpDialog = function() {
   this.signUpDialogShown = true;
 };
@@ -26,7 +23,7 @@ com.digitald4.common.LoginController.prototype.closeSignUpDialog = function() {
 
 com.digitald4.common.LoginController.prototype.processSignUp = function() {
   if (this.retypePassword != this.password) {
-    notify('Passwords don\'t match');
+    notify('Passwords do not match');
     return;
   }
   var user = {
@@ -39,6 +36,13 @@ com.digitald4.common.LoginController.prototype.processSignUp = function() {
   this.userService.create(user, function(user) {
     document.location.href = './';
   }, notify);
+};
+
+com.digitald4.common.LoginController.prototype.toggleRecoveryShown = function() {
+  this.recoveryShown = !this.recoveryShown;
+};
+
+com.digitald4.common.LoginController.prototype.recoverPassword = function() {
 };
 
 

@@ -34,8 +34,8 @@
         </div>
 
         <div class="form">
-          <fieldset class="grey-bg no-margin collapse">
-            <legend><a href="#">Lost password?</a></legend>
+          <legend><a href="#" data-ng-click="$ctrl.toggleRecoveryShown()">Lost password?</a></legend>
+          <fieldset class="grey-bg no-margin collapse" data-ng-show="$ctrl.recoveryShown">
             <p class="input-with-button">
               <label for="recovery-mail">Enter your e-mail address</label>
               <input type="text" id="recovery-mail" data-ng-model="$ctrl.email">
