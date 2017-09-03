@@ -22,6 +22,7 @@ import com.google.cloud.datastore.StructuredQuery.OrderBy;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.GeneratedMessageV3;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import org.json.JSONObject;
 
 public class DataConnectorCloudDS implements DataConnector {
 
@@ -51,7 +53,7 @@ public class DataConnectorCloudDS implements DataConnector {
 			public T apply(T t) {
 				Entity.Builder entity = Entity.newBuilder(datastore.allocateId(getKeyFactory(t.getClass()).newKey()));
 				t.getAllFields()
-						.forEach((key, value) -> set(entity, key.getName(), value));
+						.forEach((field, value) -> setObject(entity, t, field, value));
 				return convert(t.getClass(), datastore.put(entity.build()));
 			}
 		}.applyWithRetries(t);
@@ -112,6 +114,7 @@ public class DataConnectorCloudDS implements DataConnector {
 			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
 			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
 			case BOOLEAN: return PropertyFilter.eq(columName, Boolean.valueOf(filter.getValue()));
+			case STRING: return PropertyFilter.eq(columName, filter.getValue());
 		}
 		return PropertyFilter.eq(columName, filter.getValue());
 	}
@@ -124,7 +127,7 @@ public class DataConnectorCloudDS implements DataConnector {
 				T t = updater.apply(get(c, id));
 				Entity.Builder entity = Entity.newBuilder(getKeyFactory(c).newKey(id));
 				t.getAllFields()
-						.forEach((key, value) -> set(entity, key.getName(), value));
+						.forEach((field, value) -> setObject(entity, t, field, value));
 				return convert(c, datastore.put(entity.build()));
 			}
 		}.apply(Pair.of(id, updater));
@@ -159,34 +162,48 @@ public class DataConnectorCloudDS implements DataConnector {
 		return keyFactories.computeIfAbsent(c, v -> datastore.newKeyFactory().setKind(c.getSimpleName()));
 	}
 
-	private static void set(Entity.Builder entity, String name, Object value) {
+	private static <T extends GeneratedMessageV3> void setObject(Entity.Builder entity, T t, FieldDescriptor field,
+																															 Object value) {
+		String name = field.getName();
 		if (name.equals("id")) {
 			return;
+		}
+		if (field.isRepeated() || field.isMapField()) {
+			JSONObject json = new JSONObject(JsonFormat.printer().print(t));
+			entity.set(name, json.get(field.getName()).toString());
+		} else {
+			switch (field.getJavaType()) {
+				case BOOLEAN: entity.set(name, (Boolean) value); break;
+				case DOUBLE: entity.set(name, (Double) value); break;
+				case ENUM: entity.set(name, value.toString()); break;
+				case FLOAT: entity.set(name, (Float) value); break;
+				case INT: entity.set(name, (Integer) value); break;
+				case LONG:
+					if (name.endsWith("id")) {
+						entity.set(name, (Long) value);
+					} else {
+						entity.set(name, Timestamp.of(new java.sql.Timestamp((Long) value)));
+					}
+					break;
+				case MESSAGE:
+					entity.set(name, JsonFormat.printer().print((Message) value));
+					break;
+				case STRING: entity.set(name, (String) value); break;
+				case BYTE_STRING:
+				default:
+					entity.set(name, value.toString());
+			}
 		}
 		if (value instanceof Key) {
 			entity.set(name, (Key) value);
 		} else if (value instanceof Blob) {
 			entity.set(name, (Blob) value);
-		} else if (value instanceof String) {
-			entity.set(name, (String) value);
-		} else if (value instanceof Long) {
-			if (name.endsWith("id")) {
-				entity.set(name, (Long) value);
-			} else {
-				entity.set(name, Timestamp.of(new java.sql.Timestamp((Long) value)));
-			}
-		} else if (value instanceof Double) {
-			entity.set(name, (Double) value);
-		} else if (value instanceof Integer) {
-			entity.set(name, (Integer) value);
 		} else if (value instanceof LatLng) {
 			entity.set(name, (LatLng) value);
 		} else if (value instanceof Boolean) {
 			entity.set(name, (Boolean) value);
 		} else if (value instanceof FullEntity) {
 			entity.set(name, (FullEntity<?>) value);
-		} else if (value instanceof Enum) {
-			entity.set(name, value.toString());
 		} else {
 			entity.set(name, value.toString());
 		}
