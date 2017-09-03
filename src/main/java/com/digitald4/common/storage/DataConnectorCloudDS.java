@@ -6,23 +6,17 @@ import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Blob;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.EntityQuery;
-import com.google.cloud.datastore.FullEntity;
-import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.KeyFactory;
-import com.google.cloud.datastore.LatLng;
 import com.google.cloud.datastore.Query;
-import com.google.cloud.datastore.StructuredQuery;
 import com.google.cloud.datastore.StructuredQuery.CompositeFilter;
 import com.google.cloud.datastore.StructuredQuery.OrderBy;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.GeneratedMessageV3;
@@ -110,10 +104,10 @@ public class DataConnectorCloudDS implements DataConnector {
 			throw new DD4StorageException("Unknown column: " + columName);
 		}
 		switch (field.getJavaType()) {
-			case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
-			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
-			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
 			case BOOLEAN: return PropertyFilter.eq(columName, Boolean.valueOf(filter.getValue()));
+			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
+			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
+			case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
 			case STRING: return PropertyFilter.eq(columName, filter.getValue());
 		}
 		return PropertyFilter.eq(columName, filter.getValue());
@@ -190,22 +184,8 @@ public class DataConnectorCloudDS implements DataConnector {
 					break;
 				case STRING: entity.set(name, (String) value); break;
 				case BYTE_STRING:
-				default:
-					entity.set(name, value.toString());
+				default: entity.set(name, value.toString());
 			}
-		}
-		if (value instanceof Key) {
-			entity.set(name, (Key) value);
-		} else if (value instanceof Blob) {
-			entity.set(name, (Blob) value);
-		} else if (value instanceof LatLng) {
-			entity.set(name, (LatLng) value);
-		} else if (value instanceof Boolean) {
-			entity.set(name, (Boolean) value);
-		} else if (value instanceof FullEntity) {
-			entity.set(name, (FullEntity<?>) value);
-		} else {
-			entity.set(name, value.toString());
 		}
 	}
 
@@ -222,22 +202,19 @@ public class DataConnectorCloudDS implements DataConnector {
 				if (field.isRepeated() || field.getJavaType() == JavaType.MESSAGE) {
 					JsonFormat.parser().ignoringUnknownFields()
 							.merge("{\"" + field.getName() + "\": " + entity.getString(columnName) + "}", builder);
-				} else if (field.getJavaType() == JavaType.ENUM) {
-					builder.setField(field, field.getEnumType().findValueByName(entity.getString(columnName)));
-				} else if (field.getJavaType() == JavaType.LONG) {
-					builder.setField(field, entity.getLong(columnName));
-				} else if (field.getJavaType() == JavaType.BYTE_STRING) {
-					builder.setField(field, ByteString.copyFrom(entity.getBlob(columnName).toByteArray()));
-				} else if (field.getJavaType() == JavaType.STRING) {
-					builder.setField(field, entity.getString(columnName));
-				} else if (field.getJavaType() == JavaType.INT) {
-					builder.setField(field, (int) entity.getLong(columnName));
-				} else if (field.getJavaType() == JavaType.BOOLEAN) {
-					builder.setField(field, entity.getBoolean(columnName));
-				} else if (field.getJavaType() == JavaType.DOUBLE) {
-					builder.setField(field, entity.getDouble(columnName));
-				} else if (field.getJavaType() == JavaType.FLOAT) {
-					builder.setField(field, (float) entity.getDouble(columnName));
+				} else {
+					switch (field.getJavaType()) {
+						case BOOLEAN: builder.setField(field, entity.getBoolean(columnName)); break;
+						case BYTE_STRING:
+							builder.setField(field, ByteString.copyFrom(entity.getBlob(columnName).toByteArray())); break;
+						case DOUBLE: builder.setField(field, entity.getDouble(columnName)); break;
+						case ENUM:
+							builder.setField(field, field.getEnumType().findValueByName(entity.getString(columnName))); break;
+						case FLOAT: builder.setField(field, (float) entity.getDouble(columnName)); break;
+						case INT: builder.setField(field, (int) entity.getLong(columnName)); break;
+						case LONG: builder.setField(field, entity.getLong(columnName)); break;
+						case STRING: builder.setField(field, entity.getString(columnName)); break;
+					}
 				}
 			} catch (Exception e) {
 				System.out.println(e.getMessage() + " for column: " + columnName + ". value: " + entity.getValue(columnName));
