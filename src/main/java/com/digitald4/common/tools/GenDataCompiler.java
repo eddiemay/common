@@ -4,12 +4,9 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.storage.DAO;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -69,6 +66,6 @@ public class GenDataCompiler {
 
 	private static final Function<String, String> fixName = name -> name
 			.replaceAll("[ /]", "_")
-			.replaceAll("[,\\.\\(\\)]", "")
+			.replaceAll("[,.()]", "")
 			.toUpperCase();
 }
