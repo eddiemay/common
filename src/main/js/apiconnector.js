@@ -8,15 +8,16 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
 	  globalData.extendTime();
     url = this.baseUrl + url;
     var data = undefined;
+    var idToken = globalData.user ? globalData.user.idToken : undefined;
     if (method == 'GET' || method == 'DELETE') {
       params = params || {};
-      params.idToken = globalData.idToken;
+      params.idToken = idToken;
       var serializedParams = this.$httpParamSerializer(params);
       if (params != undefined && serializedParams.length > 0) {
         url += ((url.indexOf('?') === -1) ? '?' : '&') + serializedParams;
       }
     } else {
-      data = this.$httpParamSerializer({json: JSON.stringify(params), idToken: globalData.idToken});
+      data = this.$httpParamSerializer({json: JSON.stringify(params), idToken: idToken});
     }
     // Send
     this.$http({
@@ -32,7 +33,6 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
       console.log('Status code: ' + response.status);
       if (response.status == 401) {
         globalData.user = undefined;
-        globalData.idToken = undefined;
       } else {
         console.log('error: ' + response.data.error);
         console.log('StackTrace: ' + response.data.stackTrace);

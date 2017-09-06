@@ -8,7 +8,7 @@ com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(glo
     interval = setInterval(function() {
       if (Date.now() > globalData.expiration) {
         userService.logout(function() {
-          globalData.idToken = undefined;
+          globalData.user = undefined;
         }, notify);
       } else {
         console.log(((globalData.expiration - Date.now()) / 1000) + ' seconds remainning in session.');

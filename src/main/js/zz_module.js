@@ -22,7 +22,7 @@ com.digitald4.common.module = angular.module('DD4Common', [])
       this.globalData = globalData;
       this.logout = function() {
         userService.logout(function() {
-          globalData.idToken = undefined;
+          globalData.user = undefined;
         }, notify);
       };
     }])

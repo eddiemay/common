@@ -257,11 +257,11 @@ public class DataConnectorSQLImpl implements DataConnector {
 		return defaultInstance;
 	}
 
-	public String getTable(Class<?> c) {
+	private String getTable(Class<?> c) {
 		return c.getSimpleName();
 	}
 
-	public String getView(Class<?> c) {
+	private String getView(Class<?> c) {
 		return c.getSimpleName() + "View";
 	}
 

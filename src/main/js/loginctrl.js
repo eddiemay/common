@@ -9,7 +9,6 @@ com.digitald4.common.LoginCtrl = ['userService', 'sessionWatcher', 'globalData',
 com.digitald4.common.LoginController.prototype.login = function() {
   this.userService.login(this.email, this.password, function(user) {
     this.globalData.user = user;
-    this.globalData.idToken = user.idToken;
   }.bind(this), notify);
 };
 
@@ -34,8 +33,8 @@ com.digitald4.common.LoginController.prototype.processSignUp = function() {
     typeId: 4
   };
   this.userService.create(user, function(user) {
-    document.location.href = './';
-  }, notify);
+    this.globalData.user = user;
+  }.bind(this), notify);
 };
 
 com.digitald4.common.LoginController.prototype.toggleRecoveryShown = function() {
