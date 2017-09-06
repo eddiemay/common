@@ -68,11 +68,7 @@ public class GenDataCompiler {
 	}
 
 	private static final Function<String, String> fixName = name -> name
-			.replaceAll(" ", "_")
-			.replaceAll("/", "_")
-			.replaceAll(",", "")
-			.replaceAll("\\.", "")
-			.replaceAll("\\(", "")
-			.replaceAll("\\)", "")
+			.replaceAll("[ /]", "_")
+			.replaceAll("[,\\.\\(\\)]", "")
 			.toUpperCase();
 }
