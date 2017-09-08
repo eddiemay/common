@@ -5,13 +5,15 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
-    .service('userService', ['apiConnector', function(apiConnector) {
+    .service('userService', ['apiConnector', 'globalData', function(apiConnector, globalData) {
       var userService = new com.digitald4.common.JSONService('user', apiConnector);
       userService.login = function(username, password, success, error) {
         this.performRequest(['login', 'POST'], undefined, {username: username, password: password}, success, error);
       };
-      userService.logout = function(success, error) {
-        this.performRequest(['logout'], undefined, undefined, success, error);
+      userService.logout = function() {
+        this.performRequest(['logout'], undefined, undefined, function() {
+          globalData.user = undefined;
+        }, notify);
       };
       userService.getActive = function(success, error) {
         this.performRequest(['active'], undefined, undefined, success, error);
@@ -21,9 +23,7 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .controller('DD4AppCtrl', ['globalData', 'userService', function(globalData, userService) {
       this.globalData = globalData;
       this.logout = function() {
-        userService.logout(function() {
-          globalData.user = undefined;
-        }, notify);
+        userService.logout();
       };
     }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)

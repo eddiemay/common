@@ -1,6 +1,7 @@
 com.digitald4.common.LoginController = function(userService, sessionWatcher, globalData) {
   this.userService = userService;
   this.globalData = globalData;
+  this.sessionWatcher = sessionWatcher;
   sessionWatcher.disable();
 };
 
@@ -9,6 +10,7 @@ com.digitald4.common.LoginCtrl = ['userService', 'sessionWatcher', 'globalData',
 com.digitald4.common.LoginController.prototype.login = function() {
   this.userService.login(this.email, this.password, function(user) {
     this.globalData.user = user;
+	  this.sessionWatcher.enable();
   }.bind(this), notify);
 };
 

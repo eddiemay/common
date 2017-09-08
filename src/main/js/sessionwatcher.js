@@ -4,12 +4,10 @@ var SESSION_TIME = 30 * ONE_MINUTE;
 com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(globalData, userService) {
   var interval;
 
-  this.startTimer = function() {
+  this.enable = function() {
     interval = setInterval(function() {
       if (Date.now() > globalData.expiration) {
-        userService.logout(function() {
-          globalData.user = undefined;
-        }, notify);
+        userService.logout();
       } else {
         console.log(((globalData.expiration - Date.now()) / 1000) + ' seconds remainning in session.');
       }
