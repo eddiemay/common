@@ -42,15 +42,15 @@ public class DataConnectorCloudDS implements DataConnector {
 
 	@Override
 	public <T extends GeneratedMessageV3> T create(T t) {
-		return new RetryableFunction<T, T>() {
+		return convert(t.getClass(), new RetryableFunction<T, Entity>() {
 			@Override
-			public T apply(T t) {
+			public Entity apply(T t) {
 				Entity.Builder entity = Entity.newBuilder(datastore.allocateId(getKeyFactory(t.getClass()).newKey()));
 				t.getAllFields()
 						.forEach((field, value) -> setObject(entity, t, field, value));
-				return convert(t.getClass(), datastore.put(entity.build()));
+				 return datastore.put(entity.build());
 			}
-		}.applyWithRetries(t);
+		}.applyWithRetries(t));
 	}
 
 	@Override
