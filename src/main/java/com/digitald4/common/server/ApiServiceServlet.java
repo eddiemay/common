@@ -16,6 +16,7 @@ import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.Provider;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,12 +50,13 @@ public class ApiServiceServlet extends HttpServlet {
 	private String autoLoginId;
 
 	public ApiServiceServlet() {
-		idTokenResolver = new IdTokenResolverDD4Impl();
+		Clock clock = Clock.systemUTC();
+		idTokenResolver = new IdTokenResolverDD4Impl(clock);
 
 		generalDataStore = new GeneralDataStore(new DAOConnectorImpl<>(GeneralData.class, dataConnectorProvider));
 		addService("general_data", new SingleProtoService<>(generalDataStore));
 
-		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider));
+		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider), clock);
 		addService("user", userService = new UserService(userStore, userProvider, idTokenResolver));
 
 		dataFileStore = new GenericStore<>(new DAOConnectorImpl<>(DataFile.class, dataConnectorProvider));

@@ -40,7 +40,9 @@ import org.joda.time.DateTime;
  */
 public class Calculate {
 
-	public static final long ONE_DAY = 1000 * 60 * 60 * 24;
+	public static final long ONE_MINUTE = 1000 * 60;
+
+	public static final long ONE_DAY = 60 * ONE_MINUTE * 24;
 	
 	public static final long LAST_MILLI_OF_DAY = 24 * 60 * 60 * 1000 - 1;
 	

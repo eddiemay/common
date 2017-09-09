@@ -6,14 +6,17 @@ import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Calculate;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
 
 public class UserStore extends GenericStore<User> {
-	public UserStore(DAO<User> dao) {
+	private final Clock clock;
+
+	public UserStore(DAO<User> dao, Clock clock) {
 		super(dao);
+		this.clock = clock;
 	}
 
 	@Override
@@ -44,7 +47,7 @@ public class UserStore extends GenericStore<User> {
 
 	public User updateLastLogin(User user) throws DD4StorageException {
 		return update(user.getId(), user_ -> user_.toBuilder()
-				.setLastLogin(DateTime.now().getMillis())
+				.setLastLogin(clock.millis())
 				.build());
 	}
 

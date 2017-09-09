@@ -1,6 +1,3 @@
-var ONE_MINUTE = 60000;
-var SESSION_TIME = 30 * ONE_MINUTE;
-
 com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(globalData, userService) {
   var interval;
 
