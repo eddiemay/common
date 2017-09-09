@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class IdTokenResolverDD4Impl implements IdTokenResolver {
-	private static final long TIMEOUT = 30 * Calculate.ONE_MINUTE;
+	private static final long SESSION_TIME = 30 * Calculate.ONE_MINUTE;
 	private final Clock clock;
 	private final Map<String, User> activeusers = new HashMap<>();
 
@@ -25,7 +25,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 			activeusers.remove(idToken);
 			return null;
 		}
-		activeusers.put(idToken, user = user.toBuilder().setExpTime(now + TIMEOUT).build());
+		activeusers.put(idToken, user = user.toBuilder().setExpTime(now + SESSION_TIME).build());
 		return user;
 	}
 
@@ -33,7 +33,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		String tokenId = String.valueOf((int) (Math.random() * Integer.MAX_VALUE));
 		activeusers.put(tokenId, user = user.toBuilder()
 				.setIdToken(tokenId)
-				.setExpTime(clock.millis() + TIMEOUT)
+				.setExpTime(clock.millis() + SESSION_TIME)
 				.build());
 		return user;
 	}
