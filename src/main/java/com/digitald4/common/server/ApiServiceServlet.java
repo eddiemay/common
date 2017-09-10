@@ -266,7 +266,11 @@ public class ApiServiceServlet extends HttpServlet {
 				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 				return false;
 			}
-			user = userStore.get(Integer.parseInt(autoLoginId));
+			user = userStore.get(Long.valueOf(autoLoginId));
+			if (user == null) {
+				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				return false;
+			}
 			((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
 			userProvider.set(user);
 		}

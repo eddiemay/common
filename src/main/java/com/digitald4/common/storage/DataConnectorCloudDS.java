@@ -45,7 +45,9 @@ public class DataConnectorCloudDS implements DataConnector {
 		return convert(t.getClass(), new RetryableFunction<T, Entity>() {
 			@Override
 			public Entity apply(T t) {
-				Entity.Builder entity = Entity.newBuilder(datastore.allocateId(getKeyFactory(t.getClass()).newKey()));
+				long id = (Long) t.getField(t.getDescriptorForType().findFieldByName("id"));
+				Entity.Builder entity = id == 0 ? Entity.newBuilder(datastore.allocateId(getKeyFactory(t.getClass()).newKey()))
+						: Entity.newBuilder(getKeyFactory(t.getClass()).newKey(id));
 				t.getAllFields()
 						.forEach((field, value) -> setObject(entity, t, field, value));
 				 return datastore.put(entity.build());
@@ -95,22 +97,6 @@ public class DataConnectorCloudDS implements DataConnector {
 				return listResponse.build();
 			}
 		}.apply(listRequest);
-	}
-
-	private PropertyFilter convertToPropertyFilter(Filter filter, Descriptor descriptor) {
-		String columName = filter.getColumn();
-		FieldDescriptor field = descriptor.findFieldByName(columName);
-		if (field == null) {
-			throw new DD4StorageException("Unknown column: " + columName);
-		}
-		switch (field.getJavaType()) {
-			case BOOLEAN: return PropertyFilter.eq(columName, Boolean.valueOf(filter.getValue()));
-			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
-			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
-			case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
-			case STRING: return PropertyFilter.eq(columName, filter.getValue());
-		}
-		return PropertyFilter.eq(columName, filter.getValue());
 	}
 
 	@Override
@@ -190,6 +176,9 @@ public class DataConnectorCloudDS implements DataConnector {
 	}
 
 	private <T extends GeneratedMessageV3> T convert(Class<?> c, Entity entity) {
+		if (entity == null) {
+			return null;
+		}
 		Message.Builder builder = getDefaultInstance(c).toBuilder();
 		Descriptor descriptor = builder.getDescriptorForType();
 		FieldDescriptor idField = descriptor.findFieldByName("id");
@@ -221,5 +210,21 @@ public class DataConnectorCloudDS implements DataConnector {
 			}
 		}
 		return (T) builder.build();
+	}
+
+	private PropertyFilter convertToPropertyFilter(Filter filter, Descriptor descriptor) {
+		String columName = filter.getColumn();
+		FieldDescriptor field = descriptor.findFieldByName(columName);
+		if (field == null) {
+			throw new DD4StorageException("Unknown column: " + columName);
+		}
+		switch (field.getJavaType()) {
+			case BOOLEAN: return PropertyFilter.eq(columName, Boolean.valueOf(filter.getValue()));
+			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
+			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
+			case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
+			case STRING: return PropertyFilter.eq(columName, filter.getValue());
+		}
+		return PropertyFilter.eq(columName, filter.getValue());
 	}
 }
