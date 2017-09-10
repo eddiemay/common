@@ -21,7 +21,8 @@ public class UserStore extends GenericStore<User> {
 
 	@Override
 	public User create(User user) {
-		return super.create(user.toBuilder().setPassword(encodePassword(user.getPassword())).build())
+		return super.create(updateCalculated.apply(user.toBuilder())
+				.setPassword(encodePassword(user.getPassword())).build())
 				.toBuilder().clearPassword().build();
 	}
 
@@ -31,7 +32,7 @@ public class UserStore extends GenericStore<User> {
 		if (user == null) {
 			return null;
 		}
-		return super.get(id).toBuilder().clearPassword().build();
+		return user.toBuilder().clearPassword().build();
 	}
 
 	@Override
@@ -46,7 +47,8 @@ public class UserStore extends GenericStore<User> {
 
 	@Override
 	public User update(long id, UnaryOperator<User> updater) {
-		return super.update(id, updater).toBuilder().clearPassword().build();
+		return super.update(id, user -> updateCalculated.apply(updater.apply(user).toBuilder()).build())
+				.toBuilder().clearPassword().build();
 	}
 
 	public User updateLastLogin(User user) throws DD4StorageException {
@@ -81,4 +83,7 @@ public class UserStore extends GenericStore<User> {
 			throw new RuntimeException(nsae);
 		}
 	}
+
+	private static final UnaryOperator<User.Builder> updateCalculated = user -> user
+			.setFullName(user.getFirstName() + " " + user.getLastName());
 }
