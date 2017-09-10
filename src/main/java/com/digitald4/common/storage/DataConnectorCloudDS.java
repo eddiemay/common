@@ -201,7 +201,13 @@ public class DataConnectorCloudDS implements DataConnector {
 							builder.setField(field, field.getEnumType().findValueByName(entity.getString(columnName))); break;
 						case FLOAT: builder.setField(field, (float) entity.getDouble(columnName)); break;
 						case INT: builder.setField(field, (int) entity.getLong(columnName)); break;
-						case LONG: builder.setField(field, entity.getLong(columnName)); break;
+						case LONG:
+							if (columnName.endsWith("id")) {
+								builder.setField(field, entity.getLong(columnName));
+							} else {
+								builder.setField(field, entity.getTimestamp(columnName).toSqlTimestamp().getTime());
+							}
+							break;
 						case STRING: builder.setField(field, entity.getString(columnName)); break;
 					}
 				}
