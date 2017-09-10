@@ -27,6 +27,10 @@ public class UserStore extends GenericStore<User> {
 
 	@Override
 	public User get(long id) {
+		User user = super.get(id);
+		if (user == null) {
+			return null;
+		}
 		return super.get(id).toBuilder().clearPassword().build();
 	}
 
