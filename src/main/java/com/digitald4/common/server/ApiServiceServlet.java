@@ -51,12 +51,12 @@ public class ApiServiceServlet extends HttpServlet {
 
 	public ApiServiceServlet() {
 		Clock clock = Clock.systemUTC();
-		idTokenResolver = new IdTokenResolverDD4Impl(clock);
 
 		generalDataStore = new GeneralDataStore(new DAOConnectorImpl<>(GeneralData.class, dataConnectorProvider));
 		addService("general_data", new SingleProtoService<>(generalDataStore));
 
 		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider), clock);
+		idTokenResolver = new IdTokenResolverDD4Impl(userStore, clock);
 		addService("user", userService = new UserService(userStore, userProvider, idTokenResolver));
 
 		dataFileStore = new GenericStore<>(new DAOConnectorImpl<>(DataFile.class, dataConnectorProvider));

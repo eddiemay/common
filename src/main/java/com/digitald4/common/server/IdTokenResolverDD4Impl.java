@@ -24,6 +24,9 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 
 	@Override
 	public User resolve(String idToken) {
+		if (idToken == null) {
+			return null;
+		}
 		long now = clock.millis();
 		User user = activeusers.get(idToken);
 		if (user == null) {
