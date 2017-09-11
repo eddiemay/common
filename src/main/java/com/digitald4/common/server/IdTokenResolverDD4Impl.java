@@ -11,7 +11,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 	private final Clock clock;
 	private final Map<String, User> activeusers = new HashMap<>();
 
-	public IdTokenResolverDD4Impl(Clock clock) {
+	IdTokenResolverDD4Impl(Clock clock) {
 		this.clock = clock;
 	}
 
@@ -24,8 +24,9 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		} else if (user.getExpTime() < now) {
 			activeusers.remove(idToken);
 			return null;
+		} else if (user.getExpTime() < SESSION_TIME / 2 + now) {
+			activeusers.put(idToken, user = user.toBuilder().setExpTime(now + SESSION_TIME).build());
 		}
-		activeusers.put(idToken, user = user.toBuilder().setExpTime(now + SESSION_TIME).build());
 		return user;
 	}
 
@@ -38,8 +39,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		return user;
 	}
 
-	public IdTokenResolverDD4Impl remove(String idToken) {
+	void remove(String idToken) {
 		activeusers.remove(idToken);
-		return this;
 	}
 }
