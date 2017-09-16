@@ -1,5 +1,5 @@
 com.digitald4.common.GeneralDataServ = function(apiConnector) {
-  this.jsonService = new com.digitald4.common.JSONService('general_data', apiConnector);
+  this.jsonService = new com.digitald4.common.JSONService('generalData', apiConnector);
   this.refresh();
 };
 

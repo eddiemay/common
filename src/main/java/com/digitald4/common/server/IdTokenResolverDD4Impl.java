@@ -3,7 +3,6 @@ package com.digitald4.common.server;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
-import com.digitald4.common.storage.ListResponse;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Calculate;
 import java.time.Clock;

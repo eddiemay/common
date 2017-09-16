@@ -97,19 +97,35 @@ public class FormatText {
 		}
 		return letter;
 	}
+
 	public static String toSpaced(String camelCase){
-		String spaced="";
+		StringBuilder out = new StringBuilder();
 		char ch;       // One of the characters in str.
 		if(camelCase.length() > 0)
-			spaced += Character.toUpperCase(camelCase.charAt(0));
+			out.append(Character.toUpperCase(camelCase.charAt(0)));
 		for (int i = 1;  i < camelCase.length(); i++){
 			ch = camelCase.charAt(i);
-			if (Character.isLetter(ch) && Character.isUpperCase(ch))
-				spaced+=" "+ch;
-			else
-				spaced+=ch;
+			if (Character.isLetter(ch) && Character.isUpperCase(ch)) {
+				out.append(" ");
+			}
+			out.append(ch);
 		}
-		return spaced;
+		return out.toString();
+	}
+
+	public static String toUnderScoreCased(String camelCase){
+		StringBuilder out = new StringBuilder();
+		char ch;       // One of the characters in str.
+		if(camelCase.length() > 0)
+			out.append(Character.toLowerCase(camelCase.charAt(0)));
+		for (int i = 1;  i < camelCase.length(); i++){
+			ch = camelCase.charAt(i);
+			if (Character.isLetter(ch) && Character.isUpperCase(ch)) {
+				out.append("_");
+			}
+			out.append(Character.toLowerCase(ch));
+		}
+		return out.toString();
 	}
 
 	/** This method converts an input string into proper format by setting
@@ -163,7 +179,7 @@ public class FormatText {
 	 * @return
 	 */
 	public static String toLowerCamel(String str){
-		String letter="";
+		StringBuilder result = new StringBuilder();
 		char ch;       // One of the characters in str.
 		char prevCh;   // The character that comes before ch in the string.
 		int i;         // A position in str, from 0 to str.length()-1.
@@ -171,14 +187,14 @@ public class FormatText {
 		for ( i = 0;  i < str.length();  i++ ) {
 			ch = str.charAt(i);
 			if ( Character.isLetter(ch)  &&  ! Character.isLetter(prevCh) )
-				letter+=Character.toUpperCase(ch);
+				result.append(Character.toUpperCase(ch));
 			else if(Character.isLetter(ch))
-				letter+=Character.toLowerCase(ch);
+				result.append(Character.toLowerCase(ch));
 			else if(Character.isDigit(ch))
-				letter+=ch;
+				result.append(ch);
 			prevCh = ch;
 		}
-		return letter;
+		return result.toString();
 	}
 
 	/**

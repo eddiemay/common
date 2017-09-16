@@ -92,16 +92,15 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	public DualProtoService(Class<T> c, Store<I> store) {
 		try {
 			this.type = (T) c.getMethod("getDefaultInstance").invoke(null);
-		} catch (IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+				| NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException(e);
 		}
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;
 		this.internalDescriptor = store.getType().getDescriptorForType();
 
-		JsonFormat.TypeRegistry registry =
-				JsonFormat.TypeRegistry.newBuilder().add(externalDescriptor).build();
+		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(externalDescriptor).build();
 		jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
 		jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 	}

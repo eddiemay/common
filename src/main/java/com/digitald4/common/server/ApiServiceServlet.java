@@ -53,7 +53,7 @@ public class ApiServiceServlet extends HttpServlet {
 		Clock clock = Clock.systemUTC();
 
 		generalDataStore = new GeneralDataStore(new DAOConnectorImpl<>(GeneralData.class, dataConnectorProvider));
-		addService("general_data", new SingleProtoService<>(generalDataStore));
+		addService("generalData", new SingleProtoService<>(generalDataStore));
 
 		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider), clock);
 		idTokenResolver = new IdTokenResolverDD4Impl(userStore, clock);
@@ -81,8 +81,20 @@ public class ApiServiceServlet extends HttpServlet {
 	}
 
 	protected ApiServiceServlet addService(String entity, JSONService service) {
-		services.put(entity, service);
+		services.put(entity.toLowerCase(), service);
 		return this;
+	}
+
+	private JSONService getService(String entity) throws ServletException {
+		JSONService service = services.get(entity.toLowerCase());
+		if (service == null) {
+			throw new ServletException("Unknown service: " + entity);
+		}
+		return service;
+	}
+
+	private boolean isService(String entity) {
+		return services.containsKey(entity.toLowerCase());
 	}
 
 	protected void processRequest(String entity, String action, JSONObject jsonRequest,
@@ -93,7 +105,7 @@ public class ApiServiceServlet extends HttpServlet {
 		try {
 			JSONObject json = null;
 			try {
-				JSONService service = services.get(entity);
+				JSONService service = getService(entity);
 				if (service == null) {
 					throw new DD4StorageException("Unknown service: " + entity);
 				}
@@ -191,19 +203,11 @@ public class ApiServiceServlet extends HttpServlet {
 		for (int i = 0; i < parts.length; i++) {
 			String part = parts[i];
 			String entityName = part.substring(0, part.length() - 1);
-			entityName = services.containsKey(entityName) ? entityName : part;
+			entityName = isService(entityName) ? entityName : part;
 			entityGroups.add(new EntityKey(entityName, (i + 1 < parts.length) ? parts[++i] : null));
 		}
 		entityGroups.get(entityGroups.size() - 1).action = customAction;
 		return entityGroups;
-	}
-
-	private JSONService getService(String entity) throws ServletException {
-		JSONService service = services.get(entity);
-		if (service == null) {
-			throw new ServletException("Unknown service: " + entity);
-		}
-		return service;
 	}
 
 	private Pair<EntityKey, JSONObject> parseRequest(HttpServletRequest request) throws ServletException {
@@ -215,7 +219,7 @@ public class ApiServiceServlet extends HttpServlet {
 			json.put("id", entity.key);
 			for (int i = 0; i < entitykeys.size() - 1; i++) {
 				EntityKey entitykey = entitykeys.get(i);
-				String column = entitykey.entity + (services.containsKey(entitykey.entity) ? "_id" : "");
+				String column = entitykey.entity + (isService(entitykey.entity) ? "_id" : "");
 				json.put(column, entitykey.key);
 			}
 

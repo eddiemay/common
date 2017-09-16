@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package common_ui;
+package dd4.common_ui;
 
-import "common.proto";
+import "dd4_common.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
@@ -23,27 +23,21 @@ service GenericService {
 }
 
 service UserService {
-  rpc Login(LoginRequest) returns (google.protobuf.Empty) {}
+  rpc Create(CreateRequest) returns (dd4.common.User) {}
 
-  rpc GetActive(google.protobuf.Empty) returns (common.User) {}
+  rpc Get(GetRequest) returns (dd4.common.User) {}
+
+  rpc List(ListRequest) returns (ListResponse) {}
+
+  rpc Update(UpdateRequest) returns (dd4.common.User) {}
+
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty) {}
+
+  rpc Login(LoginRequest) returns (dd4.common.User) {}
+
+  rpc GetActive(google.protobuf.Empty) returns (dd4.common.User) {}
 
   rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-}
-
-enum DateRange {
-  UNSPECIFIED = 0;
-  DAY = 1;
-  WEEK = 2;
-  MONTH = 3;
-  CAL_MONTH = 4;
-  YEAR = 5;
-}
-
-message GPSAddress {
-  string address = 1;
-	double latitude = 2;
-	double longitude = 3;
-	string unit = 4;
 }
 
 message DataFile {
