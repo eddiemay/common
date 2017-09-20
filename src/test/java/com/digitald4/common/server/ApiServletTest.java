@@ -80,7 +80,7 @@ public class ApiServletTest {
 
 	@Before
 	public void setup() throws Exception {
-		apiServlet = new ApiServiceServlet()
+		apiServlet = new ApiServiceServlet(false)
 				.addService("team", teamService)
 				.addService("player", playerService);
 

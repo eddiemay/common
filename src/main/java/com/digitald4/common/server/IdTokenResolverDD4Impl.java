@@ -1,10 +1,13 @@
 package com.digitald4.common.server;
 
+import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
-import com.digitald4.common.storage.UserStore;
+import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.Calculate;
+import com.digitald4.common.util.Encryptor;
+import com.digitald4.common.util.Provider;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
@@ -12,56 +15,81 @@ import java.util.Map;
 
 public class IdTokenResolverDD4Impl implements IdTokenResolver {
 	private static final long SESSION_TIME = 30 * Calculate.ONE_MINUTE;
-	private final UserStore userStore;
+	private final Store<ActiveSession> activeSessionStore;
+	private final Provider<Encryptor> encryptorProvider;
 	private final Clock clock;
-	private final Map<String, User> activeusers = new HashMap<>();
+	private final Map<String, ActiveSession> activeSessions = new HashMap<>();
 
-	IdTokenResolverDD4Impl(UserStore userStore, Clock clock) {
-		this.userStore = userStore;
+	IdTokenResolverDD4Impl(Store<ActiveSession> activeSessionStore, Provider<Encryptor> encryptorProvider, Clock clock) {
+		this.activeSessionStore = activeSessionStore;
+		this.encryptorProvider = encryptorProvider;
 		this.clock = clock;
 	}
 
 	@Override
 	public User resolve(String idToken) {
+		ActiveSession activeSession = getActiveSession(idToken);
+		if (activeSession == null) {
+			return null;
+		}
+		return activeSession.getUser();
+	}
+
+	private ActiveSession getActiveSession(String idToken) {
 		if (idToken == null) {
 			return null;
 		}
 		long now = clock.millis();
-		User user = activeusers.get(idToken);
-		if (user == null) {
-			List<User> list = userStore.list(ListRequest.newBuilder()
+		ActiveSession activeSession = activeSessions.get(idToken);
+		if (activeSession == null) {
+			List<ActiveSession> list = activeSessionStore.list(ListRequest.newBuilder()
 					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
 					.build()).getResultList();
 			if (list.isEmpty()) {
 				return null;
 			}
-			user = list.get(0);
+			activeSession = list.get(0);
+			activeSessions.put(activeSession.getIdToken(), activeSession);
 		}
-		if (user.getExpTime() < now) {
-			activeusers.remove(idToken);
-			userStore.update(user.getId(), user_ -> user_.toBuilder()
-					.clearIdToken()
-					.clearExpTime()
-					.build());
+		if (activeSession.getExpTime() < now) {
+			remove(idToken);
 			return null;
-		} else if (user.getExpTime() < SESSION_TIME / 2 + now) {
-			activeusers.put(idToken, user = userStore.update(user.getId(), user_ -> user_.toBuilder()
-					.setExpTime(now + SESSION_TIME)
-					.build()));
+		} else if (activeSession.getExpTime() < SESSION_TIME / 2 + now) {
+			activeSessions.put(idToken, activeSession = activeSessionStore.update(activeSession.getId(),
+					activeSession_ -> activeSession_.toBuilder()
+							.setExpTime(now + SESSION_TIME)
+							.build()));
 		}
-		return user;
+		return activeSession;
 	}
 
 	public User put(User user) {
-		String tokenId = String.valueOf((int) (Math.random() * Integer.MAX_VALUE));
-		activeusers.put(tokenId, user = userStore.update(user.getId(), user_ -> user_.toBuilder()
-				.setIdToken(tokenId)
+		ActiveSession activeSession;
+		user = user.toBuilder()
+				.setIdToken(String.valueOf((int) (Math.random() * Integer.MAX_VALUE)))
 				.setExpTime(clock.millis() + SESSION_TIME)
+				.build();
+		activeSessions.put(user.getIdToken(), activeSession = activeSessionStore.create(ActiveSession.newBuilder()
+				.setIdToken(user.getIdToken())
+				.setExpTime(user.getExpTime())
+				.setUser(user)
 				.build()));
-		return user;
+		return activeSession.getUser();
 	}
 
 	void remove(String idToken) {
-		activeusers.remove(idToken);
+		ActiveSession activeSession = activeSessions.get(idToken);
+		if (activeSession == null) {
+			List<ActiveSession> list = activeSessionStore.list(ListRequest.newBuilder()
+					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
+					.build()).getResultList();
+			if (!list.isEmpty()) {
+				activeSession = list.get(0);
+			}
+		}
+		if (activeSession != null) {
+			activeSessions.remove(idToken);
+			activeSessionStore.delete(activeSession.getId());
+		}
 	}
 }

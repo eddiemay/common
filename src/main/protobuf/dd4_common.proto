@@ -76,3 +76,10 @@ message User {
   // This should not be put into the UI model.
   string password = 12;
 }
+
+message ActiveSession {
+  int64 id = 1;
+  string id_token = 2;
+  int64 exp_time = 3;
+  User user = 4;
+}

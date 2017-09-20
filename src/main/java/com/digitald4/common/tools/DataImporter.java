@@ -35,6 +35,8 @@ public class DataImporter {
 	}
 
 	private String sendPost(String url, String payload) throws Exception {
+		long startTime = System.currentTimeMillis();
+		System.out.println("\nSending 'POST' request to URL: " + url);
 		HttpsURLConnection con = (HttpsURLConnection) new URL(url).openConnection();
 		con.setRequestMethod("POST");
 		con.setRequestProperty("User-Agent", "Mozilla/5.0");
@@ -44,13 +46,12 @@ public class DataImporter {
 		if (idToken != null) {
 			payload = "idToken=" + idToken + "&" + payload;
 		}
+		System.out.println("Payload: " + payload);
 		dos.writeBytes(payload);
 		dos.flush();
 		dos.close();
 
 		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL: " + url);
-		System.out.println("Payload: " + payload);
 		System.out.println("Response Code: " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
@@ -61,6 +62,7 @@ public class DataImporter {
 		}
 		in.close();
 		System.out.println("Response: " + response);
+		System.out.println("Time: " + (System.currentTimeMillis() - startTime) + "ms");
 		return response.toString();
 	}
 

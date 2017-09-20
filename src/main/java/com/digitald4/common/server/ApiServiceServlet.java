@@ -2,6 +2,7 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
+import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
@@ -13,6 +14,7 @@ import com.digitald4.common.storage.GeneralDataStore;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
+import com.digitald4.common.util.Encryptor;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.Provider;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
@@ -35,11 +37,14 @@ public class ApiServiceServlet extends HttpServlet {
 	public enum ServerType {TOMCAT, APPENGINE};
 	protected ServerType serverType;
 
+	private final boolean useViews;
 	private final Map<String, JSONService> services = new HashMap<>();
 	private final IdTokenResolver idTokenResolver;
 	private DataConnector dataConnector;
 	private Emailer emailer;
+	private Encryptor encryptor;
 	protected final Provider<DataConnector> dataConnectorProvider = () -> dataConnector;
+	private final Provider<Encryptor> encryptorProvider = () -> encryptor;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
 	protected final UserService userService;
@@ -47,16 +52,20 @@ public class ApiServiceServlet extends HttpServlet {
 	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
-	private String autoLoginId;
 
-	public ApiServiceServlet() {
+	public ApiServiceServlet(boolean useViews) {
+		this.useViews = useViews;
 		Clock clock = Clock.systemUTC();
+
+		idTokenResolver = new IdTokenResolverDD4Impl(
+				new GenericStore<>(new DAOConnectorImpl<>(ActiveSession.class, dataConnectorProvider)),
+				encryptorProvider,
+				clock);
 
 		generalDataStore = new GeneralDataStore(new DAOConnectorImpl<>(GeneralData.class, dataConnectorProvider));
 		addService("generalData", new SingleProtoService<>(generalDataStore));
 
 		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider), clock);
-		idTokenResolver = new IdTokenResolverDD4Impl(userStore, clock);
 		addService("user", userService = new UserService(userStore, userProvider, idTokenResolver));
 
 		dataFileStore = new GenericStore<>(new DAOConnectorImpl<>(DataFile.class, dataConnectorProvider));
@@ -66,14 +75,16 @@ public class ApiServiceServlet extends HttpServlet {
 	public void init() {
 		ServletContext sc = getServletContext();
 		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
-		autoLoginId = getServletContext().getInitParameter("auto_login_id");
+		// encryptor = new Encryptor(sc.getInitParameter("id_token_key"));
 		if (serverType == ServerType.TOMCAT) {
 			// We use Tomcat with MySQL, so if Tomcat, MySQL
-			dataConnector = new DataConnectorSQLImpl(new DBConnectorThreadPoolImpl()
-					.connect(sc.getInitParameter("dbdriver"),
+			dataConnector = new DataConnectorSQLImpl(
+					new DBConnectorThreadPoolImpl(
+							sc.getInitParameter("dbdriver"),
 							sc.getInitParameter("dburl"),
 							sc.getInitParameter("dbuser"),
-							sc.getInitParameter("dbpass")));
+							sc.getInitParameter("dbpass")),
+					useViews);
 		} else {
 			// We use CloudDataStore with AppEngine.
 			dataConnector = new DataConnectorCloudDS();
@@ -165,11 +176,11 @@ public class ApiServiceServlet extends HttpServlet {
 	}
 
 	private class EntityKey {
-		public final String entity;
-		public String key;
-		public String action;
+		private final String entity;
+		private String key;
+		private String action;
 
-		public EntityKey(String entity, String key) {
+		private EntityKey(String entity, String key) {
 			this.entity = entity;
 			this.key = key;
 		}
@@ -266,17 +277,8 @@ public class ApiServiceServlet extends HttpServlet {
 	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, int level) throws Exception {
 		User user = userProvider.get();
 		if (user == null || user.getId() == 0) {
-			if (autoLoginId == null) {
-				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				return false;
-			}
-			user = userStore.get(Long.valueOf(autoLoginId));
-			if (user == null) {
-				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				return false;
-			}
-			((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
-			userProvider.set(user);
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			return false;
 		}
 		if (user.getTypeId() > level) {
 			response.setStatus(HttpServletResponse.SC_FORBIDDEN);

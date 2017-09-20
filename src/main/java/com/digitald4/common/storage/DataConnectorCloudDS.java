@@ -45,9 +45,15 @@ public class DataConnectorCloudDS implements DataConnector {
 		return convert(t.getClass(), new RetryableFunction<T, Entity>() {
 			@Override
 			public Entity apply(T t) {
-				long id = (Long) t.getField(t.getDescriptorForType().findFieldByName("id"));
-				Entity.Builder entity = id == 0 ? Entity.newBuilder(datastore.allocateId(getKeyFactory(t.getClass()).newKey()))
-						: Entity.newBuilder(getKeyFactory(t.getClass()).newKey(id));
+				Object id = t.getField(t.getDescriptorForType().findFieldByName("id"));
+				Entity.Builder entity;
+				if (id instanceof Long && (Long) id != 0L) {
+					entity = Entity.newBuilder(getKeyFactory(t.getClass()).newKey((Long) id));
+				} else if (id instanceof String && !((String) id).isEmpty()) {
+					entity = Entity.newBuilder(getKeyFactory(t.getClass()).newKey((String) id));
+			  } else {
+					entity = Entity.newBuilder(datastore.allocateId(getKeyFactory(t.getClass()).newKey()));
+				}
 				t.getAllFields()
 						.forEach((field, value) -> setObject(entity, t, field, value));
 				 return datastore.put(entity.build());
