@@ -243,7 +243,7 @@ public class ApiServiceServlet extends HttpServlet {
 						String col = entry.getKey();
 						parameters.put(new JSONObject()
 								.put("column", col.endsWith("_1") || col.endsWith("_2") ? col.substring(0, col.length() - 2) : col)
-								.put("operan", pos > 0 ? value.substring(0, pos) : "=")
+								.put("operator", pos > 0 ? value.substring(0, pos) : "=")
 								.put("value", value.substring(pos)));
 					}
 				}
