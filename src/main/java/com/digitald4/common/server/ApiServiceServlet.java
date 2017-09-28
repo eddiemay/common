@@ -6,10 +6,9 @@ import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.storage.DAOConnectorImpl;
-import com.digitald4.common.storage.DataConnector;
-import com.digitald4.common.storage.DataConnectorCloudDS;
-import com.digitald4.common.storage.DataConnectorSQLImpl;
+import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.DAOCloudDS;
+import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.UserStore;
@@ -37,13 +36,12 @@ public class ApiServiceServlet extends HttpServlet {
 	public enum ServerType {TOMCAT, APPENGINE};
 	protected ServerType serverType;
 
-	private final boolean useViews;
 	private final Map<String, JSONService> services = new HashMap<>();
 	private final IdTokenResolver idTokenResolver;
-	private DataConnector dataConnector;
+	private DAO dao;
 	private Emailer emailer;
 	private Encryptor encryptor;
-	protected final Provider<DataConnector> dataConnectorProvider = () -> dataConnector;
+	protected final Provider<DAO> dataAccessObjectProvider = () -> dao;
 	private final Provider<Encryptor> encryptorProvider = () -> encryptor;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
@@ -52,23 +50,23 @@ public class ApiServiceServlet extends HttpServlet {
 	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
+	protected boolean useViews;
 
-	public ApiServiceServlet(boolean useViews) {
-		this.useViews = useViews;
+	public ApiServiceServlet() {
 		Clock clock = Clock.systemUTC();
 
 		idTokenResolver = new IdTokenResolverDD4Impl(
-				new GenericStore<>(new DAOConnectorImpl<>(ActiveSession.class, dataConnectorProvider)),
+				new GenericStore<>(ActiveSession.class, dataAccessObjectProvider),
 				encryptorProvider,
 				clock);
 
-		generalDataStore = new GeneralDataStore(new DAOConnectorImpl<>(GeneralData.class, dataConnectorProvider));
+		generalDataStore = new GeneralDataStore(dataAccessObjectProvider);
 		addService("generalData", new SingleProtoService<>(generalDataStore));
 
-		userStore = new UserStore(new DAOConnectorImpl<>(User.class, dataConnectorProvider), clock);
+		userStore = new UserStore(dataAccessObjectProvider, clock);
 		addService("user", userService = new UserService(userStore, userProvider, idTokenResolver));
 
-		dataFileStore = new GenericStore<>(new DAOConnectorImpl<>(DataFile.class, dataConnectorProvider));
+		dataFileStore = new GenericStore<>(DataFile.class, dataAccessObjectProvider);
 		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
 	}
 
@@ -78,7 +76,7 @@ public class ApiServiceServlet extends HttpServlet {
 		// encryptor = new Encryptor(sc.getInitParameter("id_token_key"));
 		if (serverType == ServerType.TOMCAT) {
 			// We use Tomcat with MySQL, so if Tomcat, MySQL
-			dataConnector = new DataConnectorSQLImpl(
+			dao = new DAOSQLImpl(
 					new DBConnectorThreadPoolImpl(
 							sc.getInitParameter("dbdriver"),
 							sc.getInitParameter("dburl"),
@@ -87,7 +85,7 @@ public class ApiServiceServlet extends HttpServlet {
 					useViews);
 		} else {
 			// We use CloudDataStore with AppEngine.
-			dataConnector = new DataConnectorCloudDS();
+			dao = new DAOCloudDS();
 		}
 	}
 

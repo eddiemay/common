@@ -1,13 +1,14 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4UIProtos;
+import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
+import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
-import com.digitald4.common.storage.ListResponse;
+import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
 import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors;
@@ -25,7 +26,6 @@ import com.google.protobuf.util.JsonFormat.Printer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.json.JSONObject;
@@ -156,8 +156,8 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public DD4UIProtos.ListResponse list(ListRequest request) throws DD4StorageException {
-		return toListResponse(store.list(request));
+	public ListResponse list(ListRequest request) throws DD4StorageException {
+		return toListResponse(store.list(toQuery(request)));
 	}
 
 	@Override
@@ -167,18 +167,15 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 
 	@Override
 	public T update(final UpdateRequest request) throws DD4StorageException {
-		return getConverter().apply(store.update(request.getId(), new UnaryOperator<I>() {
-			@Override
-			public I apply(I internal) {
-				Message.Builder builder = internal.toBuilder();
-				try {
-					T t = request.getProto().unpack((Class<T>) type.getClass());
-					FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder, MERGE_OPTIONS);
-				} catch (InvalidProtocolBufferException e) {
-					throw new RuntimeException("Error updating object", e);
-				}
-				return (I) builder.build();
+		return getConverter().apply(store.update(request.getId(), internal -> {
+			Message.Builder builder = internal.toBuilder();
+			try {
+				T t = request.getProto().unpack((Class<T>) type.getClass());
+				FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder, MERGE_OPTIONS);
+			} catch (InvalidProtocolBufferException e) {
+				throw new RuntimeException("Error updating object", e);
 			}
+			return (I) builder.build();
 		}));
 	}
 
@@ -210,13 +207,33 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		return true;
 	}
 
-	public DD4UIProtos.ListResponse toListResponse(ListResponse<I> response) {
-		return DD4UIProtos.ListResponse.newBuilder()
-				.addAllResult(response.getResultList().stream()
+	public ListResponse toListResponse(QueryResult<I> queryResult) {
+		return ListResponse.newBuilder()
+				.addAllResult(queryResult.getResultList().stream()
 						.map(getConverter())
 						.map(Any::pack)
 						.collect(Collectors.toList()))
-				.setTotalSize(response.getTotalSize())
+				.setTotalSize(queryResult.getTotalSize())
+				.build();
+	}
+
+	public Query toQuery(ListRequest request) {
+		return Query.newBuilder()
+				.setLimit(request.getPageSize())
+				.setOffset(request.getPageToken())
+				.addAllFilter(request.getFilterList().stream()
+						.map(filter -> Query.Filter.newBuilder()
+								.setColumn(filter.getColumn())
+								.setOperator(filter.getOperator())
+								.setValue(filter.getValue())
+								.build())
+						.collect(Collectors.toList()))
+				.addAllOrderBy(request.getOrderByList().stream()
+						.map(orderyBy -> Query.OrderBy.newBuilder()
+								.setColumn(orderyBy.getColumn())
+								.setDesc(orderyBy.getDesc())
+								.build())
+						.collect(Collectors.toList()))
 				.build();
 	}
 

@@ -60,7 +60,7 @@ message ListRequest {
   int32 page_token = 2;
 	message Filter {
 		string column = 1;
-    string operan = 2;
+    string operator = 2;
     string value = 3;
 	}
 	repeated Filter filter = 3;

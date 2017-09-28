@@ -1,28 +1,27 @@
 package com.digitald4.common.tools;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.proto.DD4Protos.GeneralData;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.storage.DataConnector;
-import com.digitald4.common.storage.DataConnectorSQLImpl;
+import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.DAOSQLImpl;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
-import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONObject;
 
 public class DataImporter {
-	private final DataConnector dataConnector;
+	private final DAO dao;
 	private final String apiUrl;
 	private String idToken;
 
-	public DataImporter(DataConnector dataConnector, String apiUrl) {
-		this.dataConnector = dataConnector;
+	public DataImporter(DAO dao, String apiUrl) {
+		this.dao = dao;
 		this.apiUrl = apiUrl;
 	}
 
@@ -37,7 +36,7 @@ public class DataImporter {
 	private String sendPost(String url, String payload) throws Exception {
 		long startTime = System.currentTimeMillis();
 		System.out.println("\nSending 'POST' request to URL: " + url);
-		HttpsURLConnection con = (HttpsURLConnection) new URL(url).openConnection();
+		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 		con.setRequestMethod("POST");
 		con.setRequestProperty("User-Agent", "Mozilla/5.0");
 		con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
@@ -67,12 +66,12 @@ public class DataImporter {
 	}
 
 	public <T extends GeneratedMessageV3> void runFor(Class<T> c) throws Exception {
-		runFor(c, ListRequest.getDefaultInstance());
+		runFor(c, Query.getDefaultInstance());
 	}
 
-	public <T extends GeneratedMessageV3> void runFor(Class<T> c, ListRequest listRequest) throws Exception {
+	public <T extends GeneratedMessageV3> void runFor(Class<T> c, Query query) throws Exception {
 		String url = apiUrl + "/" + c.getSimpleName() + "s";
-		List<T> results = dataConnector.list(c, listRequest).getResultList();
+		List<T> results = dao.list(c, query).getResultList();
 		if (!results.isEmpty()) {
 			T type = results.get(0);
 			JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(type.getDescriptorForType()).build();
@@ -89,12 +88,13 @@ public class DataImporter {
 
 	public static void main(String[] args) throws Exception {
 		DataImporter dataImporter = new DataImporter(
-				new DataConnectorSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
+				new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 						"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true",
 						"dd4_user", "getSchooled85")),
-				"https://ip360-179401.appspot.com/api"
+				//"https://ip360-179401.appspot.com/api"
+				"http://localhost:8181/api"
 		);
 		dataImporter.login();
-		dataImporter.runFor(GeneralData.class);
+		// dataImporter.runFor(GeneralData.class);
 	}
 }

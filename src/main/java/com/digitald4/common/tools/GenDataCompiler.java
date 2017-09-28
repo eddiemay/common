@@ -2,7 +2,7 @@ package com.digitald4.common.tools;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
+import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.storage.DAO;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -19,11 +19,11 @@ public class GenDataCompiler {
 	private static final String JS_ENTRY = "\t%s: %d,\n";
 
 	private final String project;
-	private final DAO<GeneralData> dao;
+	private final DAO dao;
 	private final String javaFile;
 	private final String jsFile;
 
-	public GenDataCompiler(String project, DAO<GeneralData> dao, String javaFile, String jsFile) {
+	public GenDataCompiler(String project, DAO dao, String javaFile, String jsFile) {
 		this.project = project;
 		this.dao = dao;
 		this.javaFile = javaFile;
@@ -31,7 +31,8 @@ public class GenDataCompiler {
 	}
 
 	public void compile() throws DD4StorageException {
-		Map<Long, List<GeneralData>> hash = dao.list(ListRequest.getDefaultInstance()).getResultList()
+		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, Query.getDefaultInstance())
+				.getResultList()
 				.stream()
 				.collect(Collectors.groupingBy(GeneralData::getGroupId));
 

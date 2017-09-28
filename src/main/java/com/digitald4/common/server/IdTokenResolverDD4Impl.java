@@ -1,9 +1,9 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
+import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.Encryptor;
@@ -42,7 +42,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		long now = clock.millis();
 		ActiveSession activeSession = activeSessions.get(idToken);
 		if (activeSession == null) {
-			List<ActiveSession> list = activeSessionStore.list(ListRequest.newBuilder()
+			List<ActiveSession> list = activeSessionStore.list(Query.newBuilder()
 					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
 					.build()).getResultList();
 			if (list.isEmpty()) {
@@ -80,7 +80,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 	void remove(String idToken) {
 		ActiveSession activeSession = activeSessions.get(idToken);
 		if (activeSession == null) {
-			List<ActiveSession> list = activeSessionStore.list(ListRequest.newBuilder()
+			List<ActiveSession> list = activeSessionStore.list(Query.newBuilder()
 					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
 					.build()).getResultList();
 			if (!list.isEmpty()) {

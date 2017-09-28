@@ -1,8 +1,8 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.jdbc.DBConnector;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
+import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.ByteString;
@@ -29,7 +29,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
 
-public class DataConnectorSQLImpl implements DataConnector {
+public class DAOSQLImpl implements DAO {
 	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
 	private static final String SELECT_SQL = "SELECT * FROM ";
 	private static final String WHERE_ID = " WHERE id=?;";
@@ -44,11 +44,11 @@ public class DataConnectorSQLImpl implements DataConnector {
 	private final boolean useViews;
 	private final Map<Class<?>, GeneratedMessageV3> defaultInstances = new HashMap<>();
 
-	public DataConnectorSQLImpl(DBConnector connector) {
+	public DAOSQLImpl(DBConnector connector) {
 		this(connector, false);
 	}
 
-	public DataConnectorSQLImpl(DBConnector connector, boolean useViews) {
+	public DAOSQLImpl(DBConnector connector, boolean useViews) {
 		this.connector = connector;
 		this.useViews = useViews;
 	}
@@ -115,27 +115,27 @@ public class DataConnectorSQLImpl implements DataConnector {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> ListResponse<T> list(Class<T> c, ListRequest listRequest) {
-		return new RetryableFunction<ListRequest, ListResponse<T>>() {
+	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, Query query) {
+		return new RetryableFunction<Query, QueryResult<T>>() {
 			@Override
-			public ListResponse<T> apply(ListRequest listRequest) {
+			public QueryResult<T> apply(Query query) {
 				StringBuffer sql = new StringBuffer(SELECT_SQL).append(getView(c));
 				String where = "";
 				String countSql = null;
-				if (listRequest.getFilterCount() > 0) {
-					sql.append(where = WHERE_SQL + String.join(" AND ", listRequest.getFilterList().stream()
-							.map(filter -> filter.getColumn() + " " + (filter.getOperan().isEmpty() ? "=" : filter.getOperan()) + " ?")
+				if (query.getFilterCount() > 0) {
+					sql.append(where = WHERE_SQL + String.join(" AND ", query.getFilterList().stream()
+							.map(filter -> filter.getColumn() + " " + (filter.getOperator().isEmpty() ? "=" : filter.getOperator()) + " ?")
 							.collect(Collectors.toList())));
 				}
-				if (listRequest.getOrderByCount() > 0) {
-					sql.append(ORDER_BY_SQL).append(String.join(",", listRequest.getOrderByList().stream()
+				if (query.getOrderByCount() > 0) {
+					sql.append(ORDER_BY_SQL).append(String.join(",", query.getOrderByList().stream()
 							.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
 							.collect(Collectors.toList())));
 				}
-				if (listRequest.getPageSize() > 0) {
+				if (query.getLimit() > 0) {
 					sql.append(LIMIT_SQL)
-							.append((listRequest.getPageToken() > 0 ? listRequest.getPageSize() + "," : "")
-									+ String.valueOf(listRequest.getPageSize()));
+							.append((query.getOffset() > 0 ? query.getLimit() + "," : "")
+									+ String.valueOf(query.getOffset()));
 					countSql = COUNT_SQL + getView(c) + where + ";";
 				}
 				sql.append(";");
@@ -143,7 +143,7 @@ public class DataConnectorSQLImpl implements DataConnector {
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql.toString())) {
 					int p = 1;
-					for (Filter filter : listRequest.getFilterList()) {
+					for (Filter filter : query.getFilterList()) {
 						setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 					}
 					ResultSet rs = ps.executeQuery();
@@ -153,7 +153,7 @@ public class DataConnectorSQLImpl implements DataConnector {
 					if (countSql != null) {
 						PreparedStatement ps2 = con.prepareStatement(countSql);
 						p = 1;
-						for (Filter filter : listRequest.getFilterList()) {
+						for (Filter filter : query.getFilterList()) {
 							setObject(ps2, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 						}
 						rs = ps2.executeQuery();
@@ -163,7 +163,7 @@ public class DataConnectorSQLImpl implements DataConnector {
 						rs.close();
 						ps2.close();
 					}
-					return ListResponse.<T>newBuilder()
+					return QueryResult.<T>newBuilder()
 							.addAllResult(results)
 							.setTotalSize(count)
 							.build();
@@ -171,7 +171,7 @@ public class DataConnectorSQLImpl implements DataConnector {
 					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 				}
 			}
-		}.applyWithRetries(listRequest);
+		}.applyWithRetries(query);
 	}
 
 	@Override

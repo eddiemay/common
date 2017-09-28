@@ -3,11 +3,11 @@ package com.digitald4.common.storage;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListResponse<T> {
+public class QueryResult<T> {
 	private final List<T> results;
 	private final int totalSize;
 
-	private ListResponse(List<T> results, int totalSize) {
+	private QueryResult(List<T> results, int totalSize) {
 		this.results = results;
 		this.totalSize = totalSize;
 	}
@@ -75,8 +75,8 @@ public class ListResponse<T> {
 			return this;
 		}
 
-		public ListResponse<T> build() {
-			return new ListResponse<T>(getResultList(), getTotalSize());
+		public QueryResult<T> build() {
+			return new QueryResult<T>(getResultList(), getTotalSize());
 		}
 	}
 }

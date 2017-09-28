@@ -1,8 +1,8 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
+import com.digitald4.common.proto.DD4Protos;
+import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.cloud.Timestamp;
@@ -30,13 +30,13 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
 
-public class DataConnectorCloudDS implements DataConnector {
+public class DAOCloudDS implements DAO {
 
 	private final Datastore datastore;
 	private final Map<Class<?>, KeyFactory> keyFactories = new HashMap<>();
-	private final Map<Class<?>, GeneratedMessageV3> defaultInstances = new HashMap<>();
+	private static final Map<Class<?>, GeneratedMessageV3> defaultInstances = new HashMap<>();
 
-	public DataConnectorCloudDS() {
+	public DAOCloudDS() {
 		this.datastore = DatastoreOptions.getDefaultInstance().getService();
 	}
 
@@ -72,15 +72,15 @@ public class DataConnectorCloudDS implements DataConnector {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> ListResponse<T> list(Class<T> c, ListRequest listRequest) {
-		return new RetryableFunction<ListRequest, ListResponse<T>>() {
+	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, DD4Protos.Query query) {
+		return new RetryableFunction<DD4Protos.Query, QueryResult<T>>() {
 			@Override
-			public ListResponse<T> apply(ListRequest request) {
+			public QueryResult<T> apply(DD4Protos.Query request) {
 				EntityQuery.Builder query = Query.newEntityQueryBuilder()
 						.setKind(c.getSimpleName())
-						.setOffset(request.getPageToken());
-				if (request.getPageSize() > 0) {
-					query.setLimit(request.getPageSize());
+						.setOffset(request.getOffset());
+				if (request.getLimit() > 0) {
+					query.setLimit(request.getLimit());
 				}
 				if (request.getFilterCount() > 0) {
 					Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
@@ -98,11 +98,11 @@ public class DataConnectorCloudDS implements DataConnector {
 				}
 				request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
 						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
-				ListResponse.Builder<T> listResponse = ListResponse.newBuilder();
+				QueryResult.Builder<T> listResponse = QueryResult.newBuilder();
 				datastore.run(query.build()).forEachRemaining(entity -> listResponse.addResult(convert(c, entity)));
 				return listResponse.build();
 			}
-		}.apply(listRequest);
+		}.apply(query);
 	}
 
 	@Override
@@ -130,7 +130,7 @@ public class DataConnectorCloudDS implements DataConnector {
 		};
 	}
 
-	public <T extends GeneratedMessageV3> T getDefaultInstance(Class<?> c) {
+	public static <T extends GeneratedMessageV3> T getDefaultInstance(Class<?> c) {
 		T defaultInstance = (T) defaultInstances.get(c);
 		if (defaultInstance == null) {
 			try {

@@ -1,10 +1,11 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest.Filter;
 import com.digitald4.common.util.Calculate;
+import com.digitald4.common.util.Provider;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.util.List;
@@ -14,8 +15,8 @@ import java.util.stream.Collectors;
 public class UserStore extends GenericStore<User> {
 	private final Clock clock;
 
-	public UserStore(DAO<User> dao, Clock clock) {
-		super(dao);
+	public UserStore(Provider<DAO> daoProvider, Clock clock) {
+		super(User.class, daoProvider);
 		this.clock = clock;
 	}
 
@@ -36,8 +37,8 @@ public class UserStore extends GenericStore<User> {
 	}
 
 	@Override
-	public ListResponse<User> list(ListRequest request) {
-		ListResponse<User> result = super.list(request);
+	public QueryResult<User> list(Query query) {
+		QueryResult<User> result = super.list(query);
 		return result.toBuilder()
 				.setResultList(result.getResultList().stream()
 						.map(user -> user.toBuilder().clearPassword().build())
@@ -59,14 +60,14 @@ public class UserStore extends GenericStore<User> {
 
 	public User getBy(String login, String password) throws DD4StorageException {
 		List<User> users = list(
-				ListRequest.newBuilder()
+				Query.newBuilder()
 						.addFilter(Filter.newBuilder()
 								.setColumn(login.contains("@") ? "email" : "user_name")
-								.setOperan("=")
+								.setOperator("=")
 								.setValue(login))
 						.addFilter(Filter.newBuilder()
 								.setColumn("password")
-								.setOperan("=")
+								.setOperator("=")
 								.setValue(encodePassword(password)))
 						.build())
 				.getResultList();
