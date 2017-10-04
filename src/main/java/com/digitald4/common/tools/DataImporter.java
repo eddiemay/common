@@ -1,8 +1,12 @@
 package com.digitald4.common.tools;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
+import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest;
+import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.DAOSQLImpl;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.util.JsonFormat;
@@ -34,21 +38,35 @@ public class DataImporter {
 	}
 
 	private String sendPost(String url, String payload) throws Exception {
+		return send("POST", url, payload);
+	}
+
+	private String sendGet(String url) throws Exception {
+		return send("GET", url, null);
+	}
+
+	private String send(String method, String url, String payload) throws Exception {
 		long startTime = System.currentTimeMillis();
-		System.out.println("\nSending 'POST' request to URL: " + url);
+		if (idToken != null) {
+			if (payload != null) {
+				payload = "idToken=" + idToken + "&" + payload;
+			} else {
+				url += "?idToken=" + idToken;
+			}
+		}
+		System.out.println("\nSending '" + method + "' request to URL: " + url);
 		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
-		con.setRequestMethod("POST");
+		con.setRequestMethod(method);
 		con.setRequestProperty("User-Agent", "Mozilla/5.0");
 		con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-		con.setDoOutput(true);
-		DataOutputStream dos = new DataOutputStream(con.getOutputStream());
-		if (idToken != null) {
-			payload = "idToken=" + idToken + "&" + payload;
+		if (payload != null) {
+			con.setDoOutput(true);
+			DataOutputStream dos = new DataOutputStream(con.getOutputStream());
+			System.out.println("Payload: " + payload);
+			dos.writeBytes(payload);
+			dos.flush();
+			dos.close();
 		}
-		System.out.println("Payload: " + payload);
-		dos.writeBytes(payload);
-		dos.flush();
-		dos.close();
 
 		int responseCode = con.getResponseCode();
 		System.out.println("Response Code: " + responseCode);
@@ -86,15 +104,32 @@ public class DataImporter {
 		}
 	}
 
+	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c) throws Exception {
+		return export(c, ListRequest.getDefaultInstance());
+	}
+
+	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c, ListRequest request) throws Exception {
+		String url = apiUrl + "/" + c.getSimpleName() + "s";
+		String response = sendGet(url);
+		ListResponse.Builder builder = ListResponse.newBuilder();
+		T type = DAOCloudDS.getDefaultInstance(c);
+		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(type.getDescriptorForType()).build();
+		JsonFormat.parser().usingTypeRegistry(registry).merge(response, builder);
+		return builder.build();
+	}
+
 	public static void main(String[] args) throws Exception {
 		DataImporter dataImporter = new DataImporter(
 				new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 						"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true",
 						"dd4_user", "getSchooled85")),
-				//"https://ip360-179401.appspot.com/api"
-				"http://localhost:8181/api"
+				"https://ip360-179401.appspot.com/api"
+				// "http://localhost:8181/api"
 		);
 		dataImporter.login();
 		// dataImporter.runFor(GeneralData.class);
+		dataImporter.export(GeneralData.class)
+				.getResultList()
+				.forEach(any -> System.out.println(any.unpack(GeneralData.class)));
 	}
 }
