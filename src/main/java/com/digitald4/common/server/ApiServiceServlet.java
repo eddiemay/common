@@ -120,15 +120,15 @@ public class ApiServiceServlet extends HttpServlet {
 				}
 				if (service.requiresLogin(action) && !checkLogin(request, response)) return;
 				json = service.performAction(action, jsonRequest);
-			/*} catch (Exception e) {
-				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			} catch (DD4StorageException e) {
+				response.setStatus(e.getErrorCode());
 				json = new JSONObject()
 						.put("error", e.getMessage())
 						.put("stackTrace", formatStackTrace(e))
-						.put("requestParams", "" + request.getParameterMap().keySet())
+						.put("requestParams", String.valueOf(request.getParameterMap().keySet()))
 						.put("jsonRequest", jsonRequest.toString())
 						.put("queryString", request.getQueryString());
-				e.printStackTrace();*/
+				e.printStackTrace();
 			} finally {
 				if (json != null) {
 					response.setContentType("application/json");
@@ -291,5 +291,13 @@ public class ApiServiceServlet extends HttpServlet {
 	
 	public boolean checkAdminLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		return checkLogin(request, response, 1);
+	}
+
+	public static String formatStackTrace(Exception e) {
+		StringBuilder out = new StringBuilder();
+		for (StackTraceElement elem : e.getStackTrace()) {
+			out.append(elem + "\n");
+		}
+		return out.toString();
 	}
 }

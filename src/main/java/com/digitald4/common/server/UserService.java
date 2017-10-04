@@ -28,7 +28,7 @@ public class UserService extends SingleProtoService<User> {
 	private User login(LoginRequest loginRequest) throws DD4StorageException {
 		User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
 		if (user == null) {
-			throw new DD4StorageException("Wrong username or password");
+			throw new DD4StorageException(401, "Wrong username or password");
 		}
 		return ((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
 	}
