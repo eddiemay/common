@@ -22,6 +22,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
@@ -102,7 +103,7 @@ public class DAOCloudDS implements DAO {
 				datastore.run(query.build()).forEachRemaining(entity -> listResponse.addResult(convert(c, entity)));
 				return listResponse.build();
 			}
-		}.apply(query);
+		}.applyWithRetries(query);
 	}
 
 	@Override
@@ -116,18 +117,12 @@ public class DAOCloudDS implements DAO {
 						.forEach((field, value) -> setObject(entity, t, field, value));
 				return convert(c, datastore.put(entity.build()));
 			}
-		}.apply(Pair.of(id, updater));
+		}.applyWithRetries(Pair.of(id, updater));
 	}
 
 	@Override
 	public <T> void delete(Class<T> c, long id) {
-		new RetryableFunction<Long, Boolean>() {
-			@Override
-			public Boolean apply(Long id) {
-				datastore.delete(getKeyFactory(c).newKey(id));
-				return true;
-			}
-		};
+		deleteFunction.applyWithRetries(Pair.of(c, id));
 	}
 
 	public static <T extends GeneratedMessageV3> T getDefaultInstance(Class<?> c) {
@@ -147,6 +142,14 @@ public class DAOCloudDS implements DAO {
 	private KeyFactory getKeyFactory(Class<?> c) {
 		return keyFactories.computeIfAbsent(c, v -> datastore.newKeyFactory().setKind(c.getSimpleName()));
 	}
+
+	private RetryableFunction<Pair<Class<?>, Long>, Boolean> deleteFunction = new RetryableFunction<Pair<Class<?>, Long>, Boolean>() {
+		@Override
+		public Boolean apply(Pair<Class<?>, Long> pair) {
+			datastore.delete(getKeyFactory(pair.getLeft()).newKey(pair.getRight()));
+			return true;
+		}
+	};
 
 	private static <T extends GeneratedMessageV3> void setObject(Entity.Builder entity, T t, FieldDescriptor field,
 																															 Object value) {

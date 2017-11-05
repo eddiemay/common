@@ -1,6 +1,6 @@
-com.digitald4.common.JSONService = function(proto, apiConnector) {
+com.digitald4.common.JSONService = function(resource, apiConnector) {
 	this.apiConnector = apiConnector;
-	this.service = proto + 's';
+	this.service = resource + 's';
 };
 
 
@@ -88,29 +88,29 @@ com.digitald4.common.JSONService.prototype.list = function(listOptions, success,
 /**
 * Creates a new object.
 *
-* @param {Object} proto The object to create.
+* @param {Object} entity The object to create.
 * @param {!function(!Object)} success The call back function to call after a successful submission.
 * @param {!function(!Object)} error The call back function to call after a submission error.
 */
-com.digitald4.common.JSONService.prototype.create = function(proto, success, error) {
-  proto.$$hashKey = undefined;
-	this.performRequest('POST', undefined, {proto: proto}, success, error);
+com.digitald4.common.JSONService.prototype.create = function(entity, success, error) {
+  entity.$$hashKey = undefined;
+	this.performRequest('POST', undefined, {entity: entity}, success, error);
 };
 
 
 /**
 * Updates an object in the data store.
 *
-* @param {Object} proto The object to update.
+* @param {Object} entity The object to update.
 * @param {!function(!Object)} success The call back function to call after a successful submission.
 * @param {!function(!Object)} error The call back function to call after a submission error.
 */
-com.digitald4.common.JSONService.prototype.update = function(proto, props, success, error) {
+com.digitald4.common.JSONService.prototype.update = function(entity, props, success, error) {
 	var updated = {};
 	for (var p = 0; p < props.length; p++) {
-	  updated[props[p]] = proto[props[p]];
+	  updated[props[p]] = entity[props[p]];
 	}
-	this.performRequest('POST', proto.id, {proto: updated, updateMask: props.join()}, success, error);
+	this.performRequest('POST', entity.id, {entity: updated, updateMask: props.join()}, success, error);
 };
 
 

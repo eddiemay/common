@@ -48,7 +48,7 @@ message DataFile {
 }
 
 message CreateRequest {
-  google.protobuf.Any proto = 1;
+  google.protobuf.Any entity = 1;
 }
 
 message GetRequest {
@@ -78,7 +78,7 @@ message ListResponse {
 
 message UpdateRequest {
 	int64 id = 1;
-  google.protobuf.Any proto = 2;
+  google.protobuf.Any entity = 2;
   google.protobuf.FieldMask update_mask = 3;
 }
 

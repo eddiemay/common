@@ -133,7 +133,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	@Override
 	public T create(CreateRequest request) {
 		try {
-			T t = request.getProto().unpack((Class<T>) type.getClass());
+			T t = request.getEntity().unpack((Class<T>) type.getClass());
 			return getConverter().apply(store.create(getReverseConverter().apply(t)));
 		} catch (InvalidProtocolBufferException e) {
 			throw new RuntimeException(e);
@@ -170,7 +170,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		return getConverter().apply(store.update(request.getId(), internal -> {
 			Message.Builder builder = internal.toBuilder();
 			try {
-				T t = request.getProto().unpack((Class<T>) type.getClass());
+				T t = request.getEntity().unpack((Class<T>) type.getClass());
 				FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder, MERGE_OPTIONS);
 			} catch (InvalidProtocolBufferException e) {
 				throw new RuntimeException("Error updating object", e);
