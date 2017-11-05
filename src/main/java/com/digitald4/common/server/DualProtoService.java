@@ -244,8 +244,8 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	@SuppressWarnings("unchecked")
 	public <R extends Message> R transformJSONRequest(R msgRequest, JSONObject json) {
 		R.Builder builder = msgRequest.toBuilder();
-		if (json.has("proto")) {
-			json.getJSONObject("proto")
+		if (json.has("entity")) {
+			json.getJSONObject("entity")
 					.put("@type", "type.googleapis.com/" + externalDescriptor.getFullName());
 		}
 		jsonParser.merge(json.toString(), builder);
