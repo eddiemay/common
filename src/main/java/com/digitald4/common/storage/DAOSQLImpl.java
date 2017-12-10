@@ -3,6 +3,7 @@ package com.digitald4.common.storage;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
+import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.ByteString;
@@ -271,15 +272,15 @@ public class DAOSQLImpl implements DAO {
 		return getTable(c) + (useViews ? "View" : "");
 	}
 
-	private <T extends GeneratedMessageV3> void setObject(PreparedStatement ps, int index, T t, FieldDescriptor field,
-																												Object value) throws SQLException {
+	private <T extends GeneratedMessageV3> void setObject(
+			PreparedStatement ps, int index, T t, FieldDescriptor field, Object value) throws SQLException {
 		if ("".equals(value)) {
 			value = null;
 		}
 		if (field != null) {
 			if (field.isRepeated() || field.isMapField()) {
 				JSONObject json = new JSONObject(JsonFormat.printer().print(t));
-				ps.setString(index, json.get(field.getName()).toString());
+				ps.setString(index, json.get(FormatText.toLowerCamel(field.getName())).toString());
 			} else {
 				switch (field.getJavaType()) {
 					case ENUM:

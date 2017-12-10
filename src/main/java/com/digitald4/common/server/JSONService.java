@@ -5,15 +5,15 @@ import org.json.JSONObject;
 
 public interface JSONService {
 
-	JSONObject create(JSONObject request) throws DD4StorageException;
+	JSONObject create(JSONObject request);
 
-	JSONObject get(JSONObject request) throws DD4StorageException;
+	JSONObject get(JSONObject request);
 
-	JSONObject list(JSONObject request) throws DD4StorageException;
+	JSONObject list(JSONObject request);
 
-	JSONObject update(JSONObject request) throws DD4StorageException;
+	JSONObject update(JSONObject request);
 
-	JSONObject delete(JSONObject request) throws DD4StorageException;
+	JSONObject delete(JSONObject request);
 
 	JSONObject performAction(String action, JSONObject request) throws Exception;
 

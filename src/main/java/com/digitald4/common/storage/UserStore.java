@@ -52,13 +52,13 @@ public class UserStore extends GenericStore<User> {
 				.toBuilder().clearPassword().build();
 	}
 
-	public User updateLastLogin(User user) throws DD4StorageException {
+	public User updateLastLogin(User user)  {
 		return update(user.getId(), user_ -> user_.toBuilder()
 				.setLastLogin(clock.millis())
 				.build());
 	}
 
-	public User getBy(String login, String password) throws DD4StorageException {
+	public User getBy(String login, String password)  {
 		List<User> users = list(
 				Query.newBuilder()
 						.addFilter(Filter.newBuilder()

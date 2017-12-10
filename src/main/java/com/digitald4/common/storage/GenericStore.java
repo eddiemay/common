@@ -30,27 +30,27 @@ public class GenericStore<T extends GeneratedMessageV3> implements Store<T> {
 	}
 	
 	@Override
-	public T create(T t) throws DD4StorageException {
+	public T create(T t) {
 		return dataAccessObjectProvider.get().create(t);
 	}
 
 	@Override
-	public T get(long id) throws DD4StorageException {
+	public T get(long id) {
 		return dataAccessObjectProvider.get().get(c, id);
 	}
 
 	@Override
-	public QueryResult<T> list(Query query) throws DD4StorageException {
+	public QueryResult<T> list(Query query) {
 		return dataAccessObjectProvider.get().list(c, query);
 	}
 
 	@Override
-	public T update(long id, UnaryOperator<T> updater) throws DD4StorageException {
+	public T update(long id, UnaryOperator<T> updater) {
 		return dataAccessObjectProvider.get().update(c, id, updater);
 	}
 
 	@Override
-	public void delete(long id) throws DD4StorageException {
+	public void delete(long id) {
 		dataAccessObjectProvider.get().delete(c, id);
 	}
 }

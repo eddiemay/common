@@ -11,15 +11,15 @@ import com.google.protobuf.Empty;
 
 public interface ProtoService<T> {
 
-	T create(CreateRequest request) throws DD4StorageException;
+	T create(CreateRequest request);
 	
-	T get(GetRequest request) throws DD4StorageException;
+	T get(GetRequest request);
 	
-	ListResponse list(ListRequest request) throws DD4StorageException;
+	ListResponse list(ListRequest request);
 	
-	T update(UpdateRequest request) throws DD4StorageException;
+	T update(UpdateRequest request);
 	
-	Empty delete(DeleteRequest request) throws DD4StorageException;
+	Empty delete(DeleteRequest request);
 
 	boolean requiresLogin(String action);
 }

@@ -24,10 +24,12 @@ package com.digitald4.common.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Date;
 import java.sql.Time;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.OptionalDouble;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -364,31 +366,22 @@ public class Calculate {
 	 * @return the calculated effective temperature.
 	 */
 	public static double calcEffectiveTemp(double maxTemp, double minTemp, double maxTemp2, double minTemp2, double maxTemp3) {
-		return .7*maxTemp+.003*minTemp*maxTemp2+.002*minTemp2*maxTemp3;
+		return .7 * maxTemp + .003 * minTemp * maxTemp2 + .002 * minTemp2 * maxTemp3;
 	}
 
-	public static double calcMaxDeviation(double phaseA, double phaseB, double phaseC) {
-		double phaseAve = calcAverage(phaseA,phaseB,phaseC);
-		double[] A = {Math.abs(phaseA - phaseAve), Math.abs(phaseB - phaseAve),Math.abs(phaseC - phaseAve)};
-		double max = A[0];
-		for (int i = 1; i < A.length; i++)
-			if (A[i] > max)
-				max = A[i];
-		return max;
+	public static double calcMaxDeviation(double... values) {
+		double avg = calcAverage(values);
+		return Arrays.stream(values)
+				.parallel()
+				.map(value -> Math.abs(value - avg )) // Calc deviation from average
+				.max()
+				.orElse(0);
 	}
 
-	public static double calcAverage(double value1, double value2, double value3) {		
-		return (value1+value2+value3)/3;
+	public static double calcAverage(double... values) {
+		return Arrays.stream(values).parallel().average().orElse(0);
 	}
 
-	public static double calcMaxDeviationOld(double phase, double phase2, double phase3) {
-		double[] A = {Math.abs(phase - phase2), Math.abs(phase - phase3),Math.abs(phase2 - phase3)};
-		double max = A[0];
-		for(int i = 1; i < A.length; i++)
-			if (A[i] > max)
-				max = A[i];
-		return max;
-	}
 	public static final double TEN_NANO = .00000001;
 
 	public static boolean isNull(Object o){
@@ -418,7 +411,7 @@ public class Calculate {
 		return false;
 	}
 
-	public static double percentMatch(String s, String t){
+	public static double percentMatch(String s, String t) {
 		if(s == null && t == null)
 			return 1;
 		if(s == null || t == null)
@@ -428,16 +421,15 @@ public class Calculate {
 		return 0;
 	}
 
-	//****************************
-	// Get minimum of three values
-	//****************************
-	private static int Minimum (int a, int b, int c) {
-		int mi = a;
-		if (b < mi)
-			mi = b;
-		if (c < mi)
-			mi = c;
-		return mi;
+	// Get minimum from a list of values.
+	public static int minimum(int... values) {
+		int min = values[0];
+		for (int value : values) {
+			if (value < min) {
+				min = value;
+			}
+		}
+		return min;
 	}
 
 	//*****************************
@@ -484,7 +476,7 @@ public class Calculate {
 					cost = 1;
 
 				// Step 6
-				d[i][j] = Minimum (d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + cost);
+				d[i][j] = minimum (d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + cost);
 			}
 		}
 		// Step 7
@@ -492,16 +484,16 @@ public class Calculate {
 	}
 
 	public static double getNPV(int baseYear, double rate, int cost, int year) {
-		return cost/Math.pow(1+rate, year-baseYear);
+		return cost / Math.pow(1 + rate, year - baseYear);
 	}
 
 	public static float[] effective(float[] maxs, float[] mins){
 		float[] effs = new float[maxs.length];
-		float c1=(float).7;
-		float c2=(float).003;
-		float c3=(float).002;
-		for(int x=0; x<maxs.length-2; x++){
-			effs[x] = c1*maxs[x]+c2*mins[x]*maxs[x+1]+c3*mins[x+1]*maxs[x+2];
+		float c1 = (float).7;
+		float c2 = (float).003;
+		float c3 = (float).002;
+		for (int x = 0; x < maxs.length - 2; x++){
+			effs[x] = c1 * maxs[x] + c2*mins[x] * maxs[x + 1] + c3 * mins[x+1] * maxs[x+2];
 		}
 		return effs;
 	}
@@ -515,9 +507,10 @@ public class Calculate {
 		m.appendTail(sb);
 		return sb.toString();
 	}
+
 	public static <T> Collection<T> getIntersection(Collection<T>[] collects){
 		TreeSet<T> result = new TreeSet<T>(collects[0]);
-		for(int i=1; i<collects.length; i++){
+		for (int i = 1; i < collects.length; i++) {
 			Collection<T> c = collects[i];
 			result.retainAll(c);
 		}
@@ -603,5 +596,33 @@ public class Calculate {
 
 	public static String or(String value, String nullCase) {
 		return value != null ? value : nullCase;
+	}
+
+	public static double standardDeviation(double... values) {
+		return Math.sqrt(variance(values));
+	}
+
+	public static double variance(double... values) {
+		double mean = calcAverage(values);
+		return Arrays.stream(values)
+				.parallel()
+				.map(value -> Math.pow(value - mean, 2))
+				.sum() / (values.length - 1);
+	}
+
+	public static long factorial(int n) {
+		long f = 1;
+		for (int i = 2; i <= n; i++) {
+			f = f * i;
+		}
+		return f;
+	}
+
+	public static long combinations(int n, int r) {
+		long partialFac = 1;
+		for (int i = n - r + 1; i <= n; i++) {
+			partialFac *= i;
+		}
+		return partialFac / factorial(r);
 	}
 }

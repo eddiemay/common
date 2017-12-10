@@ -30,7 +30,7 @@ public class GenDataCompiler {
 		this.jsFile = jsFile;
 	}
 
-	public void compile() throws DD4StorageException {
+	public void compile() {
 		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, Query.getDefaultInstance())
 				.getResultList()
 				.stream()

@@ -4,27 +4,27 @@ public class DD4StorageException extends RuntimeException {
 
 	private final int errorCode;
 
-	public DD4StorageException(int errorCode, String message) {
-		this(errorCode, message, null);
-	}
-	
 	public DD4StorageException(String message) {
-		this(500, message, null);
+		this(message, null, 500);
 	}
 
-	public DD4StorageException(int errorCode, Exception e) {
-		this(errorCode, null, e);
+	public DD4StorageException(String message, int errorCode) {
+		this(message, null, errorCode);
 	}
 
 	public DD4StorageException(Exception e) {
-		this(500, null, e);
+		this(null, e, 500);
+	}
+
+	public DD4StorageException(Exception e, int errorCode) {
+		this(null, e, errorCode);
 	}
 
 	public DD4StorageException(String message, Exception e) {
-		this(500, message, e);
+		this(message, e, 500);
 	}
 
-	public DD4StorageException(int errorCode, String message, Exception e) {
+	public DD4StorageException(String message, Exception e, int errorCode) {
 		super(message, e);
 		this.errorCode = errorCode;
 	}

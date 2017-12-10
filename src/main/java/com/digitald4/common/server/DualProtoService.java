@@ -156,7 +156,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public ListResponse list(ListRequest request) throws DD4StorageException {
+	public ListResponse list(ListRequest request) {
 		return toListResponse(store.list(toQuery(request)));
 	}
 
@@ -166,7 +166,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public T update(final UpdateRequest request) throws DD4StorageException {
+	public T update(final UpdateRequest request) {
 		return getConverter().apply(store.update(request.getId(), internal -> {
 			Message.Builder builder = internal.toBuilder();
 			try {
@@ -191,7 +191,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public JSONObject performAction(String action, JSONObject jsonRequest) throws DD4StorageException {
+	public JSONObject performAction(String action, JSONObject jsonRequest) {
 		switch (action) {
 			case "create": return create(jsonRequest);
 			case "get": return get(jsonRequest);

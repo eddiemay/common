@@ -90,4 +90,31 @@ public class CalculateTest {
 		assertEquals(31, end.getDayOfMonth());
 		assertEquals(Calculate.LAST_MILLI_OF_DAY, end.getMillisOfDay());
 	}
+
+	@Test
+	public void testCalcAverage() {
+		assertEquals(394, Calculate.calcAverage(600, 470, 170, 430, 300), .001);
+	}
+
+	@Test
+	public void testVariance() {
+		assertEquals(27130, Calculate.variance(600, 470, 170, 430, 300), .001);
+	}
+
+	@Test
+	public void testStandardDeviation() {
+		assertEquals(164.712, Calculate.standardDeviation(600, 470, 170, 430, 300), .001);
+	}
+
+	@Test
+	public void testFactorial() {
+		assertEquals(2, Calculate.factorial(2));
+		assertEquals(24, Calculate.factorial(4));
+		assertEquals(362880, Calculate.factorial(9));
+	}
+
+	@Test
+	public void testCombinations() {
+		assertEquals(45, Calculate.combinations(10, 2));
+	}
 }

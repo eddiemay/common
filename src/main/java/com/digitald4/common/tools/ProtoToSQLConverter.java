@@ -32,41 +32,61 @@ public class ProtoToSQLConverter {
 			String line;
 			while ((line = br.readLine()) != null) {
 				line = line.trim();
-				if (entity != null) {
-					if (line.startsWith("}")) {
-						if (--depth == 0) {
-							System.out.println(String.format(CREATE_TABLE, entity, columns));
-							entity = null;
+				try {
+					if (entity != null) {
+						if (line.startsWith("}")) {
+							if (--depth == 0) {
+								System.out.println(String.format(CREATE_TABLE, entity, columns));
+								entity = null;
+							}
+						} else if (line.contains("=") && depth == 1 && !line.startsWith("//")) {
+							int i = line.indexOf('=');
+							while (line.charAt(--i) == ' ') ;
+							while (line.charAt(--i) != ' ') ;
+							String colName = line.substring(i, line.indexOf('=')).trim();
+							int j = i;
+							while (line.charAt(--j) == ' ') ;
+							while (line.charAt(--j) != ' ' && j > 0) ;
+							String type = line.substring(j, i).trim();
+							String dbType = null;
+							switch (type) {
+								case "bool":
+									dbType = "tinyint(1)";
+									break;
+								case "int32":
+									dbType = "int(11)";
+									break;
+								case "int64":
+									dbType = colName.endsWith("id") ? "BIGINT" : "datetime";
+									break;
+								case "float":
+									dbType = "float";
+									break;
+								case "double":
+									dbType = "double";
+									break;
+								case "string":
+									dbType = "varchar(128)";
+									break;
+								case "bytes":
+									dbType = "blob";
+									break;
+								default:
+									dbType = "varchar(1024)";
+									break;
+							}
+							if (columns.length() > 0) {
+								columns += ",\n";
+							}
+							columns += String.format(colName.equals("id") ? DB_ID : DB_COLUMN, colName, dbType);
 						}
-					} else if (line.contains("=") && depth == 1&& !line.startsWith("//")) {
-						int i = line.indexOf('=');
-						while (line.charAt(--i) == ' ');
-						while (line.charAt(--i) != ' ');
-						String colName = line.substring(i, line.indexOf('=')).trim();
-						int j = i;
-						while (line.charAt(--j) == ' ');
-						while (line.charAt(--j) != ' ' && j > 0);
-						String type = line.substring(j, i).trim();
-						String dbType = null;
-						switch (type) {
-							case "bool": dbType = "tinyint(1)"; break;
-							case "int32": dbType = "int(11)"; break;
-							case "int64": dbType = "datetime"; break;
-							case "float": dbType = "float"; break;
-							case "double": dbType = "double"; break;
-							case "string": dbType = "varchar(128)"; break;
-							case "bytes": dbType = "blob"; break;
-							default: dbType = "varchar(1024)"; break;
-						}
-						if (columns.length() > 0) {
-							columns += ",\n";
-						}
-						columns += String.format(colName.equals("id") ? DB_ID : DB_COLUMN, colName, dbType);
+					} else if (line.startsWith(ENTITY_START)) {
+						entity = line.substring(ENTITY_START.length(), line.indexOf("{")).trim();
+						columns = "";
+						depth++;
 					}
-				} else if (line.startsWith(ENTITY_START)) {
-					entity = line.substring(ENTITY_START.length(), line.indexOf("{")).trim();
-					columns = "";
-					depth++;
+				} catch (Exception e) {
+					throw new RuntimeException("Error processing: " + line, e);
 				}
 			}
 		} catch (IOException ioe) {
@@ -75,6 +95,6 @@ public class ProtoToSQLConverter {
 	}
 
 	public static void main(String[] args) {
-		new ProtoToSQLConverter("../SolarSaver/src/conf/solarsaver.proto").execute();
+		new ProtoToSQLConverter(args[0]).execute();
 	}
 }

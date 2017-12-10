@@ -21,19 +21,19 @@ public class UserService extends SingleProtoService<User> {
 		this.idTokenResolver = idTokenResolver;
 	}
 
-	private User getActive() throws DD4StorageException {
+	private User getActive() {
 		return userProvider.get();
 	}
 
-	private User login(LoginRequest loginRequest) throws DD4StorageException {
+	private User login(LoginRequest loginRequest) {
 		User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
 		if (user == null) {
-			throw new DD4StorageException(401, "Wrong username or password");
+			throw new DD4StorageException("Wrong username or password", 401);
 		}
 		return ((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
 	}
 
-	private Empty logout() throws DD4StorageException {
+	private Empty logout() {
 		User user = userProvider.get();
 		if (user != null) {
 			((IdTokenResolverDD4Impl) idTokenResolver).remove(user.getIdToken());

@@ -13,6 +13,7 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -29,7 +30,7 @@ public class DataImporter {
 		this.apiUrl = apiUrl;
 	}
 
-	public void login() throws Exception {
+	public void login() throws IOException {
 		idToken = new JSONObject(
 				sendPost(apiUrl + "/users:login",
 				"json=%7B%22username%22:%22eddiemay@gmail.com%22,%22password%22:%22vxae11%22%7D"))
@@ -37,15 +38,15 @@ public class DataImporter {
 		System.out.println("IdToken: " + idToken);
 	}
 
-	private String sendPost(String url, String payload) throws Exception {
+	public String sendPost(String url, String payload) throws IOException {
 		return send("POST", url, payload);
 	}
 
-	private String sendGet(String url) throws Exception {
+	public String sendGet(String url) throws IOException {
 		return send("GET", url, null);
 	}
 
-	private String send(String method, String url, String payload) throws Exception {
+	public String send(String method, String url, String payload) throws IOException {
 		long startTime = System.currentTimeMillis();
 		if (idToken != null) {
 			if (payload != null) {
@@ -54,6 +55,7 @@ public class DataImporter {
 				url += "?idToken=" + idToken;
 			}
 		}
+		url = url.replaceAll(" ", "%20");
 		System.out.println("\nSending '" + method + "' request to URL: " + url);
 		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 		con.setRequestMethod(method);
@@ -83,11 +85,11 @@ public class DataImporter {
 		return response.toString();
 	}
 
-	public <T extends GeneratedMessageV3> void runFor(Class<T> c) throws Exception {
+	public <T extends GeneratedMessageV3> void runFor(Class<T> c) throws IOException {
 		runFor(c, Query.getDefaultInstance());
 	}
 
-	public <T extends GeneratedMessageV3> void runFor(Class<T> c, Query query) throws Exception {
+	public <T extends GeneratedMessageV3> void runFor(Class<T> c, Query query) throws IOException {
 		String url = apiUrl + "/" + c.getSimpleName() + "s";
 		List<T> results = dao.list(c, query).getResultList();
 		if (!results.isEmpty()) {
@@ -104,11 +106,11 @@ public class DataImporter {
 		}
 	}
 
-	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c) throws Exception {
+	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c) throws IOException {
 		return export(c, ListRequest.getDefaultInstance());
 	}
 
-	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c, ListRequest request) throws Exception {
+	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c, ListRequest request) throws IOException {
 		String url = apiUrl + "/" + c.getSimpleName() + "s";
 		String response = sendGet(url);
 		ListResponse.Builder builder = ListResponse.newBuilder();
@@ -118,7 +120,7 @@ public class DataImporter {
 		return builder.build();
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws IOException {
 		DataImporter dataImporter = new DataImporter(
 				new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 						"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true",
