@@ -43,6 +43,8 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	private final Descriptor externalDescriptor;
 	private final Parser jsonParser;
 	private final Printer jsonPrinter;
+
+	private boolean defaultRequiresLogin = true;
 	
 	private final Function<I, T> converter = new Function<I, T>() {
 		@Override
@@ -203,8 +205,13 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		}
 	}
 
+	public DualProtoService<T, I> setDefaultRequiresLogin(boolean defaultRequiresLogin) {
+		this.defaultRequiresLogin = defaultRequiresLogin;
+		return this;
+	}
+
 	public boolean requiresLogin(String action) {
-		return true;
+		return defaultRequiresLogin;
 	}
 
 	public ListResponse toListResponse(QueryResult<I> queryResult) {
