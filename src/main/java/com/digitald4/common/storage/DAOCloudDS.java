@@ -81,9 +81,6 @@ public class DAOCloudDS implements DAO {
 				EntityQuery.Builder query = Query.newEntityQueryBuilder()
 						.setKind(c.getSimpleName())
 						.setOffset(request.getOffset());
-				if (request.getLimit() > 0) {
-					query.setLimit(request.getLimit());
-				}
 				if (request.getFilterCount() > 0) {
 					Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
 					if (request.getFilterCount() == 1) {
@@ -98,11 +95,21 @@ public class DAOCloudDS implements DAO {
 								pfilters.subList(1, pfilters.size()).toArray(new PropertyFilter[pfilters.size() - 1])));
 					}
 				}
+				/* Rather than use limit, loop over all items and add tell limit to get a total count.
+				if (request.getLimit() > 0) {
+					query.setLimit(request.getLimit());
+				}*/
 				request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
 						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
 				QueryResult.Builder<T> listResponse = QueryResult.newBuilder();
-				datastore.run(query.build()).forEachRemaining(entity -> listResponse.addResult(convert(c, entity)));
-				return listResponse.build();
+				int[] count = new int[1];
+				datastore.run(query.build()).forEachRemaining(entity -> {
+					if (request.getLimit() == 0 || count[0] < request.getLimit()) {
+						listResponse.addResult(convert(c, entity));
+					}
+					count[0]++;
+				});
+				return listResponse.setTotalSize(request.getOffset() + count[0]).build();
 			}
 		}.applyWithRetries(query);
 	}

@@ -39,7 +39,7 @@ public class DAOSQLImpl implements DAO {
 	private static final String WHERE_SQL = " WHERE ";
 	private static final String ORDER_BY_SQL = " ORDER BY ";
 	private static final String LIMIT_SQL = " LIMIT ";
-	private static final String COUNT_SQL = "SELECT COUNT(*) FROM ";
+	private static final String COUNT_SQL = "SELECT COUNT(*) FROM %s%s;";
 
 	private final DBConnector connector;
 	private final boolean useViews;
@@ -137,7 +137,7 @@ public class DAOSQLImpl implements DAO {
 					sql.append(LIMIT_SQL)
 							.append((query.getOffset() > 0 ? query.getLimit() + "," : "")
 									+ String.valueOf(query.getOffset()));
-					countSql = COUNT_SQL + getView(c) + where + ";";
+					countSql = String.format(COUNT_SQL, getView(c), where);
 				}
 				sql.append(";");
 				Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
