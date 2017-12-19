@@ -59,8 +59,12 @@ public class DataImporter {
 		System.out.println("\nSending '" + method + "' request to URL: " + url);
 		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 		con.setRequestMethod(method);
-		con.setRequestProperty("User-Agent", "Mozilla/5.0");
+		con.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
 		con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+		con.setRequestProperty("Cache-Control", "max-age=0");
+		con.setRequestProperty("Connection", "keep-alive");
+		con.setRequestProperty("Host", "stats.nba.com");
+		con.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36");
 		if (payload != null) {
 			con.setDoOutput(true);
 			DataOutputStream dos = new DataOutputStream(con.getOutputStream());
