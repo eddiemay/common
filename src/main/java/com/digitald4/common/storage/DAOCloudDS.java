@@ -3,6 +3,7 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
+import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.cloud.Timestamp;
@@ -159,7 +160,7 @@ public class DAOCloudDS implements DAO {
 		}
 		if (field.isRepeated() || field.isMapField()) {
 			JSONObject json = new JSONObject(JsonFormat.printer().print(t));
-			entity.set(name, json.get(field.getName()).toString());
+			entity.set(name, json.get(FormatText.toLowerCamel(field.getName())).toString());
 		} else {
 			switch (field.getJavaType()) {
 				case BOOLEAN: entity.set(name, (Boolean) value); break;
