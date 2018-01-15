@@ -40,7 +40,7 @@ public class ApiServiceServlet extends HttpServlet {
 	private DAO dao;
 	private Emailer emailer;
 	private Encryptor encryptor;
-	protected final Provider<DAO> dataAccessObjectProvider = () -> dao;
+	protected final Provider<DAO> daoProvider = () -> dao;
 	private final Provider<Encryptor> encryptorProvider = () -> encryptor;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
@@ -55,17 +55,17 @@ public class ApiServiceServlet extends HttpServlet {
 		Clock clock = Clock.systemUTC();
 
 		idTokenResolver = new IdTokenResolverDD4Impl(
-				new GenericStore<>(ActiveSession.class, dataAccessObjectProvider),
+				new GenericStore<>(ActiveSession.class, daoProvider),
 				encryptorProvider,
 				clock);
 
-		generalDataStore = new GeneralDataStore(dataAccessObjectProvider);
+		generalDataStore = new GeneralDataStore(daoProvider);
 		addService("generalData", new SingleProtoService<>(generalDataStore));
 
-		userStore = new UserStore(dataAccessObjectProvider, clock);
+		userStore = new UserStore(daoProvider, clock);
 		addService("user", userService = new UserService(userStore, userProvider, idTokenResolver));
 
-		dataFileStore = new GenericStore<>(DataFile.class, dataAccessObjectProvider);
+		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
 		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
 	}
 

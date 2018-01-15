@@ -135,8 +135,8 @@ public class DAOSQLImpl implements DAO {
 				}
 				if (query.getLimit() > 0) {
 					sql.append(LIMIT_SQL)
-							.append((query.getOffset() > 0 ? query.getLimit() + "," : "")
-									+ String.valueOf(query.getOffset()));
+							.append((query.getOffset() > 0 ? query.getOffset() + "," : "")
+									+ String.valueOf(query.getLimit()));
 					countSql = String.format(COUNT_SQL, getView(c), where);
 				}
 				sql.append(";");
