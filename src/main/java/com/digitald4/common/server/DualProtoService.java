@@ -209,7 +209,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 
 	public ListResponse toListResponse(QueryResult<I> queryResult) {
 		return ListResponse.newBuilder()
-				.addAllResult(queryResult.getResultList().stream()
+				.addAllResult(queryResult.stream()
 						.map(getConverter())
 						.map(Any::pack)
 						.collect(Collectors.toList()))

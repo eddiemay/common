@@ -1,6 +1,5 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
@@ -39,11 +38,9 @@ public class UserStore extends GenericStore<User> {
 	@Override
 	public QueryResult<User> list(Query query) {
 		QueryResult<User> result = super.list(query);
-		return result.toBuilder()
-				.setResultList(result.getResultList().stream()
+		return result.setResultList(result.stream()
 						.map(user -> user.toBuilder().clearPassword().build())
-						.collect(Collectors.toList()))
-				.build();
+						.collect(Collectors.toList()));
 	}
 
 	@Override
@@ -59,18 +56,16 @@ public class UserStore extends GenericStore<User> {
 	}
 
 	public User getBy(String login, String password)  {
-		List<User> users = list(
-				Query.newBuilder()
-						.addFilter(Filter.newBuilder()
-								.setColumn(login.contains("@") ? "email" : "user_name")
-								.setOperator("=")
-								.setValue(login))
-						.addFilter(Filter.newBuilder()
-								.setColumn("password")
-								.setOperator("=")
-								.setValue(encodePassword(password)))
-						.build())
-				.getResultList();
+		List<User> users = list(Query.newBuilder()
+				.addFilter(Filter.newBuilder()
+						.setColumn(login.contains("@") ? "email" : "user_name")
+						.setOperator("=")
+						.setValue(login))
+				.addFilter(Filter.newBuilder()
+						.setColumn("password")
+						.setOperator("=")
+						.setValue(encodePassword(password)))
+				.build());
 		if (users.isEmpty()) {
 			return null;
 		}

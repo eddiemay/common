@@ -1,6 +1,5 @@
 package com.digitald4.common.tools;
 
-import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.storage.DAO;
@@ -32,7 +31,6 @@ public class GenDataCompiler {
 
 	public void compile() {
 		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, Query.getDefaultInstance())
-				.getResultList()
 				.stream()
 				.collect(Collectors.groupingBy(GeneralData::getGroupId));
 

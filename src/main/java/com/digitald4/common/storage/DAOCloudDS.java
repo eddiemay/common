@@ -101,15 +101,15 @@ public class DAOCloudDS implements DAO {
 				}*/
 				request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
 						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
-				QueryResult.Builder<T> listResponse = QueryResult.newBuilder();
+				QueryResult<T> results = new QueryResult<>();
 				int[] count = new int[1];
 				datastore.run(query.build()).forEachRemaining(entity -> {
 					if (request.getLimit() == 0 || count[0] < request.getLimit()) {
-						listResponse.addResult(convert(c, entity));
+						results.add(convert(c, entity));
 					}
 					count[0]++;
 				});
-				return listResponse.setTotalSize(request.getOffset() + count[0]).build();
+				return results.setTotalSize(request.getOffset() + count[0]);
 			}
 		}.applyWithRetries(query);
 	}

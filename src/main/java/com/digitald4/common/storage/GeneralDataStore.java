@@ -18,6 +18,6 @@ public class GeneralDataStore extends GenericStore<GeneralData> {
 	public List<GeneralData> listByGroupId(long groupId) {
 		return super.list(Query.newBuilder()
 				.addFilter(BY_GROUP_ID.toBuilder().setValue(String.valueOf(groupId)))
-				.build()).getResultList();
+				.build());
 	}
 }

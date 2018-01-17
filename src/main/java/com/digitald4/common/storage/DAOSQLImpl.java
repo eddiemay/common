@@ -148,9 +148,8 @@ public class DAOSQLImpl implements DAO {
 						setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 					}
 					ResultSet rs = ps.executeQuery();
-					List<T> results = process(c, rs);
+					QueryResult<T> results = process(c, rs);
 					rs.close();
-					int count = results.size();
 					if (countSql != null) {
 						PreparedStatement ps2 = con.prepareStatement(countSql);
 						p = 1;
@@ -159,15 +158,14 @@ public class DAOSQLImpl implements DAO {
 						}
 						rs = ps2.executeQuery();
 						if (rs.next()) {
-							count = rs.getInt(1);
+							results.setTotalSize(rs.getInt(1));
 						}
 						rs.close();
 						ps2.close();
+					} else {
+						results.setTotalSize(results.size());
 					}
-					return QueryResult.<T>newBuilder()
-							.addAllResult(results)
-							.setTotalSize(count)
-							.build();
+					return results;
 				} catch (SQLException e) {
 					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 				}
@@ -310,8 +308,8 @@ public class DAOSQLImpl implements DAO {
 		}
 	}
 
-	private <T extends GeneratedMessageV3> List<T> process(Class<T> c, ResultSet rs) throws SQLException {
-		List<T> results = new ArrayList<T>();
+	private <T extends GeneratedMessageV3> QueryResult<T> process(Class<T> c, ResultSet rs) throws SQLException {
+		QueryResult<T> results = new QueryResult<>();
 		while (rs.next()) {
 			results.add(parseFromResultSet(c, rs));
 		}
