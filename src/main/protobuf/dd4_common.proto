@@ -10,16 +10,16 @@ message Company {
   string website = 2;
   string slogan = 3;
   string description = 4;
-  string ipAddress = 5;
+  string ip_address = 5;
   string email = 6;
   string paypal = 7;
-  string statCounterID = 8;
-  string statCounterPart = 9;
+  string stat_counter_id = 8;
+  string stat_counter_part = 9;
   string container = 10;
   string address = 11;
   string phone = 12;
   string fax = 13;
-  string reportFooter = 14;
+  string report_footer = 14;
 }
 
 message DataFile {
@@ -71,7 +71,6 @@ message Query {
   repeated OrderBy order_by = 2;
   int32 limit = 3;
   int32 offset = 4;
-
 }
 
 message User {

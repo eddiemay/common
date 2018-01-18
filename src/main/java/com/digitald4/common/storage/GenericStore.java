@@ -1,6 +1,5 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.GeneratedMessageV3;
@@ -11,9 +10,9 @@ public class GenericStore<T extends GeneratedMessageV3> implements Store<T> {
 
 	private final Class<T> c;
 	private final T type;
-	private final Provider<DAO> dataAccessObjectProvider;
+	private final Provider<DAO> daoProvider;
 	
-	public GenericStore(Class<T> c, Provider<DAO> dataAccessObjectProvider) {
+	public GenericStore(Class<T> c, Provider<DAO> daoProvider) {
 		try {
 			this.c = c;
 			this.type = (T) c.getMethod("getDefaultInstance").invoke(null);
@@ -21,7 +20,7 @@ public class GenericStore<T extends GeneratedMessageV3> implements Store<T> {
 				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException(e);
 		}
-		this.dataAccessObjectProvider = dataAccessObjectProvider;
+		this.daoProvider = daoProvider;
 	}
 	
 	@Override
@@ -31,26 +30,26 @@ public class GenericStore<T extends GeneratedMessageV3> implements Store<T> {
 	
 	@Override
 	public T create(T t) {
-		return dataAccessObjectProvider.get().create(t);
+		return daoProvider.get().create(t);
 	}
 
 	@Override
 	public T get(long id) {
-		return dataAccessObjectProvider.get().get(c, id);
+		return daoProvider.get().get(c, id);
 	}
 
 	@Override
 	public QueryResult<T> list(Query query) {
-		return dataAccessObjectProvider.get().list(c, query);
+		return daoProvider.get().list(c, query);
 	}
 
 	@Override
 	public T update(long id, UnaryOperator<T> updater) {
-		return dataAccessObjectProvider.get().update(c, id, updater);
+		return daoProvider.get().update(c, id, updater);
 	}
 
 	@Override
 	public void delete(long id) {
-		dataAccessObjectProvider.get().delete(c, id);
+		daoProvider.get().delete(c, id);
 	}
 }
