@@ -44,7 +44,6 @@ public class DAOTestingImpl implements DAO {
 
 	@Override
 	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, Query query) {
-		QueryResult<T> result = new QueryResult();
 		Map<Long, ? extends GeneratedMessageV3> table = tables.get(c);
 		if (table != null) {
 			T type = DAOCloudDS.getDefaultInstance(c);
@@ -65,13 +64,12 @@ public class DAOTestingImpl implements DAO {
 			if (query.getOffset() > 0) {
 				results = results.subList(query.getOffset(), results.size());
 			}
-			result.setTotalSize(results.size() + query.getOffset());
 			if (query.getLimit() > 0 && results.size() > query.getLimit()) {
 				results = results.subList(0, query.getLimit());
 			}
-			result.addAll(results);
+			return new QueryResult<>(results, results.size() + query.getOffset());
 		}
-		return result;
+		return new QueryResult<>();
 	}
 
 	@Override

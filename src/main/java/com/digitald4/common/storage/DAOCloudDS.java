@@ -25,6 +25,7 @@ import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class DAOCloudDS implements DAO {
 				}*/
 				request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
 						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
-				QueryResult<T> results = new QueryResult<>();
+				List<T> results = new ArrayList<>();
 				int[] count = new int[1];
 				datastore.run(query.build()).forEachRemaining(entity -> {
 					if (request.getLimit() == 0 || count[0] < request.getLimit()) {
@@ -109,7 +110,7 @@ public class DAOCloudDS implements DAO {
 					}
 					count[0]++;
 				});
-				return results.setTotalSize(request.getOffset() + count[0]);
+				return new QueryResult<>(results, request.getOffset() + count[0]);
 			}
 		}.applyWithRetries(query);
 	}

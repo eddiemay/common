@@ -38,9 +38,11 @@ public class UserStore extends GenericStore<User> {
 	@Override
 	public QueryResult<User> list(Query query) {
 		QueryResult<User> result = super.list(query);
-		return result.setResultList(result.stream()
+		return new QueryResult<>(
+				result.stream()
 						.map(user -> user.toBuilder().clearPassword().build())
-						.collect(Collectors.toList()));
+						.collect(Collectors.toList()),
+				result.getTotalSize());
 	}
 
 	@Override
