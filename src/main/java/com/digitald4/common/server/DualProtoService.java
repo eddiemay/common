@@ -220,8 +220,8 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 				.build();
 	}
 
-	public Query toQuery(ListRequest request) {
-		return Query.newBuilder()
+	private Query toQuery(ListRequest request) {
+		Query.Builder builder = Query.newBuilder()
 				.setLimit(request.getPageSize())
 				.setOffset(request.getPageToken())
 				.addAllFilter(request.getFilterList().stream()
@@ -230,14 +230,16 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 								.setOperator(filter.getOperator())
 								.setValue(filter.getValue())
 								.build())
-						.collect(Collectors.toList()))
-				.addAllOrderBy(request.getOrderBy().isEmpty() ? new ArrayList<>() : Arrays.stream(request.getOrderBy().split(","))
-						.map(orderBy -> OrderBy.newBuilder()
-								.setColumn(orderBy.split(" ")[0])
-								.setDesc(orderBy.endsWith("DESC"))
-								.build())
-						.collect(Collectors.toList()))
-				.build();
+						.collect(Collectors.toList()));
+		if (!request.getOrderBy().isEmpty()) {
+			builder.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
+					.map(orderBy -> OrderBy.newBuilder()
+							.setColumn(orderBy.split(" ")[0])
+							.setDesc(orderBy.endsWith("DESC"))
+							.build())
+					.collect(Collectors.toList()));
+		}
+		return builder.build();
 	}
 
 	public <R extends Message> R transformJSONRequest(R msgRequest, HttpServletRequest request) {
