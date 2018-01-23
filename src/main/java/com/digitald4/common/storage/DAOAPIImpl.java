@@ -72,11 +72,13 @@ public class DAOAPIImpl implements DAO {
 			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + getResourceName(c) + "?");
 
 			url.append(query.getFilterList().stream()
-					.map(filter -> filter.getColumn() + filter.getOperator() + filter.getValue())
+					.map(filter -> filter.getColumn() + (filter.getOperator().isEmpty() ? "=" : filter.getOperator()) + filter.getValue())
 					.collect(Collectors.joining("&")));
-			url.append("&orderBy").append("=").append(query.getOrderByList().stream()
-					.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? "DESC" : ""))
-					.collect(Collectors.joining( "," )));
+			if (query.getOrderByCount() > 0) {
+				url.append("&orderBy").append("=").append(query.getOrderByList().stream()
+						.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? "DESC" : ""))
+						.collect(Collectors.joining(",")));
+			}
 			if (query.getLimit() > 0) {
 				url.append("&pageSize").append("=").append(query.getLimit());
 			}

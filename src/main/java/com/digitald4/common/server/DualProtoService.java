@@ -25,6 +25,7 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
@@ -230,7 +231,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 								.setValue(filter.getValue())
 								.build())
 						.collect(Collectors.toList()))
-				.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
+				.addAllOrderBy(request.getOrderBy().isEmpty() ? new ArrayList<>() : Arrays.stream(request.getOrderBy().split(","))
 						.map(orderBy -> OrderBy.newBuilder()
 								.setColumn(orderBy.split(" ")[0])
 								.setDesc(orderBy.endsWith("DESC"))
