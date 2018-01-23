@@ -247,7 +247,7 @@ public class ApiServiceServlet extends HttpServlet {
 								.put("operator", pos > 0 ? value.substring(0, pos) : "=")
 								.put("value", value.substring(pos)));
 					}
-				} else if (!entry.getKey().equals("idToken")) {
+				} else if (!entry.getKey().equals("json") && !entry.getKey().equals("idToken")) {
 					json.put(entry.getKey(), entry.getValue()[0]);
 				}
 			}

@@ -19,7 +19,6 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -81,11 +80,14 @@ public class DAOAPIImpl implements DAO {
 				}
 				url.append(filter.getColumn()).append("=").append(filter.getValue());
 			}
+			/*if (query.getOrderByCount() > 0) {
+				url.append("&orderBy").append("=").append();
+			}*/
 			if (query.getLimit() > 0) {
-				url.append("&page_size").append("=").append(query.getLimit());
+				url.append("&pageSize").append("=").append(query.getLimit());
 			}
 			if (query.getOffset() > 0) {
-				url.append("&page_token").append("=").append(query.getOffset());
+				url.append("&pageToken").append("=").append(query.getOffset());
 			}
 			String response = apiConnector.sendGet(url.toString());
 			ListResponse.Builder builder = ListResponse.newBuilder();
