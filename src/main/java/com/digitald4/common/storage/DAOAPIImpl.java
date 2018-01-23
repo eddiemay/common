@@ -7,6 +7,7 @@ import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.server.APIConnector;
+import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.Any;
@@ -18,6 +19,7 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 public class DAOAPIImpl implements DAO {
+	private static final String API_PAYLOAD = "json=%s";
 	private final APIConnector apiConnector;
 	private final Parser jsonParser;
 	private final Printer jsonPrinter;
@@ -36,7 +39,7 @@ public class DAOAPIImpl implements DAO {
 	}
 
 	public <T extends GeneratedMessageV3> T create(T t) {
-		String url = apiConnector.getApiUrl() + "/" + t.getClass().getSimpleName() + "s/";
+		String url = apiConnector.getApiUrl() + "/" + getResourceName(t.getClass());
 		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(t.getDescriptorForType()).build();
 		Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 		Parser jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
@@ -45,7 +48,7 @@ public class DAOAPIImpl implements DAO {
 					.setEntity(Any.pack(t))
 					.build();
 			Message.Builder builder = t.newBuilderForType();
-			jsonParser.merge(apiConnector.sendPost(url, "json=" + jsonPrinter.print(request)), builder);
+			jsonParser.merge(apiConnector.sendPost(url, String.format(API_PAYLOAD, jsonPrinter.print(request))), builder);
 			return (T) builder.build();
 		} catch (Exception ioe) {
 			throw new DD4StorageException(ioe);
@@ -53,7 +56,7 @@ public class DAOAPIImpl implements DAO {
 	}
 
 	public <T extends GeneratedMessageV3> T get(Class<T> c, long id) {
-		String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s/" + id;
+		String url = apiConnector.getApiUrl() + "/" + getResourceName(c) + "/" + id;
 		try {
 			String json = apiConnector.sendGet(url);
 			Message.Builder builder = DAOCloudDS.getDefaultInstance(c).toBuilder();
@@ -67,15 +70,22 @@ public class DAOAPIImpl implements DAO {
 	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, Query query) {
 		try {
 			// TODO(eddiemay) Need to set values from query.
-			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s?");
+			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + getResourceName(c) + "?");
+
+			boolean first = true;
 			for (Filter filter : query.getFilterList()) {
+				if (!first) {
+					url.append("&");
+				} else {
+					first = false;
+				}
 				url.append(filter.getColumn()).append("=").append(filter.getValue());
 			}
 			if (query.getLimit() > 0) {
-				url.append("page_size").append("=").append(query.getLimit());
+				url.append("&page_size").append("=").append(query.getLimit());
 			}
 			if (query.getOffset() > 0) {
-				url.append("page_token").append("=").append(query.getOffset());
+				url.append("&page_token").append("=").append(query.getOffset());
 			}
 			String response = apiConnector.sendGet(url.toString());
 			ListResponse.Builder builder = ListResponse.newBuilder();
@@ -122,14 +132,14 @@ public class DAOAPIImpl implements DAO {
 					System.out.println("Nothing changed, returning");
 				} else {
 					try {
-						String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s/" + id;
+						String url = apiConnector.getApiUrl() + "/" + getResourceName(c) + "/" + id;
 						UpdateRequest request = UpdateRequest.newBuilder()
 								.setId(id)
 								.setEntity(Any.pack(updated))
 								.setUpdateMask(FieldMask.newBuilder()
 										.addAllPaths(modified.stream().map(FieldDescriptor::getName).collect(Collectors.toList())))
 								.build();
-						apiConnector.send("PATCH", url, jsonPrinter.print(request));
+						apiConnector.send("PATCH", url, String.format(API_PAYLOAD, jsonPrinter.print(request)));
 					} catch (IOException ioe) {
 						throw new DD4StorageException("Error updating record " + updated + ": " + ioe.getMessage(), ioe);
 					}
@@ -140,11 +150,15 @@ public class DAOAPIImpl implements DAO {
 	}
 
 	public <T> void delete(Class<T> c, long id) {
-		String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s/" + id;
+		String url = apiConnector.getApiUrl() + "/" + getResourceName(c) + "/" + id;
 		try {
 			apiConnector.send("DELETE", url, null);
 		} catch (IOException ioe) {
 			throw new DD4StorageException(ioe);
 		}
+	}
+
+	private static String getResourceName(Class<?> cls) {
+		return FormatText.toLowerCamel(cls.getSimpleName()) + "s";
 	}
 }

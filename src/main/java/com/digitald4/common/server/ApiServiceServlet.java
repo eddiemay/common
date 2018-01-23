@@ -18,6 +18,7 @@ import com.digitald4.common.util.Provider;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import org.json.JSONObject;
 public class ApiServiceServlet extends HttpServlet {
 	public enum ServerType {TOMCAT, APPENGINE};
 	protected ServerType serverType;
+	private static final List<String> SPECIAL_PARAMETERS = Arrays.asList("json", "idToken", "orderBy", "pageSize", "pageToken");
 
 	private final Map<String, JSONService> services = new HashMap<>();
 	private final IdTokenResolver idTokenResolver;
@@ -233,7 +235,7 @@ public class ApiServiceServlet extends HttpServlet {
 
 			JSONArray parameters = json.has("filter") ? json.getJSONArray("filter") : new JSONArray();
 			for (Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-				if (!entry.getKey().equals("json") && !entry.getKey().equals("idToken")) {
+				if (!SPECIAL_PARAMETERS.contains(entry.getKey())) {
 					for (String value : entry.getValue()) {
 						int pos = 0;
 						while (value.charAt(pos) >= '<' && value.charAt(pos) <= '>') {
@@ -245,6 +247,8 @@ public class ApiServiceServlet extends HttpServlet {
 								.put("operator", pos > 0 ? value.substring(0, pos) : "=")
 								.put("value", value.substring(pos)));
 					}
+				} else if (!entry.getKey().equals("idToken")) {
+					json.put(entry.getKey(), entry.getValue()[0]);
 				}
 			}
 			if (parameters.length() > 0) {

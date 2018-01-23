@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import org.json.JSONObject;
 
 public class APIConnector {
@@ -45,6 +46,10 @@ public class APIConnector {
 			} else {
 				url += "?idToken=" + idToken;
 			}
+		}
+		if (payload != null && ("GET".equals(method) || "DELETE".equals(method))) {
+			url = url + "?" + payload;
+			payload = null;
 		}
 		url = url.replaceAll(" ", "%20");
 		System.out.println("\nSending '" + method + "' request to URL: " + url);
