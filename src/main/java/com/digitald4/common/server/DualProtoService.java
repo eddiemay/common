@@ -2,6 +2,7 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
@@ -24,6 +25,7 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -228,10 +230,10 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 								.setValue(filter.getValue())
 								.build())
 						.collect(Collectors.toList()))
-				.addAllOrderBy(request.getOrderByList().stream()
-						.map(orderyBy -> Query.OrderBy.newBuilder()
-								.setColumn(orderyBy.getColumn())
-								.setDesc(orderyBy.getDesc())
+				.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
+						.map(orderBy -> OrderBy.newBuilder()
+								.setColumn(orderBy.split(" ")[0])
+								.setDesc(orderBy.endsWith("DESC"))
 								.build())
 						.collect(Collectors.toList()))
 				.build();

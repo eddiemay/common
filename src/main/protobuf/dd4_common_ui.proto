@@ -64,11 +64,7 @@ message ListRequest {
     string value = 3;
 	}
 	repeated Filter filter = 3;
-  message OrderBy {
-    string column = 1;
-    bool desc = 2;
-  }
-  repeated OrderBy order_by = 4;
+  string order_by = 4;
 }
 
 message ListResponse {

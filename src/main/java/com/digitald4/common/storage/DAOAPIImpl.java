@@ -71,18 +71,12 @@ public class DAOAPIImpl implements DAO {
 			// TODO(eddiemay) Need to set values from query.
 			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + getResourceName(c) + "?");
 
-			boolean first = true;
-			for (Filter filter : query.getFilterList()) {
-				if (!first) {
-					url.append("&");
-				} else {
-					first = false;
-				}
-				url.append(filter.getColumn()).append("=").append(filter.getValue());
-			}
-			/*if (query.getOrderByCount() > 0) {
-				url.append("&orderBy").append("=").append();
-			}*/
+			url.append(query.getFilterList().stream()
+					.map(filter -> filter.getColumn() + filter.getOperator() + filter.getValue())
+					.collect(Collectors.joining("&")));
+			url.append("&orderBy").append("=").append(query.getOrderByList().stream()
+					.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? "DESC" : ""))
+					.collect(Collectors.joining( "," )));
 			if (query.getLimit() > 0) {
 				url.append("&pageSize").append("=").append(query.getLimit());
 			}
@@ -141,6 +135,8 @@ public class DAOAPIImpl implements DAO {
 								.setUpdateMask(FieldMask.newBuilder()
 										.addAllPaths(modified.stream().map(FieldDescriptor::getName).collect(Collectors.toList())))
 								.build();
+						JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(updated.getDescriptorForType()).build();
+						Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 						apiConnector.send("PATCH", url, String.format(API_PAYLOAD, jsonPrinter.print(request)));
 					} catch (IOException ioe) {
 						throw new DD4StorageException("Error updating record " + updated + ": " + ioe.getMessage(), ioe);
