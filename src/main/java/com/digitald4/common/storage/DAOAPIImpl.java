@@ -2,7 +2,6 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
@@ -72,11 +71,11 @@ public class DAOAPIImpl implements DAO {
 			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + getResourceName(c) + "?");
 
 			url.append(query.getFilterList().stream()
-					.map(filter -> filter.getColumn() + (filter.getOperator().isEmpty() ? "=" : filter.getOperator()) + filter.getValue())
+					.map(filter -> filter.getColumn() + "=" + filter.getOperator() + filter.getValue())
 					.collect(Collectors.joining("&")));
 			if (query.getOrderByCount() > 0) {
 				url.append("&orderBy").append("=").append(query.getOrderByList().stream()
-						.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? "DESC" : ""))
+						.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
 						.collect(Collectors.joining(",")));
 			}
 			if (query.getLimit() > 0) {
@@ -139,7 +138,7 @@ public class DAOAPIImpl implements DAO {
 								.build();
 						JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(updated.getDescriptorForType()).build();
 						Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
-						apiConnector.send("PATCH", url, String.format(API_PAYLOAD, jsonPrinter.print(request)));
+						apiConnector.send("POST", url, String.format(API_PAYLOAD, jsonPrinter.print(request)));
 					} catch (IOException ioe) {
 						throw new DD4StorageException("Error updating record " + updated + ": " + ioe.getMessage(), ioe);
 					}

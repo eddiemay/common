@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import org.json.JSONObject;
 
 public class APIConnector {
@@ -64,7 +63,7 @@ public class APIConnector {
 		if (payload != null) {
 			con.setDoOutput(true);
 			DataOutputStream dos = new DataOutputStream(con.getOutputStream());
-			System.out.println("Payload: " + payload);
+			// System.out.println("Payload: " + payload);
 			dos.writeBytes(payload);
 			dos.flush();
 			dos.close();
@@ -80,7 +79,7 @@ public class APIConnector {
 			response.append(line);
 		}
 		in.close();
-		System.out.println("Response: " + response);
+		// System.out.println("Response: " + response);
 		System.out.println("Time: " + (System.currentTimeMillis() - startTime) + "ms");
 		return response.toString();
 	}
