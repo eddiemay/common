@@ -20,10 +20,8 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
-import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,14 +35,14 @@ public class DAOCloudDS implements DAO {
 
 	private final Datastore datastore;
 	private final Map<Class<?>, KeyFactory> keyFactories = new HashMap<>();
-	private static final Map<Class<?>, GeneratedMessageV3> defaultInstances = new HashMap<>();
+	private static final Map<Class<?>, Message> defaultInstances = new HashMap<>();
 
 	public DAOCloudDS() {
 		this.datastore = DatastoreOptions.getDefaultInstance().getService();
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T create(T t) {
+	public <T extends Message> T create(T t) {
 		return convert(t.getClass(), new RetryableFunction<T, Entity>() {
 			@Override
 			public Entity apply(T t) {
@@ -65,7 +63,7 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T get(Class<T> c, long id) {
+	public <T extends Message> T get(Class<T> c, long id) {
 		return new RetryableFunction<Long, T>() {
 			@Override
 			public T apply(Long id) {
@@ -75,7 +73,7 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, DD4Protos.Query query) {
+	public <T extends Message> QueryResult<T> list(Class<T> c, DD4Protos.Query query) {
 		return new RetryableFunction<DD4Protos.Query, QueryResult<T>>() {
 			@Override
 			public QueryResult<T> apply(DD4Protos.Query request) {
@@ -116,7 +114,7 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
 		return new RetryableFunction<Pair<Long, UnaryOperator<T>>, T>() {
 			@Override
 			public T apply(Pair<Long, UnaryOperator<T>> pair) {
@@ -134,7 +132,7 @@ public class DAOCloudDS implements DAO {
 		deleteFunction.applyWithRetries(Pair.of(c, id));
 	}
 
-	public static <T extends GeneratedMessageV3> T getDefaultInstance(Class<?> c) {
+	public static <T extends Message> T getDefaultInstance(Class<?> c) {
 		T defaultInstance = (T) defaultInstances.get(c);
 		if (defaultInstance == null) {
 			try {
@@ -160,7 +158,7 @@ public class DAOCloudDS implements DAO {
 		}
 	};
 
-	private static <T extends GeneratedMessageV3> void setObject(Entity.Builder entity, T t, FieldDescriptor field,
+	private static <T extends Message> void setObject(Entity.Builder entity, T t, FieldDescriptor field,
 																															 Object value) {
 		String name = field.getName();
 		if (name.equals("id")) {
@@ -193,7 +191,7 @@ public class DAOCloudDS implements DAO {
 		}
 	}
 
-	private <T extends GeneratedMessageV3> T convert(Class<?> c, Entity entity) {
+	private <T extends Message> T convert(Class<?> c, Entity entity) {
 		if (entity == null) {
 			return null;
 		}

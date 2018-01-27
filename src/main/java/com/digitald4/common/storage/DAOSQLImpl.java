@@ -11,7 +11,6 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
-import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import java.lang.reflect.InvocationTargetException;
@@ -43,7 +42,7 @@ public class DAOSQLImpl implements DAO {
 
 	private final DBConnector connector;
 	private final boolean useViews;
-	private final Map<Class<?>, GeneratedMessageV3> defaultInstances = new HashMap<>();
+	private final Map<Class<?>, Message> defaultInstances = new HashMap<>();
 
 	public DAOSQLImpl(DBConnector connector) {
 		this(connector, false);
@@ -55,7 +54,7 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T create(T t) {
+	public <T extends Message> T create(T t) {
 		return new RetryableFunction<T, T>() {
 			@Override
 			public T apply(T t) {
@@ -93,7 +92,7 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T get(Class<T> c, long id) {
+	public <T extends Message> T get(Class<T> c, long id) {
 		return new RetryableFunction<Long, T>() {
 			@Override
 			public T apply(Long id) {
@@ -116,7 +115,7 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, Query query) {
+	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
 		return new RetryableFunction<Query, QueryResult<T>>() {
 			@Override
 			public QueryResult<T> apply(Query query) {
@@ -173,7 +172,7 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
 		return new RetryableFunction<Pair<Long, UnaryOperator<T>>, T>() {
 			@Override
 			public T apply(Pair<Long, UnaryOperator<T>> pair) {
@@ -247,7 +246,7 @@ public class DAOSQLImpl implements DAO {
 		}
 	}
 
-	public <T extends GeneratedMessageV3> T getDefaultInstance(Class<T> c) {
+	public <T extends Message> T getDefaultInstance(Class<T> c) {
 		T defaultInstance = (T) defaultInstances.get(c);
 		if (defaultInstance == null) {
 			try {
@@ -269,7 +268,7 @@ public class DAOSQLImpl implements DAO {
 		return getTable(c) + (useViews ? "View" : "");
 	}
 
-	private <T extends GeneratedMessageV3> void setObject(
+	private <T extends Message> void setObject(
 			PreparedStatement ps, int index, T t, FieldDescriptor field, Object value) throws SQLException {
 		if ("".equals(value)) {
 			value = null;
@@ -307,7 +306,7 @@ public class DAOSQLImpl implements DAO {
 		}
 	}
 
-	private <T extends GeneratedMessageV3> List<T> process(Class<T> c, ResultSet rs) throws SQLException {
+	private <T extends Message> List<T> process(Class<T> c, ResultSet rs) throws SQLException {
 		List<T> results = new ArrayList<>();
 		while (rs.next()) {
 			results.add(parseFromResultSet(c, rs));
@@ -315,7 +314,7 @@ public class DAOSQLImpl implements DAO {
 		return results;
 	}
 
-	private <T extends GeneratedMessageV3> T parseFromResultSet(Class<T> c, ResultSet rs) throws SQLException {
+	private <T extends Message> T parseFromResultSet(Class<T> c, ResultSet rs) throws SQLException {
 		ResultSetMetaData rsmd = rs.getMetaData();
 		Message.Builder builder = getDefaultInstance(c).toBuilder();
 		for (int i = 1; i <= rsmd.getColumnCount(); i++) {

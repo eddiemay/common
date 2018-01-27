@@ -12,7 +12,6 @@ import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.FieldMask;
-import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
@@ -28,15 +27,14 @@ public class DAOAPIImpl implements DAO {
 	private static final String API_PAYLOAD = "json=%s";
 	private final APIConnector apiConnector;
 	private final Parser jsonParser;
-	private final Printer jsonPrinter;
 
 	public DAOAPIImpl(APIConnector apiConnector) {
 		this.apiConnector = apiConnector;
 		jsonParser = JsonFormat.parser();
-		jsonPrinter = JsonFormat.printer();
 	}
 
-	public <T extends GeneratedMessageV3> T create(T t) {
+	@Override
+	public <T extends Message> T create(T t) {
 		String url = apiConnector.getApiUrl() + "/" + getResourceName(t.getClass());
 		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(t.getDescriptorForType()).build();
 		Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
@@ -53,7 +51,8 @@ public class DAOAPIImpl implements DAO {
 		}
 	}
 
-	public <T extends GeneratedMessageV3> T get(Class<T> c, long id) {
+	@Override
+	public <T extends Message> T get(Class<T> c, long id) {
 		String url = apiConnector.getApiUrl() + "/" + getResourceName(c) + "/" + id;
 		try {
 			String json = apiConnector.sendGet(url);
@@ -65,7 +64,8 @@ public class DAOAPIImpl implements DAO {
 		}
 	}
 
-	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, Query query) {
+	@Override
+	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
 		try {
 			// TODO(eddiemay) Need to set values from query.
 			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + getResourceName(c) + "?");
@@ -100,7 +100,8 @@ public class DAOAPIImpl implements DAO {
 		}
 	}
 
-	public <T extends GeneratedMessageV3> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	@Override
+	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
 		return new RetryableFunction<Pair<Long, UnaryOperator<T>>, T>() {
 			@Override
 			public T apply(Pair<Long, UnaryOperator<T>> pair) {
@@ -148,6 +149,7 @@ public class DAOAPIImpl implements DAO {
 		}.applyWithRetries(Pair.of(id, updater));
 	}
 
+	@Override
 	public <T> void delete(Class<T> c, long id) {
 		String url = apiConnector.getApiUrl() + "/" + getResourceName(c) + "/" + id;
 		try {

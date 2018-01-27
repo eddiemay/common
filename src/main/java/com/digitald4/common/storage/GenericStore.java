@@ -2,11 +2,11 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.util.Provider;
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.Message;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.UnaryOperator;
 
-public class GenericStore<T extends GeneratedMessageV3> implements Store<T> {
+public class GenericStore<T extends Message> implements Store<T> {
 
 	private final Class<T> c;
 	private final T type;

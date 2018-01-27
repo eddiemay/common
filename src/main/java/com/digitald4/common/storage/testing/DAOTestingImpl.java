@@ -8,7 +8,7 @@ import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.QueryResult;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.Message;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 
 public class DAOTestingImpl implements DAO {
 	private AtomicLong idGenerator = new AtomicLong(5000);
-	private Map<Class, Map<Long, GeneratedMessageV3>> tables = new HashMap<>();
+	private Map<Class, Map<Long, Message>> tables = new HashMap<>();
 
 	@Override
-	public <T extends GeneratedMessageV3> T create(T t) {
-		Map<Long, GeneratedMessageV3> table = tables.computeIfAbsent(t.getClass(), c -> new HashMap<Long, GeneratedMessageV3>());
+	public <T extends Message> T create(T t) {
+		Map<Long, Message> table = tables.computeIfAbsent(t.getClass(), c -> new HashMap<Long, Message>());
 		FieldDescriptor idField = t.getDescriptorForType().findFieldByName("id");
 		Long id = (Long) t.getField(idField);
 		if (id == 0L) {
@@ -34,8 +34,8 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T get(Class<T> c, long id) {
-		Map<Long, ? extends GeneratedMessageV3> table = tables.get(c);
+	public <T extends Message> T get(Class<T> c, long id) {
+		Map<Long, ? extends Message> table = tables.get(c);
 		if (table == null) {
 			return null;
 		}
@@ -43,8 +43,8 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> QueryResult<T> list(Class<T> c, Query query) {
-		Map<Long, ? extends GeneratedMessageV3> table = tables.get(c);
+	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
+		Map<Long, ? extends Message> table = tables.get(c);
 		if (table != null) {
 			T type = DAOCloudDS.getDefaultInstance(c);
 			Descriptor descriptor = type.getDescriptorForType();
@@ -73,11 +73,11 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T extends GeneratedMessageV3> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
 		T t = get(c, id);
 		if (t != null) {
 			t = updater.apply(t);
-			Map<Long, GeneratedMessageV3> table = tables.get(c);
+			Map<Long, Message> table = tables.get(c);
 			table.put(id, t);
 		}
 		return t;
@@ -85,7 +85,7 @@ public class DAOTestingImpl implements DAO {
 
 	@Override
 	public <T> void delete(Class<T> c, long id) {
-		Map<Long, ? extends GeneratedMessageV3> table = tables.get(c);
+		Map<Long, ? extends Message> table = tables.get(c);
 		if (table != null) {
 			table.remove(id);
 		}
