@@ -94,7 +94,7 @@ public class DAOCloudDS implements DAO {
 								pfilters.subList(1, pfilters.size()).toArray(new PropertyFilter[pfilters.size() - 1])));
 					}
 				}
-				/* Rather than use limit, loop over all items and add tell limit to get a total count.
+				/* Rather than use limit, loop over all items and add until limit to get a total count.
 				if (request.getLimit() > 0) {
 					query.setLimit(request.getLimit());
 				}*/
@@ -240,13 +240,55 @@ public class DAOCloudDS implements DAO {
 		if (field == null) {
 			throw new DD4StorageException("Unknown column: " + columName);
 		}
-		switch (field.getJavaType()) {
-			case BOOLEAN: return PropertyFilter.eq(columName, Boolean.valueOf(filter.getValue()));
-			case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
-			case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
-			case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
-			case STRING: return PropertyFilter.eq(columName, filter.getValue());
+		switch (filter.getOperator()) {
+			case "<" : {
+				switch (field.getJavaType()) {
+					case BOOLEAN: return PropertyFilter.lt(columName, Boolean.valueOf(filter.getValue()));
+					case DOUBLE: return PropertyFilter.lt(columName, Double.valueOf(filter.getValue()));
+					case INT: return PropertyFilter.lt(columName, Integer.valueOf(filter.getValue()));
+					case LONG: return PropertyFilter.lt(columName, Long.valueOf(filter.getValue()));
+					case STRING: return PropertyFilter.lt(columName, filter.getValue());
+					default: return PropertyFilter.lt(columName, filter.getValue());
+				}
+			}
+			case "<=" :
+				switch (field.getJavaType()) {
+					case BOOLEAN: return PropertyFilter.le(columName, Boolean.valueOf(filter.getValue()));
+					case DOUBLE: return PropertyFilter.le(columName, Double.valueOf(filter.getValue()));
+					case INT: return PropertyFilter.le(columName, Integer.valueOf(filter.getValue()));
+					case LONG: return PropertyFilter.le(columName, Long.valueOf(filter.getValue()));
+					case STRING: return PropertyFilter.le(columName, filter.getValue());
+					default: return PropertyFilter.le(columName, filter.getValue());
+				}
+			case "=" :
+			case "" :
+				switch (field.getJavaType()) {
+					case BOOLEAN: return PropertyFilter.eq(columName, Boolean.valueOf(filter.getValue()));
+					case DOUBLE: return PropertyFilter.eq(columName, Double.valueOf(filter.getValue()));
+					case INT: return PropertyFilter.eq(columName, Integer.valueOf(filter.getValue()));
+					case LONG: return PropertyFilter.eq(columName, Long.valueOf(filter.getValue()));
+					case STRING: return PropertyFilter.eq(columName, filter.getValue());
+					default: return PropertyFilter.eq(columName, filter.getValue());
+				}
+			case ">=" :
+				switch (field.getJavaType()) {
+					case BOOLEAN: return PropertyFilter.ge(columName, Boolean.valueOf(filter.getValue()));
+					case DOUBLE: return PropertyFilter.ge(columName, Double.valueOf(filter.getValue()));
+					case INT: return PropertyFilter.ge(columName, Integer.valueOf(filter.getValue()));
+					case LONG: return PropertyFilter.ge(columName, Long.valueOf(filter.getValue()));
+					case STRING: return PropertyFilter.ge(columName, filter.getValue());
+					default: PropertyFilter.ge(columName, filter.getValue());
+				}
+			case ">" :
+				switch (field.getJavaType()) {
+					case BOOLEAN: return PropertyFilter.gt(columName, Boolean.valueOf(filter.getValue()));
+					case DOUBLE: return PropertyFilter.gt(columName, Double.valueOf(filter.getValue()));
+					case INT: return PropertyFilter.gt(columName, Integer.valueOf(filter.getValue()));
+					case LONG: return PropertyFilter.gt(columName, Long.valueOf(filter.getValue()));
+					case STRING: return PropertyFilter.gt(columName, filter.getValue());
+					default: return PropertyFilter.gt(columName, filter.getValue());
+				}
+			default: throw new IllegalArgumentException("Unknown operator " + filter.getOperator());
 		}
-		return PropertyFilter.eq(columName, filter.getValue());
 	}
 }
