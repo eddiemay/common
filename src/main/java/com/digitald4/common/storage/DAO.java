@@ -15,4 +15,6 @@ public interface DAO {
 	<T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater);
 
 	<T> void delete(Class<T> c, long id);
+
+	<T extends Message> int delete(Class<T> c, Query query);
 }

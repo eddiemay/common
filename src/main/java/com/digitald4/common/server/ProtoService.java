@@ -1,6 +1,7 @@
 package com.digitald4.common.server;
 
-import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
+import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
@@ -20,6 +21,8 @@ public interface ProtoService<T> {
 	T update(UpdateRequest request);
 	
 	Empty delete(DeleteRequest request);
+
+	BatchDeleteResponse batchDelete(BatchDeleteRequest request);
 
 	boolean requiresLogin(String action);
 }

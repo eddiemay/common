@@ -15,6 +15,8 @@ public interface JSONService {
 
 	JSONObject delete(JSONObject request);
 
+	JSONObject batchDelete(JSONObject request);
+
 	JSONObject performAction(String action, JSONObject request) throws Exception;
 
 	boolean requiresLogin(String action);

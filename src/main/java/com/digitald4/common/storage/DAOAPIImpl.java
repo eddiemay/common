@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import org.json.JSONObject;
 
 public class DAOAPIImpl implements DAO {
 	private static final String API_PAYLOAD = "json=%s";
@@ -67,7 +68,6 @@ public class DAOAPIImpl implements DAO {
 	@Override
 	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
 		try {
-			// TODO(eddiemay) Need to set values from query.
 			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + getResourceName(c) + "?");
 
 			url.append(query.getFilterList().stream()
@@ -139,12 +139,15 @@ public class DAOAPIImpl implements DAO {
 								.build();
 						JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(updated.getDescriptorForType()).build();
 						Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
-						apiConnector.send("POST", url, String.format(API_PAYLOAD, jsonPrinter.print(request)));
+						String json = apiConnector.send("POST", url, String.format(API_PAYLOAD, jsonPrinter.print(request)));
+						Message.Builder builder = DAOCloudDS.getDefaultInstance(c).toBuilder();
+						jsonParser.merge(json, builder);
+						return (T) builder.build();
 					} catch (IOException ioe) {
 						throw new DD4StorageException("Error updating record " + updated + ": " + ioe.getMessage(), ioe);
 					}
 				}
-				return get(c, id);
+				return updated;
 			}
 		}.applyWithRetries(Pair.of(id, updater));
 	}
@@ -154,6 +157,32 @@ public class DAOAPIImpl implements DAO {
 		String url = apiConnector.getApiUrl() + "/" + getResourceName(c) + "/" + id;
 		try {
 			apiConnector.send("DELETE", url, null);
+		} catch (IOException ioe) {
+			throw new DD4StorageException(ioe);
+		}
+	}
+
+	@Override
+	public <T extends Message> int delete(Class<T> c, Query query) {
+		try {
+			StringBuilder url = new StringBuilder(apiConnector.getApiUrl() + "/" + getResourceName(c) + ":batchDelete?");
+
+			url.append(query.getFilterList().stream()
+					.map(filter -> filter.getColumn() + "=" + filter.getOperator() + filter.getValue())
+					.collect(Collectors.joining("&")));
+			if (query.getOrderByCount() > 0) {
+				url.append("&orderBy").append("=").append(query.getOrderByList().stream()
+						.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
+						.collect(Collectors.joining(",")));
+			}
+			if (query.getLimit() > 0) {
+				url.append("&pageSize").append("=").append(query.getLimit());
+			}
+			if (query.getOffset() > 0) {
+				url.append("&pageToken").append("=").append(query.getOffset());
+			}
+			return new JSONObject(apiConnector.send("DELETE", url.toString(), null))
+					.getInt("deleted");
 		} catch (IOException ioe) {
 			throw new DD4StorageException(ioe);
 		}

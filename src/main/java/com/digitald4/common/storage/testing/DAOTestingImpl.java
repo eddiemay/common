@@ -90,4 +90,19 @@ public class DAOTestingImpl implements DAO {
 			table.remove(id);
 		}
 	}
+
+	@Override
+	public <T extends Message> int delete(Class<T> c, Query query) {
+		Map<Long, ? extends Message> table = tables.get(c);
+		if (table != null) {
+			QueryResult<T> results = list(c, query);
+			if (results.size() > 0) {
+				FieldDescriptor idField = DAOCloudDS.getDefaultInstance(c)
+						.getDescriptorForType().findFieldByName("id");
+				results.parallelStream().forEach(t -> table.remove((Long) t.getField(idField)));
+			}
+			return results.size();
+		}
+		return 0;
+	}
 }

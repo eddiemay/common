@@ -3,6 +3,8 @@ package com.digitald4.common.server;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
+import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
+import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.GetRequest;
@@ -194,6 +196,18 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
+	public JSONObject batchDelete(JSONObject jsonRequest) {
+		return convertToJSON(batchDelete(transformJSONRequest(BatchDeleteRequest.getDefaultInstance(), jsonRequest)));
+	}
+
+	@Override
+	public BatchDeleteResponse batchDelete(BatchDeleteRequest request) {
+		return BatchDeleteResponse.newBuilder()
+				.setDeleted(store.delete(toQuery(request)))
+				.build();
+	}
+
+	@Override
 	public JSONObject performAction(String action, JSONObject jsonRequest) {
 		switch (action) {
 			case "create": return create(jsonRequest);
@@ -201,6 +215,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 			case "list": return list(jsonRequest);
 			case "update": return update(jsonRequest);
 			case "delete": return delete(jsonRequest);
+			case "batchDelete": return batchDelete(jsonRequest);
 			default:
 				throw new DD4StorageException("Invalid action: " + action);
 		}
@@ -221,6 +236,28 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	private Query toQuery(ListRequest request) {
+		Query.Builder builder = Query.newBuilder()
+				.setLimit(request.getPageSize())
+				.setOffset(request.getPageToken())
+				.addAllFilter(request.getFilterList().stream()
+						.map(filter -> Query.Filter.newBuilder()
+								.setColumn(filter.getColumn())
+								.setOperator(filter.getOperator())
+								.setValue(filter.getValue())
+								.build())
+						.collect(Collectors.toList()));
+		if (!request.getOrderBy().isEmpty()) {
+			builder.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
+					.map(orderBy -> OrderBy.newBuilder()
+							.setColumn(orderBy.split(" ")[0])
+							.setDesc(orderBy.endsWith("DESC"))
+							.build())
+					.collect(Collectors.toList()));
+		}
+		return builder.build();
+	}
+
+	private Query toQuery(BatchDeleteRequest request) {
 		Query.Builder builder = Query.newBuilder()
 				.setLimit(request.getPageSize())
 				.setOffset(request.getPageToken())

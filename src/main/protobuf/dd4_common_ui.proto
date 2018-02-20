@@ -20,6 +20,8 @@ service GenericService {
   rpc Update(UpdateRequest) returns (google.protobuf.Any) {}
 
   rpc Delete(DeleteRequest) returns (google.protobuf.Empty) {}
+
+  rpc BatchDelete(BatchDeleteRequest) returns (google.protobuf.Empty) {}
 }
 
 service UserService {
@@ -80,6 +82,22 @@ message UpdateRequest {
 
 message DeleteRequest {
 	int64 id = 1;
+}
+
+message BatchDeleteRequest {
+  message Filter {
+    string column = 1;
+    string operator = 2;
+    string value = 3;
+  }
+  repeated Filter filter = 1;
+  string order_by = 2;
+  int32 page_size = 3;
+  int32 page_token = 4;
+}
+
+message BatchDeleteResponse {
+  int32 deleted = 1;
 }
 
 message LoginRequest {

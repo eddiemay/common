@@ -69,8 +69,8 @@ message Query {
     bool desc = 2;
   }
   repeated OrderBy order_by = 2;
-  int32 limit = 3;
-  int32 offset = 4;
+  int32 offset = 3;
+  int32 limit = 4;
 }
 
 message User {

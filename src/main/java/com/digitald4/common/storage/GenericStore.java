@@ -52,4 +52,9 @@ public class GenericStore<T extends Message> implements Store<T> {
 	public void delete(long id) {
 		daoProvider.get().delete(c, id);
 	}
+
+	@Override
+	public int delete(Query query) {
+		return daoProvider.get().delete(c, query);
+	}
 }

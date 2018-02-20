@@ -78,8 +78,7 @@ public class DAOCloudDS implements DAO {
 			@Override
 			public QueryResult<T> apply(DD4Protos.Query request) {
 				EntityQuery.Builder query = Query.newEntityQueryBuilder()
-						.setKind(c.getSimpleName())
-						.setOffset(request.getOffset());
+						.setKind(c.getSimpleName());
 				if (request.getFilterCount() > 0) {
 					Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
 					if (request.getFilterCount() == 1) {
@@ -103,7 +102,8 @@ public class DAOCloudDS implements DAO {
 				List<T> results = new ArrayList<>();
 				int[] count = new int[1];
 				datastore.run(query.build()).forEachRemaining(entity -> {
-					if (request.getLimit() == 0 || count[0] < request.getLimit()) {
+					if (count[0] >= request.getOffset()
+							&& (request.getLimit() == 0 || count[0] < request.getOffset() + request.getLimit())) {
 						results.add(convert(c, entity));
 					}
 					count[0]++;
@@ -130,6 +130,22 @@ public class DAOCloudDS implements DAO {
 	@Override
 	public <T> void delete(Class<T> c, long id) {
 		deleteFunction.applyWithRetries(Pair.of(c, id));
+	}
+
+	@Override
+	public <T extends Message> int delete(Class<T> c, DD4Protos.Query query) {
+		return new RetryableFunction<DD4Protos.Query, Integer>() {
+			@Override
+			public Integer apply(DD4Protos.Query request) {
+				QueryResult<T> results = list(c, request);
+				if (results.size() > 0) {
+					FieldDescriptor idField = DAOCloudDS.getDefaultInstance(c)
+							.getDescriptorForType().findFieldByName("id");
+					results.parallelStream().forEach(t -> delete(c, (Long) t.getField(idField)));
+				}
+				return results.size();
+			}
+		}.applyWithRetries(query);
 	}
 
 	public static <T extends Message> T getDefaultInstance(Class<?> c) {

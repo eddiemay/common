@@ -15,4 +15,6 @@ public interface Store<T> {
 	T update(long id, UnaryOperator<T> updater);
 
 	void delete(long id);
+
+	int delete(Query query);
 }
