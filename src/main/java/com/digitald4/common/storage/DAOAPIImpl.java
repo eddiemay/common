@@ -2,6 +2,7 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
 import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
@@ -181,8 +182,10 @@ public class DAOAPIImpl implements DAO {
 			if (query.getOffset() > 0) {
 				url.append("&pageToken").append("=").append(query.getOffset());
 			}
-			return new JSONObject(apiConnector.send("DELETE", url.toString(), null))
-					.getInt("deleted");
+			String json = apiConnector.send("DELETE", url.toString(), null);
+			BatchDeleteResponse.Builder response = BatchDeleteResponse.newBuilder();
+			jsonParser.merge(json, response);
+			return response.build().getDeleted();
 		} catch (IOException ioe) {
 			throw new DD4StorageException(ioe);
 		}
