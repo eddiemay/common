@@ -1,11 +1,13 @@
 package com.digitald4.common.exception;
 
+import javax.servlet.http.HttpServletResponse;
+
 public class DD4StorageException extends RuntimeException {
 
 	private final int errorCode;
 
 	public DD4StorageException(String message) {
-		this(message, null, 500);
+		this(message, null, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 	}
 
 	public DD4StorageException(String message, int errorCode) {
@@ -13,15 +15,11 @@ public class DD4StorageException extends RuntimeException {
 	}
 
 	public DD4StorageException(Exception e) {
-		this(null, e, 500);
-	}
-
-	public DD4StorageException(Exception e, int errorCode) {
-		this(null, e, errorCode);
+		this(null, e, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 	}
 
 	public DD4StorageException(String message, Exception e) {
-		this(message, e, 500);
+		this(message, e, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 	}
 
 	public DD4StorageException(String message, Exception e, int errorCode) {

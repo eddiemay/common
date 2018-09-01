@@ -5,6 +5,7 @@ import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
+import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -13,7 +14,6 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -139,7 +139,7 @@ public class DAOSQLImpl implements DAO {
 					countSql = String.format(COUNT_SQL, getView(c), where);
 				}
 				sql.append(";");
-				Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
+				Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql.toString())) {
 					int p = 1;
@@ -269,7 +269,7 @@ public class DAOSQLImpl implements DAO {
 							.append(String.valueOf(query.getLimit()));
 				}
 				sql.append(";");
-				Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
+				Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql.toString())) {
 					int p = 1;
@@ -282,20 +282,6 @@ public class DAOSQLImpl implements DAO {
 				}
 			}
 		}.applyWithRetries(query);
-	}
-
-	public <T extends Message> T getDefaultInstance(Class<T> c) {
-		T defaultInstance = (T) defaultInstances.get(c);
-		if (defaultInstance == null) {
-			try {
-				defaultInstance = (T) c.getMethod("getDefaultInstance").invoke(null);
-				defaultInstances.put(c, defaultInstance);
-			} catch (IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-				throw new RuntimeException(e);
-			}
-		}
-		return defaultInstance;
 	}
 
 	private String getTable(Class<?> c) {
@@ -313,7 +299,7 @@ public class DAOSQLImpl implements DAO {
 		}
 		if (field != null) {
 			if (field.isRepeated() || field.isMapField()) {
-				JSONObject json = new JSONObject(JsonFormat.printer().print(t));
+				JSONObject json = new JSONObject(ProtoUtil.print(t));
 				ps.setString(index, json.get(FormatText.toLowerCamel(field.getName())).toString());
 			} else {
 				switch (field.getJavaType()) {
@@ -332,7 +318,7 @@ public class DAOSQLImpl implements DAO {
 						}
 						break;
 					case MESSAGE:
-						ps.setString(index, JsonFormat.printer().print((Message) value));
+						ps.setString(index, ProtoUtil.print((Message) value));
 						break;
 					default:
 						ps.setObject(index, value);
@@ -354,7 +340,7 @@ public class DAOSQLImpl implements DAO {
 
 	private <T extends Message> T parseFromResultSet(Class<T> c, ResultSet rs) throws SQLException {
 		ResultSetMetaData rsmd = rs.getMetaData();
-		Message.Builder builder = getDefaultInstance(c).toBuilder();
+		Message.Builder builder = ProtoUtil.getDefaultInstance(c).toBuilder();
 		for (int i = 1; i <= rsmd.getColumnCount(); i++) {
 			String columnName = rsmd.getColumnName(i).toLowerCase();
 			Object value = rs.getObject(i);

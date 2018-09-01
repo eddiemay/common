@@ -6,6 +6,7 @@ import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.QueryResult;
+import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
@@ -46,9 +47,9 @@ public class DAOTestingImpl implements DAO {
 	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
 		Map<Long, ? extends Message> table = tables.get(c);
 		if (table != null) {
-			T type = DAOCloudDS.getDefaultInstance(c);
+			T type = ProtoUtil.getDefaultInstance(c);
 			Descriptor descriptor = type.getDescriptorForType();
-			List<T> results = (List<T>) table.values().stream().collect(Collectors.toList());
+			List<T> results = table.values().stream().map(item -> (T) item).collect(Collectors.toList());
 			for (Filter filter : query.getFilterList()) {
 				FieldDescriptor field = descriptor.findFieldByName(filter.getColumn());
 				results = results.parallelStream()
@@ -97,7 +98,7 @@ public class DAOTestingImpl implements DAO {
 		if (table != null) {
 			QueryResult<T> results = list(c, query);
 			if (results.size() > 0) {
-				FieldDescriptor idField = DAOCloudDS.getDefaultInstance(c)
+				FieldDescriptor idField = ProtoUtil.getDefaultInstance(c)
 						.getDescriptorForType().findFieldByName("id");
 				results.parallelStream().forEach(t -> table.remove((Long) t.getField(idField)));
 			}

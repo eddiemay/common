@@ -9,6 +9,7 @@ import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.DAOSQLImpl;
+import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Printer;
@@ -54,7 +55,7 @@ public class DataImporter {
 		String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s";
 		String response = apiConnector.sendGet(url);
 		ListResponse.Builder builder = ListResponse.newBuilder();
-		T type = DAOCloudDS.getDefaultInstance(c);
+		T type = ProtoUtil.getDefaultInstance(c);
 		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(type.getDescriptorForType()).build();
 		JsonFormat.parser().usingTypeRegistry(registry).merge(response, builder);
 		return builder.build();
@@ -70,6 +71,6 @@ public class DataImporter {
 		// dataImporter.runFor(GeneralData.class);
 		dataImporter.export(GeneralData.class)
 				.getResultList()
-				.forEach(any -> System.out.println(any.unpack(GeneralData.class)));
+				.forEach(any -> System.out.println(ProtoUtil.unpack(GeneralData.class, any)));
 	}
 }

@@ -3,6 +3,7 @@ package com.digitald4.common.server;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.storage.Store;
+import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.JsonFormat;
@@ -141,5 +142,5 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 	};
 
 	private static final Function<DataFile, JSONObject> toJSON = dataFile ->
-			new JSONObject(JsonFormat.printer().print(dataFile.toBuilder().clearData().build()));
+			new JSONObject(ProtoUtil.print(dataFile.toBuilder().clearData().build()));
 }

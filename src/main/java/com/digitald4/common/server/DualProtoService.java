@@ -11,6 +11,7 @@ import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
+import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
 import com.google.protobuf.Any;
@@ -19,15 +20,9 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Empty;
 import com.google.protobuf.GeneratedMessageV3;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.FieldMaskUtil;
 import com.google.protobuf.util.FieldMaskUtil.MergeOptions;
-import com.google.protobuf.util.JsonFormat;
-import com.google.protobuf.util.JsonFormat.Parser;
-import com.google.protobuf.util.JsonFormat.Printer;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
@@ -42,12 +37,11 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		MERGE_OPTIONS.setReplaceRepeatedFields(true);
 	}
 
+	private final Class<T> cls;
 	private final T type;
 	private final Store<I> store;
 	private final Descriptor internalDescriptor;
 	private final Descriptor externalDescriptor;
-	private final Parser jsonParser;
-	private final Printer jsonPrinter;
 
 	private final Function<I, T> converter = new Function<I, T>() {
 		@Override
@@ -95,31 +89,15 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	};
 	
 	public DualProtoService(Class<T> c, Store<I> store) {
-		try {
-			this.type = (T) c.getMethod("getDefaultInstance").invoke(null);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-				| NoSuchMethodException | SecurityException e) {
-			throw new RuntimeException(e);
-		}
-		this.externalDescriptor = type.getDescriptorForType();
-		this.store = store;
-		this.internalDescriptor = store.getType().getDescriptorForType();
-
-		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(externalDescriptor).build();
-		jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
-		jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
+		this(ProtoUtil.getDefaultInstance(c), store);
 	}
 
 	protected DualProtoService(T type, Store<I> store) {
+		this.cls = (Class<T>) type.getClass();
 		this.type = type;
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;
 		this.internalDescriptor = store.getType().getDescriptorForType();
-
-		JsonFormat.TypeRegistry registry =
-				JsonFormat.TypeRegistry.newBuilder().add(externalDescriptor).build();
-		jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
-		jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 	}
 	
 	public Function<I, T> getConverter() {
@@ -137,12 +115,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 
 	@Override
 	public T create(CreateRequest request) {
-		try {
-			T t = request.getEntity().unpack((Class<T>) type.getClass());
-			return getConverter().apply(store.create(getReverseConverter().apply(t)));
-		} catch (InvalidProtocolBufferException e) {
-			throw new RuntimeException(e);
-		}
+		return getConverter().apply(store.create(getReverseConverter().apply(ProtoUtil.unpack(cls, request.getEntity()))));
 	}
 
 	@Override
@@ -174,12 +147,8 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	public T update(final UpdateRequest request) {
 		return getConverter().apply(store.update(request.getId(), internal -> {
 			Message.Builder builder = internal.toBuilder();
-			try {
-				T t = request.getEntity().unpack((Class<T>) type.getClass());
-				FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder, MERGE_OPTIONS);
-			} catch (InvalidProtocolBufferException e) {
-				throw new RuntimeException("Error updating object", e);
-			}
+			T t = ProtoUtil.unpack(cls, request.getEntity());
+			FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder, MERGE_OPTIONS);
 			return (I) builder.build();
 		}));
 	}
@@ -290,15 +259,15 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 			json.getJSONObject("entity")
 					.put("@type", "type.googleapis.com/" + externalDescriptor.getFullName());
 		}
-		jsonParser.merge(json.toString(), builder);
+		ProtoUtil.merge(json, builder);
 		return (R) builder.build();
 	}
 
-	public final JSONObject convertToJSON(Message item) {
-		return new JSONObject(jsonPrinter.print(item));
+	public static JSONObject convertToJSON(Message item) {
+		return new JSONObject(ProtoUtil.print(item));
 	}
 
-	public static final JSONObject convertToJSON(boolean bool) {
+	public static JSONObject convertToJSON(boolean bool) {
 		return new JSONObject(bool);
 	}
 }

@@ -5,6 +5,7 @@ import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
+import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.util.RetryableFunction;
 import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.Datastore;
@@ -21,8 +22,6 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
-import com.google.protobuf.util.JsonFormat;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,10 +31,8 @@ import java.util.stream.Collectors;
 import org.json.JSONObject;
 
 public class DAOCloudDS implements DAO {
-
-	private final Datastore datastore;
 	private final Map<Class<?>, KeyFactory> keyFactories = new HashMap<>();
-	private static final Map<Class<?>, Message> defaultInstances = new HashMap<>();
+	private final Datastore datastore;
 
 	public DAOCloudDS() {
 		this.datastore = DatastoreOptions.getDefaultInstance().getService();
@@ -43,7 +40,7 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T extends Message> T create(T t) {
-		return convert(t.getClass(), new RetryableFunction<T, Entity>() {
+		return convert((Class<T>) t.getClass(), new RetryableFunction<T, Entity>() {
 			@Override
 			public Entity apply(T t) {
 				Object id = t.getField(t.getDescriptorForType().findFieldByName("id"));
@@ -80,7 +77,7 @@ public class DAOCloudDS implements DAO {
 				EntityQuery.Builder query = Query.newEntityQueryBuilder()
 						.setKind(c.getSimpleName());
 				if (request.getFilterCount() > 0) {
-					Descriptor descriptor = getDefaultInstance(c).getDescriptorForType();
+					Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
 					if (request.getFilterCount() == 1) {
 						Filter filter = request.getFilter(0);
 						query.setFilter(convertToPropertyFilter(filter, descriptor));
@@ -139,27 +136,13 @@ public class DAOCloudDS implements DAO {
 			public Integer apply(DD4Protos.Query request) {
 				QueryResult<T> results = list(c, request);
 				if (results.size() > 0) {
-					FieldDescriptor idField = DAOCloudDS.getDefaultInstance(c)
+					FieldDescriptor idField = ProtoUtil.getDefaultInstance(c)
 							.getDescriptorForType().findFieldByName("id");
 					results.parallelStream().forEach(t -> delete(c, (Long) t.getField(idField)));
 				}
 				return results.size();
 			}
 		}.applyWithRetries(query);
-	}
-
-	public static <T extends Message> T getDefaultInstance(Class<?> c) {
-		T defaultInstance = (T) defaultInstances.get(c);
-		if (defaultInstance == null) {
-			try {
-				defaultInstance = (T) c.getMethod("getDefaultInstance").invoke(null);
-				defaultInstances.put(c, defaultInstance);
-			} catch (IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-				throw new RuntimeException(e);
-			}
-		}
-		return defaultInstance;
 	}
 
 	private KeyFactory getKeyFactory(Class<?> c) {
@@ -181,7 +164,7 @@ public class DAOCloudDS implements DAO {
 			return;
 		}
 		if (field.isRepeated() || field.isMapField()) {
-			JSONObject json = new JSONObject(JsonFormat.printer().print(t));
+			JSONObject json = new JSONObject(ProtoUtil.print(t));
 			entity.set(name, json.get(FormatText.toLowerCamel(field.getName())).toString());
 		} else {
 			switch (field.getJavaType()) {
@@ -198,7 +181,7 @@ public class DAOCloudDS implements DAO {
 					}
 					break;
 				case MESSAGE:
-					entity.set(name, JsonFormat.printer().print((Message) value));
+					entity.set(name, ProtoUtil.print((Message) value));
 					break;
 				case STRING: entity.set(name, (String) value); break;
 				case BYTE_STRING:
@@ -207,11 +190,11 @@ public class DAOCloudDS implements DAO {
 		}
 	}
 
-	private <T extends Message> T convert(Class<?> c, Entity entity) {
+	private <T extends Message> T convert(Class<T> c, Entity entity) {
 		if (entity == null) {
 			return null;
 		}
-		Message.Builder builder = getDefaultInstance(c).toBuilder();
+		Message.Builder builder = ProtoUtil.getDefaultInstance(c).toBuilder();
 		Descriptor descriptor = builder.getDescriptorForType();
 		FieldDescriptor idField = descriptor.findFieldByName("id");
 		if (idField != null) {
@@ -221,8 +204,7 @@ public class DAOCloudDS implements DAO {
 			try {
 				FieldDescriptor field = descriptor.findFieldByName(columnName);
 				if (field.isRepeated() || field.getJavaType() == JavaType.MESSAGE) {
-					JsonFormat.parser().ignoringUnknownFields()
-							.merge("{\"" + field.getName() + "\": " + entity.getString(columnName) + "}", builder);
+					ProtoUtil.merge("{\"" + field.getName() + "\": " + entity.getString(columnName) + "}", builder);
 				} else {
 					switch (field.getJavaType()) {
 						case BOOLEAN: builder.setField(field, entity.getBoolean(columnName)); break;

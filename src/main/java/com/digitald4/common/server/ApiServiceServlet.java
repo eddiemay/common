@@ -95,10 +95,10 @@ public class ApiServiceServlet extends HttpServlet {
 		return this;
 	}
 
-	private JSONService getService(String entity) throws ServletException {
+	private JSONService getService(String entity) {
 		JSONService service = services.get(entity.toLowerCase());
 		if (service == null) {
-			throw new ServletException("Unknown service: " + entity);
+			throw new DD4StorageException("Unknown service: " + entity, HttpServletResponse.SC_BAD_REQUEST);
 		}
 		return service;
 	}
@@ -116,10 +116,9 @@ public class ApiServiceServlet extends HttpServlet {
 			JSONObject json = null;
 			try {
 				JSONService service = getService(entity);
-				if (service == null) {
-					throw new DD4StorageException("Unknown service: " + entity);
+				if (service.requiresLogin(action)) {
+					checkLogin(request, response);
 				}
-				if (service.requiresLogin(action) && !checkLogin(request, response)) return;
 				json = service.performAction(action, jsonRequest);
 			} catch (DD4StorageException e) {
 				response.setStatus(e.getErrorCode());
@@ -220,7 +219,7 @@ public class ApiServiceServlet extends HttpServlet {
 		return entityGroups;
 	}
 
-	private Pair<EntityKey, JSONObject> parseRequest(HttpServletRequest request) throws ServletException {
+	private Pair<EntityKey, JSONObject> parseRequest(HttpServletRequest request) {
 		List<EntityKey> entitykeys = getEntitykeys(request);
 		String payload = request.getParameter("json");
 		try {
@@ -256,7 +255,7 @@ public class ApiServiceServlet extends HttpServlet {
 			}
 			return Pair.of(entity, json);
 		} catch (JSONException e) {
-			throw new ServletException(e);
+			throw new DD4StorageException("Malformed request", e, HttpServletResponse.SC_BAD_REQUEST);
 		}
 	}
 	
@@ -275,31 +274,28 @@ public class ApiServiceServlet extends HttpServlet {
     return (queryString == null) ? requestURL.toString() : requestURL.append('?').append(queryString).toString();
 	}
 	
-	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response, int level) throws Exception {
+	public void checkLogin(HttpServletRequest request, HttpServletResponse response, int level) {
 		User user = userProvider.get();
 		if (user == null || user.getId() == 0) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			return false;
+			throw new DD4StorageException("Unauthorized", HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		if (user.getTypeId() > level) {
-			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-			return false;
+			throw new DD4StorageException("Access Denied", HttpServletResponse.SC_FORBIDDEN);
 		}
-		return true;
 	}
 
-	public boolean checkLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		return checkLogin(request, response, 4);
+	public void checkLogin(HttpServletRequest request, HttpServletResponse response) {
+		checkLogin(request, response, 4);
 	}
 	
-	public boolean checkAdminLogin(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		return checkLogin(request, response, 1);
+	public void checkAdminLogin(HttpServletRequest request, HttpServletResponse response) {
+		checkLogin(request, response, 1);
 	}
 
-	public static String formatStackTrace(Exception e) {
+	private static String formatStackTrace(Exception e) {
 		StringBuilder out = new StringBuilder();
 		for (StackTraceElement elem : e.getStackTrace()) {
-			out.append(elem + "\n");
+			out.append(elem).append("\n");
 		}
 		return out.toString();
 	}
