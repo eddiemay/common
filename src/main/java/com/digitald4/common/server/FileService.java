@@ -6,7 +6,6 @@ import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.util.JsonFormat;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -38,7 +37,6 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		this.responseProvider = responseProvider;
 	}
 
-	@Override
 	public JSONObject create(JSONObject json) {
 		try {
 			return toJSON.apply(dataFileStore.create(converter.apply(requestProvider.get().getPart("file"))));
@@ -62,7 +60,6 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		return null;
 	}
 
-	@Override
 	public JSONObject update(JSONObject json) {
 		HttpServletRequest request = requestProvider.get();
 		String[] urlParts = request.getRequestURL().toString().split("/");
@@ -100,9 +97,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 			case "update":
 				return update(request);
 			case "delete":
-				return delete(request);
-			case "list":
-				return list(request);
+			case "list": super.performAction(action, request);
 			case "get":
 			default:
 				return get(request);

@@ -12,6 +12,8 @@ import com.google.protobuf.Empty;
 
 public interface ProtoService<T> {
 
+	T getType();
+
 	T create(CreateRequest request);
 	
 	T get(GetRequest request);

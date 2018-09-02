@@ -44,9 +44,9 @@ public class UserService extends SingleProtoService<User> {
 	@Override
 	public JSONObject performAction(String action, JSONObject jsonRequest) {
 		switch (action) {
-			case "active": return convertToJSON(getActive());
-			case "login": return convertToJSON(login(transformJSONRequest(LoginRequest.getDefaultInstance(), jsonRequest)));
-			case "logout": return convertToJSON(logout());
+			case "active": return toJSON(getActive());
+			case "login": return toJSON(login(toProto(LoginRequest.getDefaultInstance(), jsonRequest)));
+			case "logout": return toJSON(logout());
 			default: return super.performAction(action, jsonRequest);
 		}
 	}
