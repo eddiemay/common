@@ -10,47 +10,11 @@ import "google/protobuf/field_mask.proto";
 option java_package = "com.digitald4.common.proto";
 option java_outer_classname = "DD4UIProtos";
 
-service GenericService {
-  rpc Create(google.protobuf.Any) returns (google.protobuf.Any) {}
-
-  rpc Get(GetRequest) returns (google.protobuf.Any) {}
-
-  rpc List(ListRequest) returns (ListResponse) {}
-
-  rpc Update(UpdateRequest) returns (google.protobuf.Any) {}
-
-  rpc Delete(DeleteRequest) returns (google.protobuf.Empty) {}
-
-  rpc BatchDelete(BatchDeleteRequest) returns (google.protobuf.Empty) {}
-}
-
-service UserService {
-  rpc Create(dd4.common.User) returns (dd4.common.User) {}
-
-  rpc Get(GetRequest) returns (dd4.common.User) {}
-
-  rpc List(ListRequest) returns (ListResponse) {}
-
-  rpc Update(UpdateRequest) returns (dd4.common.User) {}
-
-  rpc Delete(DeleteRequest) returns (google.protobuf.Empty) {}
-
-  rpc Login(LoginRequest) returns (dd4.common.User) {}
-
-  rpc GetActive(google.protobuf.Empty) returns (dd4.common.User) {}
-
-  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-}
-
 message DataFile {
   int64 id = 1;
   string name = 2;
   string type = 3;
   int32 size = 4;
-}
-
-message GetRequest {
-  int64 id = 1;
 }
 
 message ListRequest {
@@ -71,13 +35,9 @@ message ListResponse {
 }
 
 message UpdateRequest {
-	int64 id = 1;
+  int64 id = 1;
   google.protobuf.Any entity = 2;
   google.protobuf.FieldMask update_mask = 3;
-}
-
-message DeleteRequest {
-	int64 id = 1;
 }
 
 message BatchDeleteRequest {
