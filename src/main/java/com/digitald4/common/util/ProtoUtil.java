@@ -2,6 +2,7 @@ package com.digitald4.common.util;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.google.protobuf.Any;
+import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
@@ -9,32 +10,30 @@ import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
 import com.google.protobuf.util.JsonFormat.TypeRegistry;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.json.JSONObject;
 
 public class ProtoUtil {
 	private static final Map<Class<?>, Message> defaultInstances = new HashMap<>();
-	private static final Parser ignoringUnknownFieldsParser = JsonFormat.parser().ignoringUnknownFields();
-	private static final Map<Class<?>, Parser> parsers = new HashMap<>();
-	private static final Printer printer = JsonFormat.printer();
+	private static Parser parser = JsonFormat.parser();
+	private static Printer printer = JsonFormat.printer();
 
 	private ProtoUtil() {}
 
+	public static void init(Descriptor... descriptors) {
+		TypeRegistry registry = TypeRegistry.newBuilder().add(Arrays.stream(descriptors).collect(Collectors.toList())).build();
+		parser = parser.usingTypeRegistry(registry);
+		printer = printer.usingTypeRegistry(registry);
+	}
+
 	public static void merge(JSONObject json, Message.Builder builder) {
-		merge(
-				parsers.computeIfAbsent(
-						builder.getClass(),
-						c -> JsonFormat.parser().usingTypeRegistry(TypeRegistry.newBuilder().add(builder.build().getDescriptorForType()).build())),
-				json.toString(),
-				builder);
+		merge(json.toString(), builder);
 	}
 
 	public static void merge(String json, Message.Builder builder) {
-		merge(ignoringUnknownFieldsParser, json, builder);
-	}
-
-	private static void merge(Parser parser, String json, Message.Builder builder) {
 		try {
 			parser.merge(json, builder);
 		} catch (InvalidProtocolBufferException e) {
