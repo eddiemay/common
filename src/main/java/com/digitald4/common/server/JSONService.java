@@ -6,13 +6,7 @@ import org.json.JSONObject;
 
 public interface JSONService {
 
-	JSONObject performAction(String action, JSONObject request) throws Exception;
+	JSONObject performAction(String action, JSONObject request);
 
 	boolean requiresLogin(String action);
-
-	static <R extends Message> R toProto(R msgRequest, JSONObject json) {
-		R.Builder builder = msgRequest.toBuilder();
-		ProtoUtil.merge(json, builder);
-		return (R) builder.build();
-	}
 }

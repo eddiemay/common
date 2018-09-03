@@ -6,8 +6,6 @@ import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.util.Provider;
 import com.google.protobuf.ByteString;
-import org.json.JSONObject;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +16,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import org.json.JSONObject;
 
 /**
  * Service for handling the uploading, retrieving, replacing and deleting of files.
@@ -37,7 +36,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		this.responseProvider = responseProvider;
 	}
 
-	public JSONObject create(JSONObject json) {
+	protected JSONObject create() {
 		try {
 			return toJSON.apply(dataFileStore.create(converter.apply(requestProvider.get().getPart("file"))));
 		} catch (ServletException | IOException e) {
@@ -60,7 +59,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		return null;
 	}
 
-	public JSONObject update(JSONObject json) {
+	public JSONObject update() {
 		HttpServletRequest request = requestProvider.get();
 		String[] urlParts = request.getRequestURL().toString().split("/");
 		int id = Integer.parseInt(urlParts[urlParts.length - 1]);
@@ -82,26 +81,6 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 			}
 		}
 		throw new RuntimeException("No filename");
-	}
-
-	@Override
-	public boolean requiresLogin(String action) {
-		return true;
-	}
-
-	@Override
-	public JSONObject performAction(String action, JSONObject request) {
-		switch (action) {
-			case "create":
-				return create(request);
-			case "update":
-				return update(request);
-			case "delete":
-			case "list": super.performAction(action, request);
-			case "get":
-			default:
-				return get(request);
-		}
 	}
 
 	private static final Function<Part, DataFile> converter = filePart -> {
@@ -138,4 +117,23 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 
 	private static final Function<DataFile, JSONObject> toJSON = dataFile ->
 			new JSONObject(ProtoUtil.print(dataFile.toBuilder().clearData().build()));
+
+	static class FileJSONService extends JSONServiceImpl<DD4UIProtos.DataFile> {
+		private final FileService fileService;
+
+		FileJSONService(FileService fileService) {
+			super(DD4UIProtos.DataFile.class, fileService, true);
+			this.fileService = fileService;
+		}
+
+		@Override
+		public JSONObject performAction(String action, JSONObject request) {
+			switch (action) {
+				case "create": return fileService.create();
+				case "update": return fileService.update();
+				case "delete": case "list": super.performAction(action, request);
+				case "get": default: return fileService.get(request);
+			}
+		}
+	}
 }

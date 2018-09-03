@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import org.json.JSONObject;
 
 public class ProtoUtil {
@@ -47,6 +48,25 @@ public class ProtoUtil {
 		} catch (InvalidProtocolBufferException e) {
 			throw new DD4StorageException("Error converting message to json: " + message, e);
 		}
+	}
+
+	public <R extends Message> R toProto(R msgRequest, HttpServletRequest request) {
+		return toProto(msgRequest, new JSONObject(request.getParameterMap().values().iterator().next()[0]));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <R extends Message> R toProto(R msgRequest, JSONObject json) {
+		R.Builder builder = msgRequest.toBuilder();
+		ProtoUtil.merge(json, builder);
+		return (R) builder.build();
+	}
+
+	public static JSONObject toJSON(Message item) {
+		return new JSONObject(ProtoUtil.print(item));
+	}
+
+	public static JSONObject toJSON(boolean bool) {
+		return new JSONObject(bool);
 	}
 
 	public static <T extends Message> T unpack(Class<T> c, Any any) {

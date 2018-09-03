@@ -1,5 +1,8 @@
 package com.digitald4.common.server;
 
+import static com.digitald4.common.util.ProtoUtil.toJSON;
+import static com.digitald4.common.util.ProtoUtil.toProto;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
@@ -21,11 +24,11 @@ public class UserService extends SingleProtoService<User> {
 		this.idTokenResolver = idTokenResolver;
 	}
 
-	private User getActive() {
+	public User getActive() {
 		return userProvider.get();
 	}
 
-	private User login(LoginRequest loginRequest) {
+	public User login(LoginRequest loginRequest) {
 		User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
 		if (user == null) {
 			throw new DD4StorageException("Wrong username or password", 401);
@@ -33,7 +36,7 @@ public class UserService extends SingleProtoService<User> {
 		return ((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
 	}
 
-	private Empty logout() {
+	public Empty logout() {
 		User user = userProvider.get();
 		if (user != null) {
 			((IdTokenResolverDD4Impl) idTokenResolver).remove(user.getIdToken());
@@ -41,17 +44,25 @@ public class UserService extends SingleProtoService<User> {
 		return Empty.getDefaultInstance();
 	}
 
-	@Override
-	public JSONObject performAction(String action, JSONObject jsonRequest) {
-		switch (action) {
-			case "active": return toJSON(getActive());
-			case "login": return toJSON(login(toProto(LoginRequest.getDefaultInstance(), jsonRequest)));
-			case "logout": return toJSON(logout());
-			default: return super.performAction(action, jsonRequest);
-		}
-	}
+	static class UserJSONService extends JSONServiceImpl<User> {
+		private final UserService userService;
 
-	public boolean requiresLogin(String action) {
-		return !action.equals("login") && !action.equals("logout") && !action.equals("create") && !action.equals("active");
+		public UserJSONService(UserService userService) {
+			super(User.class, userService, false);
+			this.userService = userService;
+		}
+		public boolean requiresLogin(String action) {
+			return !action.equals("login") && !action.equals("logout") && !action.equals("create") && !action.equals("active");
+		}
+
+		@Override
+		public JSONObject performAction(String action, JSONObject jsonRequest) {
+			switch (action) {
+				case "active": return toJSON(userService.getActive());
+				case "login": return toJSON(userService.login(toProto(LoginRequest.getDefaultInstance(), jsonRequest)));
+				case "logout": return toJSON(userService.logout());
+				default: return super.performAction(action, jsonRequest);
+			}
+		}
 	}
 }

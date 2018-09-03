@@ -13,12 +13,12 @@ public class SingleProtoService<T extends GeneratedMessageV3> extends DualProtoS
 	}
 
 	@Override
-	public UnaryOperator<T> getConverter() {
+	protected UnaryOperator<T> getConverter() {
 		return converter;
 	}
 
 	@Override
-	public UnaryOperator<T> getReverseConverter() {
+	protected UnaryOperator<T> getReverseConverter() {
 		return converter;
 	}
 }

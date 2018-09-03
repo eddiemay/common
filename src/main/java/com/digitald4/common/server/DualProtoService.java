@@ -1,13 +1,9 @@
 package com.digitald4.common.server;
 
-import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
-import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
-import com.digitald4.common.proto.DD4UIProtos.DeleteRequest;
-import com.digitald4.common.proto.DD4UIProtos.GetRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
@@ -15,6 +11,7 @@ import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.ApiMethod;
+import com.google.api.server.spi.config.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -28,12 +25,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.json.JSONObject;
 
 public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedMessageV3>
-		implements ProtoService<T>, JSONService {
+		implements ProtoService<T> {
 	private static final MergeOptions MERGE_OPTIONS = new MergeOptions();
 	static {
 		MERGE_OPTIONS.setReplaceRepeatedFields(true);
@@ -102,29 +96,22 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		this.internalDescriptor = store.getType().getDescriptorForType();
 	}
 
-	@Override
-	public T getType() {
-		return type;
-	}
-	
-	public Function<I, T> getConverter() {
+	protected Function<I, T> getConverter() {
 		return converter;
 	}
-	
-	public Function<T, I> getReverseConverter() {
+
+	protected Function<T, I> getReverseConverter() {
 		return reverse;
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-	public T create(CreateRequest request) {
-		return getConverter().apply(store.create(getReverseConverter().apply(ProtoUtil.unpack(cls, request.getEntity()))));
+	public T create(T entity) {
+		return getConverter().apply(store.create(getReverseConverter().apply(entity)));
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET)
-	public T get(GetRequest request) {
-		return getConverter().apply(store.get(request.getId()));
+	public T get(@Named("id") long id) {
+		return getConverter().apply(store.get(id));
 	}
 
 	@Override
@@ -133,7 +120,6 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT)
 	public T update(final UpdateRequest request) {
 		return getConverter().apply(store.update(request.getId(), internal -> {
 			Message.Builder builder = internal.toBuilder();
@@ -144,24 +130,20 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE)
-	public Empty delete(DeleteRequest request) {
-		store.delete(request.getId());
+	public Empty delete(@Named("id") long id) {
+		store.delete(id);
 		return Empty.getDefaultInstance();
 	}
 
 	@Override
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE)
 	public BatchDeleteResponse batchDelete(BatchDeleteRequest request) {
 		return BatchDeleteResponse.newBuilder()
 				.setDeleted(store.delete(toQuery(request)))
 				.build();
 	}
 
-	public boolean requiresLogin(String action) {
-		return true;
-	}
-
-	public ListResponse toListResponse(QueryResult<I> queryResult) {
+	protected ListResponse toListResponse(QueryResult<I> queryResult) {
 		return ListResponse.newBuilder()
 				.addAllResult(queryResult.stream()
 						.map(getConverter())
@@ -213,48 +195,5 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 					.collect(Collectors.toList()));
 		}
 		return builder.build();
-	}
-
-	@Override
-	public JSONObject performAction(String action, JSONObject jsonRequest) {
-		switch (action) {
-			case "create":
-				return toJSON(create(toProto(CreateRequest.getDefaultInstance(), jsonRequest)));
-			case "get":
-				return toJSON(get(toProto(GetRequest.getDefaultInstance(), jsonRequest)));
-			case "list":
-				return toJSON(list(toProto(ListRequest.getDefaultInstance(), jsonRequest)));
-			case "update":
-				return toJSON(update(toProto(UpdateRequest.getDefaultInstance(), jsonRequest)));
-			case "delete":
-				return toJSON(delete(toProto(DeleteRequest.getDefaultInstance(), jsonRequest)));
-			case "batchDelete":
-				return toJSON(batchDelete(toProto(BatchDeleteRequest.getDefaultInstance(), jsonRequest)));
-			default:
-				throw new DD4StorageException("Invalid action: " + action, HttpServletResponse.SC_BAD_REQUEST);
-		}
-	}
-
-	public <R extends Message> R toProto(R msgRequest, HttpServletRequest request) {
-		return toProto(msgRequest, new JSONObject(request.getParameterMap().values().iterator().next()[0]));
-	}
-
-	@SuppressWarnings("unchecked")
-	public <R extends Message> R toProto(R msgRequest, JSONObject json) {
-		R.Builder builder = msgRequest.toBuilder();
-		if (json.has("entity")) {
-			json.getJSONObject("entity")
-					.put("@type", "type.googleapis.com/" + externalDescriptor.getFullName());
-		}
-		ProtoUtil.merge(json, builder);
-		return (R) builder.build();
-	}
-
-	public static JSONObject toJSON(Message item) {
-		return new JSONObject(ProtoUtil.print(item));
-	}
-
-	public static JSONObject toJSON(boolean bool) {
-		return new JSONObject(bool);
 	}
 }

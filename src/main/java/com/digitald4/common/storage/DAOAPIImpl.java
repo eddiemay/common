@@ -3,7 +3,6 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
-import com.digitald4.common.proto.DD4UIProtos.CreateRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.server.APIConnector;
@@ -42,11 +41,8 @@ public class DAOAPIImpl implements DAO {
 		Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 		Parser jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
 		try {
-			CreateRequest request = CreateRequest.newBuilder()
-					.setEntity(Any.pack(t))
-					.build();
 			Message.Builder builder = t.newBuilderForType();
-			jsonParser.merge(apiConnector.sendPost(url, String.format(API_PAYLOAD, jsonPrinter.print(request))), builder);
+			jsonParser.merge(apiConnector.sendPost(url, String.format(API_PAYLOAD, jsonPrinter.print(t))), builder);
 			return (T) builder.build();
 		} catch (Exception ioe) {
 			throw new DD4StorageException(ioe);

@@ -11,7 +11,7 @@ option java_package = "com.digitald4.common.proto";
 option java_outer_classname = "DD4UIProtos";
 
 service GenericService {
-  rpc Create(CreateRequest) returns (google.protobuf.Any) {}
+  rpc Create(google.protobuf.Any) returns (google.protobuf.Any) {}
 
   rpc Get(GetRequest) returns (google.protobuf.Any) {}
 
@@ -25,7 +25,7 @@ service GenericService {
 }
 
 service UserService {
-  rpc Create(CreateRequest) returns (dd4.common.User) {}
+  rpc Create(dd4.common.User) returns (dd4.common.User) {}
 
   rpc Get(GetRequest) returns (dd4.common.User) {}
 
@@ -47,10 +47,6 @@ message DataFile {
   string name = 2;
   string type = 3;
   int32 size = 4;
-}
-
-message CreateRequest {
-  google.protobuf.Any entity = 1;
 }
 
 message GetRequest {
@@ -97,6 +93,7 @@ message BatchDeleteRequest {
 }
 
 message BatchDeleteResponse {
+  // The number of items that were deleted.
   int32 deleted = 1;
 }
 
