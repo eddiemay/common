@@ -8,6 +8,7 @@ import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.util.ProtoUtil;
+import com.google.protobuf.Any;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.GeneratedMessageV3;
 import javax.servlet.http.HttpServletResponse;
@@ -40,7 +41,12 @@ public class  JSONServiceImpl<T extends GeneratedMessageV3> implements JSONServi
 			case "list":
 				return toJSON(protoService.list(toProto(ListRequest.getDefaultInstance(), jsonRequest)));
 			case "update":
-				return toJSON(protoService.update(toProto(UpdateRequest.getDefaultInstance(), jsonRequest)));
+				return toJSON(protoService.update(
+						UpdateRequest.newBuilder()
+								.setId(jsonRequest.getLong("id"))
+								.setEntity(Any.pack(toProto(type, jsonRequest.getJSONObject("entity"))))
+								.setUpdateMask(toProto(FIELD_MASK, jsonRequest.getJSONObject("fieldMask")))
+								.build()));
 			case "delete":
 				return toJSON(protoService.delete(jsonRequest.getInt("id")));
 			case "batchDelete":
