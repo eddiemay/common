@@ -45,7 +45,7 @@ public class  JSONServiceImpl<T extends GeneratedMessageV3> implements JSONServi
 						UpdateRequest.newBuilder()
 								.setId(jsonRequest.getLong("id"))
 								.setEntity(Any.pack(toProto(type, jsonRequest.getJSONObject("entity"))))
-								.setUpdateMask(toProto(FIELD_MASK, jsonRequest.getJSONObject("fieldMask")))
+								.setUpdateMask(FieldMask.newBuilder().addPaths(jsonRequest.getString("updateMask")))
 								.build()));
 			case "delete":
 				return toJSON(protoService.delete(jsonRequest.getInt("id")));
