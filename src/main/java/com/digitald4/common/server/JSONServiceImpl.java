@@ -8,11 +8,13 @@ import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.util.ProtoUtil;
+import com.google.protobuf.FieldMask;
 import com.google.protobuf.GeneratedMessageV3;
 import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
 public class  JSONServiceImpl<T extends GeneratedMessageV3> implements JSONService {
+	private static final FieldMask FIELD_MASK = FieldMask.getDefaultInstance();
 	private final T type;
 	private final ProtoService<T> protoService;
 	private final boolean requiresLoginDefault;

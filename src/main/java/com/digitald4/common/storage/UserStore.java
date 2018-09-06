@@ -4,16 +4,18 @@ import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.util.Calculate;
-import com.digitald4.common.util.Provider;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class UserStore extends GenericStore<User> {
 	private final Clock clock;
 
+	@Inject
 	public UserStore(Provider<DAO> daoProvider, Clock clock) {
 		super(User.class, daoProvider);
 		this.clock = clock;

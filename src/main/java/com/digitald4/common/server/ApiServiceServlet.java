@@ -16,7 +16,6 @@ import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Encryptor;
 import com.digitald4.common.util.Pair;
-import com.digitald4.common.util.Provider;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -25,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.inject.Provider;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -45,7 +45,6 @@ public class ApiServiceServlet extends HttpServlet {
 	private Emailer emailer;
 	private Encryptor encryptor;
 	protected final Provider<DAO> daoProvider = () -> dao;
-	private final Provider<Encryptor> encryptorProvider = () -> encryptor;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
 	protected final UserService userService;
@@ -58,10 +57,7 @@ public class ApiServiceServlet extends HttpServlet {
 	public ApiServiceServlet() {
 		Clock clock = Clock.systemUTC();
 
-		idTokenResolver = new IdTokenResolverDD4Impl(
-				new GenericStore<>(ActiveSession.class, daoProvider),
-				encryptorProvider,
-				clock);
+		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<>(ActiveSession.class, daoProvider), clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
 		addService("generalData",
@@ -79,7 +75,6 @@ public class ApiServiceServlet extends HttpServlet {
 	public void init() {
 		ServletContext sc = getServletContext();
 		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
-		// encryptor = new Encryptor(sc.getInitParameter("id_token_key"));
 		if (serverType == ServerType.TOMCAT) {
 			// We use Tomcat with MySQL, so if Tomcat, MySQL
 			dao = new DAOSQLImpl(

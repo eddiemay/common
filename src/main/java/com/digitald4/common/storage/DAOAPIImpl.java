@@ -23,12 +23,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 public class DAOAPIImpl implements DAO {
 	private static final String API_PAYLOAD = "json=%s";
 	private final APIConnector apiConnector;
 	private final Parser jsonParser;
 
+	@Inject
 	public DAOAPIImpl(APIConnector apiConnector) {
 		this.apiConnector = apiConnector;
 		jsonParser = JsonFormat.parser();

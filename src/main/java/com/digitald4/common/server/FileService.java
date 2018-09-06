@@ -4,7 +4,9 @@ import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4UIProtos;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.ProtoUtil;
-import com.digitald4.common.util.Provider;
+import com.google.api.server.spi.config.Api;
+import com.google.api.server.spi.config.ApiIssuer;
+import com.google.api.server.spi.config.ApiNamespace;
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,6 +14,8 @@ import java.io.InputStream;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +25,26 @@ import org.json.JSONObject;
 /**
  * Service for handling the uploading, retrieving, replacing and deleting of files.
  */
+@Api(
+		name = "file",
+		version = "v1",
+		namespace =
+		@ApiNamespace(
+				ownerDomain = "nbastats.digitald4.com",
+				ownerName = "nbastats.digitald4.com"
+		),
+		// [START_EXCLUDE]
+		issuers = {
+				@ApiIssuer(
+						name = "firebase",
+						issuer = "https://securetoken.google.com/fantasy-predictor",
+						jwksUri =
+								"https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system"
+										+ ".gserviceaccount.com"
+				)
+		}
+		// [END_EXCLUDE]
+)
 public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile> {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
@@ -28,6 +52,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 	private final Provider<HttpServletRequest> requestProvider;
 	private final Provider<HttpServletResponse> responseProvider;
 
+	@Inject
 	FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
 							Provider<HttpServletResponse> responseProvider) {
 		super(DD4UIProtos.DataFile.class, dataFileStore);

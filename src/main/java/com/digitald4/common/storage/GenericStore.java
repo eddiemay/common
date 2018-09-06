@@ -1,25 +1,22 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.util.Provider;
+import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.Message;
-import java.lang.reflect.InvocationTargetException;
 import java.util.function.UnaryOperator;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class GenericStore<T extends Message> implements Store<T> {
 
 	private final Class<T> c;
 	private final T type;
 	private final Provider<DAO> daoProvider;
-	
+
+	@Inject
 	public GenericStore(Class<T> c, Provider<DAO> daoProvider) {
-		try {
-			this.c = c;
-			this.type = (T) c.getMethod("getDefaultInstance").invoke(null);
-		} catch (IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-			throw new RuntimeException(e);
-		}
+		this.c = c;
+		this.type = ProtoUtil.getDefaultInstance(c);
 		this.daoProvider = daoProvider;
 	}
 	

@@ -3,14 +3,16 @@ package com.digitald4.common.storage;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
-import com.digitald4.common.util.Provider;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class GeneralDataStore extends GenericStore<GeneralData> {
 
 	private static final Query.Filter BY_GROUP_ID = Filter.newBuilder()
 			.setColumn("GROUP_ID").setOperator("=").build();
 
+	@Inject
 	public GeneralDataStore(Provider<DAO> daoProvider) {
 		super(GeneralData.class, daoProvider);
 	}

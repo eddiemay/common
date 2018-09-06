@@ -1,5 +1,7 @@
 package com.digitald4.common.util;
 
+import javax.inject.Provider;
+
 public class ProviderThreadLocalImpl<T> implements Provider<T> {
 	public final ThreadLocal<T> userThreadLocal = new ThreadLocal<>();
 	

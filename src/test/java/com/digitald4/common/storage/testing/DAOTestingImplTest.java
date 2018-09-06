@@ -9,7 +9,7 @@ import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.util.Provider;
+import javax.inject.Provider;
 import org.junit.Test;
 
 public class DAOTestingImplTest {

@@ -6,23 +6,21 @@ import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.Calculate;
-import com.digitald4.common.util.Encryptor;
-import com.digitald4.common.util.Provider;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
 
 public class IdTokenResolverDD4Impl implements IdTokenResolver {
 	private static final long SESSION_TIME = 30 * Calculate.ONE_MINUTE;
 	private final Store<ActiveSession> activeSessionStore;
-	private final Provider<Encryptor> encryptorProvider;
 	private final Clock clock;
 	private final Map<String, ActiveSession> activeSessions = new HashMap<>();
 
-	IdTokenResolverDD4Impl(Store<ActiveSession> activeSessionStore, Provider<Encryptor> encryptorProvider, Clock clock) {
+	@Inject
+	IdTokenResolverDD4Impl(Store<ActiveSession> activeSessionStore, Clock clock) {
 		this.activeSessionStore = activeSessionStore;
-		this.encryptorProvider = encryptorProvider;
 		this.clock = clock;
 	}
 

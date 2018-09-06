@@ -8,6 +8,7 @@ import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.Named;
 import com.google.protobuf.Empty;
+import com.google.protobuf.FieldMask;
 
 public interface ProtoService<T> {
 

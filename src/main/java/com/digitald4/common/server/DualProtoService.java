@@ -17,6 +17,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Empty;
+import com.google.protobuf.FieldMask;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.FieldMaskUtil;
@@ -120,11 +121,11 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public T update(final UpdateRequest request) {
-		return getConverter().apply(store.update(request.getId(), internal -> {
+	public T update(UpdateRequest updateRequest) {
+		return getConverter().apply(store.update(updateRequest.getId(), internal -> {
 			Message.Builder builder = internal.toBuilder();
-			T t = ProtoUtil.unpack(cls, request.getEntity());
-			FieldMaskUtil.merge(request.getUpdateMask(), getReverseConverter().apply(t), builder, MERGE_OPTIONS);
+			FieldMaskUtil.merge(updateRequest.getUpdateMask(),
+					getReverseConverter().apply(ProtoUtil.unpack(cls, updateRequest.getEntity())), builder, MERGE_OPTIONS);
 			return (I) builder.build();
 		}));
 	}
