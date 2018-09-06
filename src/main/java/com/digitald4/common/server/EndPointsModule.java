@@ -24,10 +24,9 @@ import javax.servlet.http.HttpServletResponse;
 public abstract class EndPointsModule extends EndpointsModule {
 	protected static final String API_URL_PATTERN = "/_ah/api/*";
 
-	protected final Provider<DAO> daoProvider = DAOCloudDS::new;
+	protected final DAO dao = new DAOCloudDS();
+	protected final Provider<DAO> daoProvider = () -> dao;
 	private final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
-	// private final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
-	// private final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
 
 	@Override
 	public void configureServlets() {
