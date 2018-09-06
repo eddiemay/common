@@ -66,6 +66,11 @@
       <version>3.3.0</version>
     </dependency>
     <dependency>
+      <groupId>com.hubspot.jackson</groupId>
+      <artifactId>jackson-datatype-protobuf</artifactId>
+      <version>0.9.10-jackson2.9-proto3</version>
+  </dependency>
+    <dependency>
       <groupId>com.itextpdf</groupId>
       <artifactId>itextpdf</artifactId>
       <version>5.5.11</version>
