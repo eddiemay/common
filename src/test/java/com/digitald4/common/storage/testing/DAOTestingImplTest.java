@@ -35,8 +35,8 @@ public class DAOTestingImplTest {
 
 		QueryResult<User> users = userStore.list(Query.getDefaultInstance());
 		assertEquals(1, users.getTotalSize());
-		assertEquals(1, users.size());
-		assertEquals(user, users.get(0));
+		assertEquals(1, users.getResults().size());
+		assertEquals(user, users.getResults().get(0));
 
 		user = userStore.update(user.getId(), user_ -> user_.toBuilder()
 				.setEmail("eddiemay1999@yahoo.com")
@@ -57,15 +57,15 @@ public class DAOTestingImplTest {
 
 		users = userStore.list(Query.getDefaultInstance());
 		assertEquals(2, users.getTotalSize());
-		assertEquals(2, users.size());
-		assertEquals(user, users.get(0));
-		assertEquals(user2, users.get(1));
+		assertEquals(2, users.getResults().size());
+		assertEquals(user, users.getResults().get(0));
+		assertEquals(user2, users.getResults().get(1));
 
 		users = userStore.list(Query.newBuilder()
 				.addFilter(Filter.newBuilder().setColumn("type_id").setValue("34"))
 				.build());
 		assertEquals(1, users.getTotalSize());
-		assertEquals(1, users.size());
-		assertEquals(user2, users.get(0));
+		assertEquals(1, users.getResults().size());
+		assertEquals(user2, users.getResults().get(0));
 	}
 }

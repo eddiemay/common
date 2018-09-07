@@ -42,7 +42,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		if (activeSession == null) {
 			List<ActiveSession> list = activeSessionStore.list(Query.newBuilder()
 					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
-					.build());
+					.build()).getResults();
 			if (list.isEmpty()) {
 				return null;
 			}
@@ -80,7 +80,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		if (activeSession == null) {
 			List<ActiveSession> list = activeSessionStore.list(Query.newBuilder()
 					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
-					.build());
+					.build()).getResults();
 			if (!list.isEmpty()) {
 				activeSession = list.get(0);
 			}

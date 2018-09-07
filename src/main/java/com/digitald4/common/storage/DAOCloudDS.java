@@ -134,7 +134,7 @@ public class DAOCloudDS implements DAO {
 		return new RetryableFunction<DD4Protos.Query, Integer>() {
 			@Override
 			public Integer apply(DD4Protos.Query request) {
-				QueryResult<T> results = list(c, request);
+				List<T> results = list(c, request).getResults();
 				if (results.size() > 0) {
 					FieldDescriptor idField = ProtoUtil.getDefaultInstance(c)
 							.getDescriptorForType().findFieldByName("id");

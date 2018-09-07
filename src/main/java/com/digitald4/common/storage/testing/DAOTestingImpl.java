@@ -4,12 +4,12 @@ import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +70,7 @@ public class DAOTestingImpl implements DAO {
 			}
 			return new QueryResult<>(results, results.size() + query.getOffset());
 		}
-		return new QueryResult<>();
+		return new QueryResult<>(new ArrayList<>(), 0);
 	}
 
 	@Override
@@ -96,7 +96,7 @@ public class DAOTestingImpl implements DAO {
 	public <T extends Message> int delete(Class<T> c, Query query) {
 		Map<Long, ? extends Message> table = tables.get(c);
 		if (table != null) {
-			QueryResult<T> results = list(c, query);
+			List<T> results = list(c, query).getResults();
 			if (results.size() > 0) {
 				FieldDescriptor idField = ProtoUtil.getDefaultInstance(c)
 						.getDescriptorForType().findFieldByName("id");

@@ -41,7 +41,7 @@ public class UserStore extends GenericStore<User> {
 	public QueryResult<User> list(Query query) {
 		QueryResult<User> result = super.list(query);
 		return new QueryResult<>(
-				result.stream()
+				result.getResults().stream()
 						.map(user -> user.toBuilder().clearPassword().build())
 						.collect(Collectors.toList()),
 				result.getTotalSize());
@@ -69,7 +69,7 @@ public class UserStore extends GenericStore<User> {
 						.setColumn("password")
 						.setOperator("=")
 						.setValue(encodePassword(password)))
-				.build());
+				.build()).getResults();
 		if (users.isEmpty()) {
 			return null;
 		}

@@ -17,7 +17,7 @@ public class GeneralDataStore extends GenericStore<GeneralData> {
 		super(GeneralData.class, daoProvider);
 	}
 
-	public List<GeneralData> listByGroupId(long groupId) {
+	public QueryResult<GeneralData> listByGroupId(long groupId) {
 		return super.list(Query.newBuilder()
 				.addFilter(BY_GROUP_ID.toBuilder().setValue(String.valueOf(groupId)))
 				.build());

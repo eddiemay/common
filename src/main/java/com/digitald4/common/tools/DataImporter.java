@@ -32,7 +32,7 @@ public class DataImporter {
 
 	public <T extends GeneratedMessageV3> void runFor(Class<T> c, Query query) throws IOException {
 		String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s";
-		List<T> results = dao.list(c, query);
+		List<T> results = dao.list(c, query).getResults();
 		if (!results.isEmpty()) {
 			T type = results.get(0);
 			JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(type.getDescriptorForType()).build();

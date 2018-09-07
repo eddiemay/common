@@ -31,7 +31,7 @@ public class GenDataCompiler {
 
 	public void compile() {
 		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, Query.getDefaultInstance())
-				.stream()
+				.getResults().stream()
 				.collect(Collectors.groupingBy(GeneralData::getGroupId));
 
 		StringBuilder javaOut = new StringBuilder(String.format(JAVA_DECLARATION, project));

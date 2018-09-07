@@ -15,7 +15,7 @@ import org.junit.Test;
 public class DAOProtoSQLImplTest {
 
 	@Test @Ignore
-	public void testDateQueryWithDatabase() throws Exception {
+	public void testDateQueryWithDatabase() {
 		DAOSQLImpl dao = new DAOSQLImpl(new DBConnectorThreadPoolImpl("com.mysql.jdbc.Driver",
 						"jdbc:mysql://localhost/cpr?autoReconnect=true", "dd4_user", "getSchooled85"));
 		User user = User.newBuilder()
@@ -38,7 +38,7 @@ public class DAOProtoSQLImplTest {
 							.setOperator("<")
 							.setValue(String.valueOf(new DateTime("2005-07-11").getMillis()))
 							.build())
-					.build());
+					.build()).getResults();
 			assertEquals(1, users.size());
 			DateTime lastLogin = new DateTime(users.get(0).getLastLogin());
 			assertEquals(2005, lastLogin.getYear());
