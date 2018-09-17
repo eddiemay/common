@@ -1,5 +1,6 @@
 package com.digitald4.common.server;
 
+import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
 import com.google.protobuf.GeneratedMessageV3;
 import java.util.function.UnaryOperator;
@@ -10,6 +11,11 @@ public class SingleProtoService<T extends GeneratedMessageV3> extends DualProtoS
 
 	public SingleProtoService(Store<T> store) {
 		super(store.getType(), store);
+	}
+
+	@Override
+	public QueryResult<T> toListResponse(QueryResult<T> results) {
+		return results;
 	}
 
 	@Override

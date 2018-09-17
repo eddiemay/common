@@ -4,17 +4,19 @@ import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.DAOSQLImpl;
+import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class DataImporter {
 	private final APIConnector apiConnector;
@@ -47,18 +49,20 @@ public class DataImporter {
 		}
 	}
 
-	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c) throws IOException {
+	public <T extends GeneratedMessageV3> QueryResult<T> export(Class<T> c) throws IOException {
 		return export(c, ListRequest.getDefaultInstance());
 	}
 
-	public <T extends GeneratedMessageV3> ListResponse export(Class<T> c, ListRequest request) throws IOException {
+	public <T extends GeneratedMessageV3> QueryResult<T> export(Class<T> c, ListRequest request) throws IOException {
 		String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s";
-		String response = apiConnector.sendGet(url);
-		ListResponse.Builder builder = ListResponse.newBuilder();
+		JSONObject response = new JSONObject(apiConnector.sendGet(url));
+		JSONArray resultArray = response.getJSONArray("result");
 		T type = ProtoUtil.getDefaultInstance(c);
-		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(type.getDescriptorForType()).build();
-		JsonFormat.parser().usingTypeRegistry(registry).merge(response, builder);
-		return builder.build();
+		List<T> results = new ArrayList<>(resultArray.length());
+		for (int x = 0; x < resultArray.length(); x++) {
+			results.add(ProtoUtil.merge(resultArray.getJSONObject(x), type));
+		}
+		return new QueryResult<>(results, response.getInt("totalSize"));
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -70,7 +74,7 @@ public class DataImporter {
 		);
 		// dataImporter.runFor(GeneralData.class);
 		dataImporter.export(GeneralData.class)
-				.getResultList()
-				.forEach(any -> System.out.println(ProtoUtil.unpack(GeneralData.class, any)));
+				.getResults()
+				.forEach(System.out::println);
 	}
 }

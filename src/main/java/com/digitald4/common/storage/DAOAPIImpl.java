@@ -3,7 +3,6 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
-import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.util.FormatText;
@@ -24,6 +23,8 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class DAOAPIImpl implements DAO {
 	private static final String API_PAYLOAD = "json=%s";
@@ -83,17 +84,15 @@ public class DAOAPIImpl implements DAO {
 			if (query.getOffset() > 0) {
 				url.append("&pageToken").append("=").append(query.getOffset());
 			}
-			String response = apiConnector.sendGet(url.toString());
-			ListResponse.Builder builder = ListResponse.newBuilder();
+			JSONObject response = new JSONObject(apiConnector.sendGet(url.toString()));
+
 			T type = ProtoUtil.getDefaultInstance(c);
-			JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(type.getDescriptorForType()).build();
-			JsonFormat.parser().usingTypeRegistry(registry).merge(response, builder);
-			ListResponse listResponse = builder.build();
-			return new QueryResult<>(
-					listResponse.getResultList().stream()
-							.map(any -> ProtoUtil.unpack(c, any))
-							.collect(Collectors.toList()),
-					listResponse.getTotalSize());
+			JSONArray resultArray = response.getJSONArray("result");
+			List<T> results = new ArrayList<>(resultArray.length());
+			for (int x = 0; x < resultArray.length(); x++) {
+				results.add(ProtoUtil.merge(resultArray.getJSONObject(x), type));
+			}
+			return new QueryResult<>(results, response.getInt("totalSize"));
 		} catch (IOException ioe) {
 			throw new DD4StorageException(ioe);
 		}

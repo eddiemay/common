@@ -15,16 +15,17 @@
 -->
 <project>
   <modelVersion>4.0.0</modelVersion>
-  <version>1.0</version>
 
   <groupId>com.digitald4</groupId>
   <artifactId>dd4-common</artifactId>
+  <version>1.0</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
     <endpoints.framework.version>2.1.2</endpoints.framework.version>
+    <endpoints.management.version>1.0.10</endpoints.management.version>
   </properties>
 
   <dependencies>
@@ -53,12 +54,12 @@
     <dependency>
       <groupId>com.google.endpoints</groupId>
       <artifactId>endpoints-management-control</artifactId>
-      <version>1.0.10</version>
+      <version>${endpoints.management.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.endpoints</groupId>
       <artifactId>endpoints-management-control-appengine</artifactId>
-      <version>1.0.10</version>
+      <version>${endpoints.management.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -70,11 +71,6 @@
       <artifactId>protobuf-java</artifactId>
       <version>3.3.0</version>
     </dependency>
-    <dependency>
-      <groupId>com.hubspot.jackson</groupId>
-      <artifactId>jackson-datatype-protobuf</artifactId>
-      <version>0.9.10-jackson2.9-proto3</version>
-  </dependency>
     <dependency>
       <groupId>com.itextpdf</groupId>
       <artifactId>itextpdf</artifactId>

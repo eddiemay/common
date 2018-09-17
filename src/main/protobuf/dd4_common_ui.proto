@@ -29,11 +29,6 @@ message ListRequest {
   int32 page_token = 4;
 }
 
-message ListResponse {
-  repeated google.protobuf.Any result = 1;
-  int32 total_size = 2;
-}
-
 message UpdateRequest {
   int64 id = 1;
   google.protobuf.Any entity = 2;

@@ -5,7 +5,6 @@ import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.ListResponse;
 import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.storage.QueryResult;
@@ -116,7 +115,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
-	public ListResponse list(ListRequest request) {
+	public QueryResult<T> list(ListRequest request) {
 		return toListResponse(store.list(toQuery(request)));
 	}
 
@@ -144,14 +143,12 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 				.build();
 	}
 
-	protected ListResponse toListResponse(QueryResult<I> queryResult) {
-		return ListResponse.newBuilder()
-				.addAllResult(queryResult.getResults().stream()
+	protected QueryResult<T> toListResponse(QueryResult<I> queryResult) {
+		return new QueryResult<>(
+				queryResult.getResults().stream()
 						.map(getConverter())
-						.map(Any::pack)
-						.collect(Collectors.toList()))
-				.setTotalSize(queryResult.getTotalSize())
-				.build();
+						.collect(Collectors.toList()),
+				queryResult.getTotalSize());
 	}
 
 	private Query toQuery(ListRequest request) {

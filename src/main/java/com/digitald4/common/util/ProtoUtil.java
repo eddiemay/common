@@ -1,16 +1,14 @@
 package com.digitald4.common.util;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.storage.QueryResult;
 import com.google.protobuf.Any;
-import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
-import com.google.protobuf.util.JsonFormat.TypeRegistry;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,10 +22,10 @@ public class ProtoUtil {
 
 	private ProtoUtil() {}
 
-	public static void init(Descriptor... descriptors) {
-		TypeRegistry registry = TypeRegistry.newBuilder().add(Arrays.stream(descriptors).collect(Collectors.toList())).build();
-		parser = parser.usingTypeRegistry(registry);
-		printer = printer.usingTypeRegistry(registry);
+	public static <T extends Message> T merge(JSONObject json, T type) {
+		T.Builder builder = type.toBuilder();
+		merge(json.toString(), builder);
+		return (T) builder.build();
 	}
 
 	public static void merge(JSONObject json, Message.Builder builder) {
@@ -67,6 +65,11 @@ public class ProtoUtil {
 
 	public static JSONObject toJSON(boolean bool) {
 		return new JSONObject(bool);
+	}
+
+	public static <T extends Message> JSONObject toJSON(QueryResult<T> queryResult) {
+		return new JSONObject().put("totalSize", queryResult.getTotalSize())
+				.put("result", queryResult.getResults().stream().map(ProtoUtil::toJSON).collect(Collectors.toList()));
 	}
 
 	public static <T extends Message> T unpack(Class<T> c, Any any) {
