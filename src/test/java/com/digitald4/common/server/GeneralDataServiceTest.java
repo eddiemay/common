@@ -62,11 +62,12 @@ public class GeneralDataServiceTest {
 		assertTrue(gd.getId() > 0);
 		assertEquals("Test", gd.getName());
 
-		gd = protoService.update(UpdateRequest.newBuilder()
-				.setId(gd.getId())
-				.setEntity(Any.pack(GeneralData.newBuilder().setName("Test2").build()))
-				.setUpdateMask(FieldMask.newBuilder().addPaths("name"))
-				.build());
+		gd = protoService.update(
+				gd.getId(),
+				UpdateRequest.newBuilder()
+						.setEntity(Any.pack(GeneralData.newBuilder().setName("Test2").build()))
+						.setUpdateMask(FieldMask.newBuilder().addPaths("name"))
+						.build());
 		assertTrue(gd.getId() > 0);
 		assertEquals("Test2", gd.getName());
 

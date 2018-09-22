@@ -42,8 +42,8 @@ public class  JSONServiceImpl<T extends GeneratedMessageV3> implements JSONServi
 				return toJSON(protoService.list(toProto(ListRequest.getDefaultInstance(), jsonRequest)));
 			case "update":
 				return toJSON(protoService.update(
+						jsonRequest.getLong("id"),
 						UpdateRequest.newBuilder()
-								.setId(jsonRequest.getLong("id"))
 								.setEntity(Any.pack(toProto(type, jsonRequest.getJSONObject("entity"))))
 								.setUpdateMask(FieldMask.newBuilder().addPaths(jsonRequest.getString("updateMask")))
 								.build()));

@@ -13,6 +13,9 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: javax.servlet:javax.servlet-api:3.1.0" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.8.11" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.8.0" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.8.10" level="project" />
     <orderEntry type="library" name="Maven: com.google.cloud:google-cloud-datastore:1.2.1" level="project" />
     <orderEntry type="library" name="Maven: com.google.cloud:google-cloud-core:1.2.1" level="project" />
     <orderEntry type="library" name="Maven: org.json:json:20160810" level="project" />
@@ -48,9 +51,6 @@
     <orderEntry type="library" name="Maven: io.grpc:grpc-protobuf:1.4.0" level="project" />
     <orderEntry type="library" name="Maven: io.grpc:grpc-protobuf-lite:1.4.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.endpoints:endpoints-framework:2.1.2" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.9.6" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.9.6" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.9.6" level="project" />
     <orderEntry type="library" name="Maven: com.google.appengine:appengine-api-1.0-sdk:1.9.60" level="project" />
     <orderEntry type="library" name="Maven: com.google.http-client:google-http-client-jackson2:1.23.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.api-client:google-api-client:1.23.0" level="project" />
@@ -79,6 +79,7 @@
     <orderEntry type="library" name="Maven: javax.inject:javax.inject:1" level="project" />
     <orderEntry type="library" name="Maven: aopalliance:aopalliance:1.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.inject.extensions:guice-servlet:4.0" level="project" />
+    <orderEntry type="library" name="Maven: com.google.endpoints:endpoints-management-control-appengine:1.0.10" level="project" />
     <orderEntry type="library" name="Maven: com.google.endpoints:endpoints-management-control:1.0.10" level="project" />
     <orderEntry type="library" name="Maven: javax.servlet:servlet-api:2.5" level="project" />
     <orderEntry type="library" name="Maven: com.google.endpoints:endpoints-management-api-client:1.0.10" level="project" />
@@ -86,9 +87,8 @@
     <orderEntry type="library" name="Maven: com.google.endpoints:endpoints-management-config:1.0.10" level="project" />
     <orderEntry type="library" name="Maven: com.google.apis:google-api-services-servicemanagement:v1-rev14-1.22.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.endpoints:endpoints-management-protos:1.0.10" level="project" />
-    <orderEntry type="library" name="Maven: com.google.endpoints:endpoints-management-control-appengine:1.0.10" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava:21.0" level="project" />
-    <orderEntry type="library" name="Maven: com.google.protobuf:protobuf-java:3.3.0" level="project" />
+    <orderEntry type="library" name="Maven: com.google.protobuf:protobuf-java:3.6.1" level="project" />
     <orderEntry type="library" name="Maven: com.itextpdf:itextpdf:5.5.11" level="project" />
     <orderEntry type="library" name="Maven: commons-dbcp:commons-dbcp:1.4" level="project" />
     <orderEntry type="library" name="Maven: commons-pool:commons-pool:1.6" level="project" />

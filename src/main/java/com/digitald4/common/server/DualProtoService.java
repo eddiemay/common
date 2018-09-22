@@ -11,12 +11,10 @@ import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.Named;
-import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Empty;
-import com.google.protobuf.FieldMask;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.FieldMaskUtil;
@@ -105,23 +103,27 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "_")
 	public T create(T entity) {
 		return getConverter().apply(store.create(getReverseConverter().apply(entity)));
 	}
 
 	@Override
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}")
 	public T get(@Named("id") long id) {
 		return getConverter().apply(store.get(id));
 	}
 
 	@Override
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "_")
 	public QueryResult<T> list(ListRequest request) {
 		return toListResponse(store.list(toQuery(request)));
 	}
 
 	@Override
-	public T update(UpdateRequest updateRequest) {
-		return getConverter().apply(store.update(updateRequest.getId(), internal -> {
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
+	public T update(@Named("id") long id, UpdateRequest updateRequest) {
+		return getConverter().apply(store.update(id, internal -> {
 			Message.Builder builder = internal.toBuilder();
 			FieldMaskUtil.merge(updateRequest.getUpdateMask(),
 					getReverseConverter().apply(ProtoUtil.unpack(cls, updateRequest.getEntity())), builder, MERGE_OPTIONS);
@@ -130,6 +132,7 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	@Override
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "{id}")
 	public Empty delete(@Named("id") long id) {
 		store.delete(id);
 		return Empty.getDefaultInstance();
@@ -152,29 +155,31 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 	}
 
 	private Query toQuery(ListRequest request) {
-		Query.Builder builder = Query.newBuilder()
+		Query.Builder query = Query.newBuilder()
 				.setLimit(request.getPageSize())
-				.setOffset(request.getPageToken())
-				.addAllFilter(request.getFilterList().stream()
-						.map(filter -> Query.Filter.newBuilder()
-								.setColumn(filter.getColumn())
-								.setOperator(filter.getOperator())
-								.setValue(filter.getValue())
-								.build())
-						.collect(Collectors.toList()));
+				.setOffset(request.getPageToken());
+		if (!request.getFilter().isEmpty()) {
+			query.addAllFilter(Arrays.stream(request.getFilter().split(","))
+					.map(filter -> Query.Filter.newBuilder()
+							.setColumn(filter.split(" ")[0])
+							.setOperator(filter.split(" ")[1])
+							.setValue(filter.split(" ")[2])
+							.build())
+					.collect(Collectors.toList()));
+		}
 		if (!request.getOrderBy().isEmpty()) {
-			builder.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
+			query.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
 					.map(orderBy -> OrderBy.newBuilder()
 							.setColumn(orderBy.split(" ")[0])
 							.setDesc(orderBy.endsWith("DESC"))
 							.build())
 					.collect(Collectors.toList()));
 		}
-		return builder.build();
+		return query.build();
 	}
 
 	private Query toQuery(BatchDeleteRequest request) {
-		Query.Builder builder = Query.newBuilder()
+		Query.Builder query = Query.newBuilder()
 				.setLimit(request.getPageSize())
 				.setOffset(request.getPageToken())
 				.addAllFilter(request.getFilterList().stream()
@@ -185,13 +190,13 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 								.build())
 						.collect(Collectors.toList()));
 		if (!request.getOrderBy().isEmpty()) {
-			builder.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
+			query.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
 					.map(orderBy -> OrderBy.newBuilder()
 							.setColumn(orderBy.split(" ")[0])
 							.setDesc(orderBy.endsWith("DESC"))
 							.build())
 					.collect(Collectors.toList()));
 		}
-		return builder.build();
+		return query.build();
 	}
 }

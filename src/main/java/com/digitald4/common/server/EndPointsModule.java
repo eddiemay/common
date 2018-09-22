@@ -8,16 +8,10 @@ import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.api.control.ServiceManagementConfigFilter;
 import com.google.api.control.extensions.appengine.GoogleAppEngineControlFilter;
-import com.google.api.server.spi.ConfiguredObjectMapper;
 import com.google.api.server.spi.guice.EndpointsModule;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.TypeLiteral;
-import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,16 +28,6 @@ public abstract class EndPointsModule extends EndpointsModule {
 	@Override
 	public void configureServlets() {
 		super.configureServlets();
-
-		ObjectWriter objectWriter = ConfiguredObjectMapper.builder()
-				// .apiSerializationConfig(serializationConfig)
-				.addRegisteredModules(ImmutableList.of(new ProtobufModule()))
-				.build()
-				.writer();
-
-		new ObjectMapper()
-				.setPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CAMEL_CASE)
-				.registerModule(new ProtobufModule());
 
 		bind(ServiceManagementConfigFilter.class).in(Singleton.class);
 		filter(API_URL_PATTERN).through(ServiceManagementConfigFilter.class);

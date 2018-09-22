@@ -18,12 +18,7 @@ message DataFile {
 }
 
 message ListRequest {
-	message Filter {
-		string column = 1;
-    string operator = 2;
-    string value = 3;
-	}
-	repeated Filter filter = 1;
+	string filter = 1;
   string order_by = 2;
   int32 page_size = 3;
   int32 page_token = 4;

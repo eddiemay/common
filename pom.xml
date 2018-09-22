@@ -26,6 +26,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <endpoints.framework.version>2.1.2</endpoints.framework.version>
     <endpoints.management.version>1.0.10</endpoints.management.version>
+    <google.protobuf.version>3.6.1</google.protobuf.version>
   </properties>
 
   <dependencies>
@@ -35,6 +36,11 @@
       <artifactId>javax.servlet-api</artifactId>
       <version>3.1.0</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.8.11</version>
     </dependency>
     <dependency>
       <groupId>com.google.cloud</groupId>
@@ -53,11 +59,6 @@
     </dependency>
     <dependency>
       <groupId>com.google.endpoints</groupId>
-      <artifactId>endpoints-management-control</artifactId>
-      <version>${endpoints.management.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.endpoints</groupId>
       <artifactId>endpoints-management-control-appengine</artifactId>
       <version>${endpoints.management.version}</version>
     </dependency>
@@ -69,7 +70,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.3.0</version>
+      <version>${google.protobuf.version}</version>
     </dependency>
     <dependency>
       <groupId>com.itextpdf</groupId>
@@ -132,15 +133,11 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <protocArtifact>com.google.protobuf:protoc:3.3.0</protocArtifact>
+              <protocArtifact>com.google.protobuf:protoc:${google.protobuf.version}</protocArtifact>
               <includeStdTypes>true</includeStdTypes>
               <outputTargets>
                 <outputTarget>
                   <type>java</type>
-                </outputTarget>
-                <outputTarget>
-                  <type>grpc-java</type>
-                  <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.0.1</pluginArtifact>
                 </outputTarget>
               </outputTargets>
             </configuration>

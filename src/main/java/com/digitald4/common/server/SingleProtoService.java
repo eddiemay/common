@@ -14,7 +14,7 @@ public class SingleProtoService<T extends GeneratedMessageV3> extends DualProtoS
 	}
 
 	@Override
-	public QueryResult<T> toListResponse(QueryResult<T> results) {
+	protected QueryResult<T> toListResponse(QueryResult<T> results) {
 		return results;
 	}
 
