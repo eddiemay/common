@@ -1,7 +1,6 @@
 package com.digitald4.common.report;
 
 import com.digitald4.common.proto.DD4Protos.Company;
-import com.google.inject.Provider;
 import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -14,6 +13,7 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 import java.io.ByteArrayOutputStream;
+import javax.inject.Provider;
 
 public abstract class PDFReport {
 	private Image logo;

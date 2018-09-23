@@ -147,7 +147,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		private final FileService fileService;
 
 		FileJSONService(FileService fileService) {
-			super(DD4UIProtos.DataFile.class, fileService, true);
+			super(fileService, true);
 			this.fileService = fileService;
 		}
 

@@ -6,22 +6,18 @@ import static com.digitald4.common.util.ProtoUtil.toProto;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
-import com.digitald4.common.util.ProtoUtil;
-import com.google.protobuf.Any;
 import com.google.protobuf.FieldMask;
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.Message;
 import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
-public class  JSONServiceImpl<T extends GeneratedMessageV3> implements JSONService {
-	private static final FieldMask FIELD_MASK = FieldMask.getDefaultInstance();
+public class  JSONServiceImpl<T extends Message> implements JSONService {
 	private final T type;
 	private final ProtoService<T> protoService;
 	private final boolean requiresLoginDefault;
 
-	public JSONServiceImpl(Class<T> cls, ProtoService<T> protoService, boolean requiresLoginDefault) {
-		this.type = ProtoUtil.getDefaultInstance(cls);
+	public JSONServiceImpl(DualProtoService<T, ?> protoService, boolean requiresLoginDefault) {
+		this.type = protoService.getType();
 		this.protoService = protoService;
 		this.requiresLoginDefault = requiresLoginDefault;
 	}
@@ -43,10 +39,9 @@ public class  JSONServiceImpl<T extends GeneratedMessageV3> implements JSONServi
 			case "update":
 				return toJSON(protoService.update(
 						jsonRequest.getLong("id"),
-						UpdateRequest.newBuilder()
-								.setEntity(Any.pack(toProto(type, jsonRequest.getJSONObject("entity"))))
-								.setUpdateMask(FieldMask.newBuilder().addPaths(jsonRequest.getString("updateMask")))
-								.build()));
+						new UpdateRequest<>(
+								toProto(type, jsonRequest.getJSONObject("entity")),
+								FieldMask.newBuilder().addPaths(jsonRequest.getString("updateMask")).build())));
 			case "delete":
 				return toJSON(protoService.delete(jsonRequest.getInt("id")));
 			case "batchDelete":

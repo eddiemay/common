@@ -3,13 +3,12 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
-import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.server.APIConnector;
+import com.digitald4.common.server.UpdateRequest;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.util.RetryableFunction;
-import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.Message;
@@ -129,15 +128,11 @@ public class DAOAPIImpl implements DAO {
 				} else {
 					try {
 						String url = apiConnector.getApiUrl() + "/" + getResourceName(c) + "/" + id;
-						UpdateRequest request = UpdateRequest.newBuilder()
-								.setId(id)
-								.setEntity(Any.pack(updated))
-								.setUpdateMask(FieldMask.newBuilder()
-										.addAllPaths(modified.stream().map(FieldDescriptor::getName).collect(Collectors.toList())))
-								.build();
-						JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(updated.getDescriptorForType()).build();
-						Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
-						String json = apiConnector.send("POST", url, String.format(API_PAYLOAD, jsonPrinter.print(request)));
+						UpdateRequest request = new UpdateRequest<>(
+								updated,
+								FieldMask.newBuilder()
+										.addAllPaths(modified.stream().map(FieldDescriptor::getName).collect(Collectors.toList())).build());
+						String json = apiConnector.send("POST", url, String.format(API_PAYLOAD, request.toJSON()));
 						Message.Builder builder = ProtoUtil.getDefaultInstance(c).toBuilder();
 						jsonParser.merge(json, builder);
 						return (T) builder.build();

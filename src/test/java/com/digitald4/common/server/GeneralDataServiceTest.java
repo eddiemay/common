@@ -8,13 +8,11 @@ import static org.mockito.Mockito.when;
 
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.server.UserService.UserJSONService;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.storage.testing.DAOTestingImpl;
 import com.digitald4.common.util.ProtoUtil;
-import com.google.protobuf.Any;
 import com.google.protobuf.FieldMask;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -29,7 +27,7 @@ public class GeneralDataServiceTest {
 		when(mockStore.getType()).thenReturn(GeneralData.getDefaultInstance());
 		when(mockStore.create(any(GeneralData.class))).thenAnswer(i -> i.getArguments()[0]);
 		SingleProtoService<GeneralData> protoService = new SingleProtoService<>(mockStore);
-		JSONService jsonService = new JSONServiceImpl<>(GeneralData.class, protoService, false);
+		JSONService jsonService = new JSONServiceImpl<>(protoService, false);
 
 		protoService.create(GeneralData.newBuilder()
 				.setName("Test")
@@ -50,7 +48,7 @@ public class GeneralDataServiceTest {
 	public void testUpdate() {
 		DAOTestingImpl dao = new DAOTestingImpl();
 		GeneralDataService protoService = new GeneralDataService(new GeneralDataStore(() -> dao));
-		JSONService jsonService = new JSONServiceImpl<>(GeneralData.class, protoService, false);
+		JSONService jsonService = new JSONServiceImpl<>(protoService, false);
 
 		GeneralData gd = protoService.create(GeneralData.newBuilder()
 				.setName("Test")
@@ -64,10 +62,9 @@ public class GeneralDataServiceTest {
 
 		gd = protoService.update(
 				gd.getId(),
-				UpdateRequest.newBuilder()
-						.setEntity(Any.pack(GeneralData.newBuilder().setName("Test2").build()))
-						.setUpdateMask(FieldMask.newBuilder().addPaths("name"))
-						.build());
+				new UpdateRequest<>(
+						GeneralData.newBuilder().setName("Test2").build(),
+						FieldMask.newBuilder().addPaths("name").build()));
 		assertTrue(gd.getId() > 0);
 		assertEquals("Test2", gd.getName());
 

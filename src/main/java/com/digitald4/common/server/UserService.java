@@ -72,7 +72,7 @@ public class UserService extends SingleProtoService<User> {
 		private final UserService userService;
 
 		public UserJSONService(UserService userService) {
-			super(User.class, userService, false);
+			super(userService, false);
 			this.userService = userService;
 		}
 		public boolean requiresLogin(String action) {

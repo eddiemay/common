@@ -48,15 +48,15 @@ public class ProtoUtil {
 		}
 	}
 
-	public <R extends Message> R toProto(R msgRequest, HttpServletRequest request) {
+	public static <T extends Message> T toProto(T msgRequest, HttpServletRequest request) {
 		return toProto(msgRequest, new JSONObject(request.getParameterMap().values().iterator().next()[0]));
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <R extends Message> R toProto(R msgRequest, JSONObject json) {
-		R.Builder builder = msgRequest.toBuilder();
+	public static <T extends Message> T toProto(T msgRequest, JSONObject json) {
+		T.Builder builder = msgRequest.toBuilder();
 		ProtoUtil.merge(json, builder);
-		return (R) builder.build();
+		return (T) builder.build();
 	}
 
 	public static JSONObject toJSON(Message item) {

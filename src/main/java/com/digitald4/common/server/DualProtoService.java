@@ -5,7 +5,6 @@ import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.proto.DD4UIProtos.UpdateRequest;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
@@ -15,7 +14,6 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Empty;
-import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.FieldMaskUtil;
 import com.google.protobuf.util.FieldMaskUtil.MergeOptions;
@@ -24,7 +22,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedMessageV3>
+public class DualProtoService<T extends Message, I extends Message>
 		implements ProtoService<T> {
 	private static final MergeOptions MERGE_OPTIONS = new MergeOptions();
 	static {
@@ -94,6 +92,10 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 		this.internalDescriptor = store.getType().getDescriptorForType();
 	}
 
+	protected T getType() {
+		return type;
+	}
+
 	protected Function<I, T> getConverter() {
 		return converter;
 	}
@@ -122,11 +124,11 @@ public class DualProtoService<T extends GeneratedMessageV3, I extends GeneratedM
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
-	public T update(@Named("id") long id, UpdateRequest updateRequest) {
+	public T update(@Named("id") long id, UpdateRequest<T> updateRequest) {
 		return getConverter().apply(store.update(id, internal -> {
 			Message.Builder builder = internal.toBuilder();
 			FieldMaskUtil.merge(updateRequest.getUpdateMask(),
-					getReverseConverter().apply(ProtoUtil.unpack(cls, updateRequest.getEntity())), builder, MERGE_OPTIONS);
+					getReverseConverter().apply(updateRequest.getEntity()), builder, MERGE_OPTIONS);
 			return (I) builder.build();
 		}));
 	}

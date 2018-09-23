@@ -4,7 +4,6 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.proto.DD4Protos.DataFile;
-import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.server.FileService.FileJSONService;
 import com.digitald4.common.storage.DAO;
@@ -61,7 +60,7 @@ public class ApiServiceServlet extends HttpServlet {
 
 		generalDataStore = new GeneralDataStore(daoProvider);
 		addService("generalData",
-				new JSONServiceImpl<>(GeneralData.class, new SingleProtoService<>(generalDataStore), false));
+				new JSONServiceImpl<>(new SingleProtoService<>(generalDataStore), false));
 
 		userStore = new UserStore(daoProvider, clock);
 		addService("user",

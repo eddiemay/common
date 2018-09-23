@@ -3,9 +3,6 @@ syntax = "proto3";
 package dd4.common_ui;
 
 import "dd4_common.proto";
-import "google/protobuf/any.proto";
-import "google/protobuf/empty.proto";
-import "google/protobuf/field_mask.proto";
 
 option java_package = "com.digitald4.common.proto";
 option java_outer_classname = "DD4UIProtos";
@@ -22,12 +19,6 @@ message ListRequest {
   string order_by = 2;
   int32 page_size = 3;
   int32 page_token = 4;
-}
-
-message UpdateRequest {
-  int64 id = 1;
-  google.protobuf.Any entity = 2;
-  google.protobuf.FieldMask update_mask = 3;
 }
 
 message BatchDeleteRequest {
