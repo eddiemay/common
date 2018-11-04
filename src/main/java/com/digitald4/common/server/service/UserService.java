@@ -6,10 +6,9 @@ import static com.digitald4.common.util.ProtoUtil.toProto;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.UpdateRequest;
 import com.digitald4.common.model.User;
-import com.digitald4.common.model.UserBasicImpl;
+import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
 import com.digitald4.common.server.IdTokenResolver;
 import com.digitald4.common.server.IdTokenResolverDD4Impl;
@@ -18,7 +17,6 @@ import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.protobuf.Empty;
 import com.google.protobuf.FieldMask;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.servlet.http.HttpServletResponse;
@@ -81,7 +79,7 @@ public class UserService extends SingleProtoService<User> {
 		public JSONObject performAction(String action, JSONObject jsonRequest) {
 			switch (action) {
 				case "create":
-					return toJSON(userService.create(new UserBasicImpl(toProto(type, jsonRequest))));
+					return toJSON(userService.create(new BasicUser(toProto(type, jsonRequest))));
 				case "get":
 					return toJSON(userService.get(jsonRequest.getInt("id")));
 				/*case "list":
@@ -91,7 +89,7 @@ public class UserService extends SingleProtoService<User> {
 					return toJSON(userService.update(
 							jsonRequest.getLong("id"),
 							new UpdateRequest<>(
-									new UserBasicImpl(toProto(type, jsonRequest.getJSONObject("entity"))),
+									new BasicUser(toProto(type, jsonRequest.getJSONObject("entity"))),
 									FieldMask.newBuilder().addPaths(jsonRequest.getString("updateMask")).build())));
 				case "delete":
 					return toJSON(userService.delete(jsonRequest.getInt("id")));

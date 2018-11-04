@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.digitald4.common.model.UpdateRequest;
 import com.digitald4.common.model.User;
-import com.digitald4.common.model.UserBasicImpl;
+import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.server.service.GeneralDataService;
@@ -85,12 +85,12 @@ public class GeneralDataServiceTest {
 
 	@Test
 	public void testCreateUser() {
-		when(mockUserStore.getType()).thenReturn(new UserBasicImpl());
+		when(mockUserStore.getType()).thenReturn(new BasicUser());
 		when(mockUserStore.create(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
 		UserService userService = new UserService(mockUserStore, null, null);
 		UserJSONService jsonService = new UserJSONService(userService);
 
-		userService.create(new UserBasicImpl(DD4Protos.User.newBuilder()
+		userService.create(new BasicUser(DD4Protos.User.newBuilder()
 				.setUsername("user@test.com")
 				.setId(1)
 				.build()));

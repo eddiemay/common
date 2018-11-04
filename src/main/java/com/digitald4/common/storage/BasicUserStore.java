@@ -1,6 +1,6 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.model.UserBasicImpl;
+import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class BasicUserStore implements UserStore<UserBasicImpl> {
+public class BasicUserStore implements UserStore<BasicUser> {
 	private final Provider<DAO> daoProvider;
 	private final Clock clock;
 
@@ -25,38 +25,38 @@ public class BasicUserStore implements UserStore<UserBasicImpl> {
 	}
 
 	@Override
-	public UserBasicImpl getType() {
-		return new UserBasicImpl();
+	public BasicUser getType() {
+		return new BasicUser();
 	}
 
 	@Override
-	public UserBasicImpl create(UserBasicImpl user) {
-		return new UserBasicImpl(daoProvider.get().create(user.toProto()));
+	public BasicUser create(BasicUser user) {
+		return new BasicUser(daoProvider.get().create(user.toProto()));
 	}
 
 	@Override
-	public UserBasicImpl get(long id) {
+	public BasicUser get(long id) {
 		User user = daoProvider.get().get(User.class, id);
 		if (user == null) {
 			return null;
 		}
-		return new UserBasicImpl(user);
+		return new BasicUser(user);
 	}
 
 	@Override
-	public QueryResult<UserBasicImpl> list(Query query) {
+	public QueryResult<BasicUser> list(Query query) {
 		QueryResult<User> result = daoProvider.get().list(User.class, query);
 		return new QueryResult<>(
 				result.getResults().stream()
-						.map(UserBasicImpl::new)
+						.map(BasicUser::new)
 						.collect(Collectors.toList()),
 				result.getTotalSize());
 	}
 
 	@Override
-	public UserBasicImpl update(long id, UnaryOperator<UserBasicImpl> updater) {
-		return new UserBasicImpl(
-				daoProvider.get().update(User.class, id, user -> updater.apply(new UserBasicImpl(user)).toProto()));
+	public BasicUser update(long id, UnaryOperator<BasicUser> updater) {
+		return new BasicUser(
+				daoProvider.get().update(User.class, id, user -> updater.apply(new BasicUser(user)).toProto()));
 	}
 
 	@Override
@@ -70,13 +70,13 @@ public class BasicUserStore implements UserStore<UserBasicImpl> {
 	}
 
 	@Override
-	public UserBasicImpl updateLastLogin(UserBasicImpl user)  {
+	public BasicUser updateLastLogin(BasicUser user)  {
 		return update(user.getId(), user_ -> user_.setLastLogin(clock.millis()));
 	}
 
 	@Override
-	public UserBasicImpl getBy(String login, String password)  {
-		List<UserBasicImpl> users = list(Query.newBuilder()
+	public BasicUser getBy(String login, String password)  {
+		List<BasicUser> users = list(Query.newBuilder()
 				.addFilter(Filter.newBuilder()
 						.setColumn(login.contains("@") ? "email" : "user_name")
 						.setOperator("=")

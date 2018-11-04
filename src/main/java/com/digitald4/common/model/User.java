@@ -1,11 +1,9 @@
 package com.digitald4.common.model;
 
-import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
-import com.digitald4.common.proto.DD4Protos.PasswordInfo;
 import com.google.protobuf.Message;
 
-public interface User<P extends Message> extends HasProto<P> {
+public interface User<P extends Message, PI extends Message> extends HasProto<P> {
 
 	long getId();
 
@@ -21,7 +19,7 @@ public interface User<P extends Message> extends HasProto<P> {
 
 	User setLastLogin(long lastLogin);
 
-	User setPasswordInfo(PasswordInfo passwordInfo);
+	User setPasswordInfo(PI passwordInfo);
 
 	ActiveSession getActiveSession();
 

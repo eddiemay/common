@@ -2,17 +2,16 @@ package com.digitald4.common.model;
 
 import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
-import com.digitald4.common.proto.DD4Protos.PasswordInfo;
 
-public class UserBasicImpl implements User<DD4Protos.User> {
+public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 	private DD4Protos.User userProto;
 	private ActiveSession activeSession;
 
-	public UserBasicImpl() {
+	public BasicUser() {
 		this.userProto = DD4Protos.User.getDefaultInstance();
 	}
 
-	public UserBasicImpl(DD4Protos.User userProto) {
+	public BasicUser(DD4Protos.User userProto) {
 		this.userProto = userProto;
 	}
 
@@ -27,7 +26,7 @@ public class UserBasicImpl implements User<DD4Protos.User> {
 	}
 
 	@Override
-	public UserBasicImpl setTypeId(int typeId) {
+	public BasicUser setTypeId(int typeId) {
 		userProto = userProto.toBuilder().setTypeId(typeId).build();
 		return this;
 	}
@@ -38,7 +37,7 @@ public class UserBasicImpl implements User<DD4Protos.User> {
 	}
 
 	@Override
-	public UserBasicImpl setUsername(String username) {
+	public BasicUser setUsername(String username) {
 		userProto = userProto.toBuilder().setUsername(username).build();
 		return this;
 	}
@@ -49,13 +48,13 @@ public class UserBasicImpl implements User<DD4Protos.User> {
 	}
 
 	@Override
-	public UserBasicImpl setLastLogin(long lastLogin) {
+	public BasicUser setLastLogin(long lastLogin) {
 		userProto = userProto.toBuilder().setLastLogin(lastLogin).build();
 		return this;
 	}
 
 	@Override
-	public UserBasicImpl setPasswordInfo(PasswordInfo passwordInfo) {
+	public BasicUser setPasswordInfo(DD4Protos.PasswordInfo passwordInfo) {
 		userProto = userProto.toBuilder().setPasswordInfo(passwordInfo).build();
 		return this;
 	}
@@ -66,7 +65,7 @@ public class UserBasicImpl implements User<DD4Protos.User> {
 	}
 
 	@Override
-	public UserBasicImpl setActiveSession(ActiveSession activeSession) {
+	public BasicUser setActiveSession(ActiveSession activeSession) {
 		this.activeSession = activeSession;
 		return this;
 	}
@@ -82,7 +81,7 @@ public class UserBasicImpl implements User<DD4Protos.User> {
 	}
 
 	@Override
-	public UserBasicImpl setProto(DD4Protos.User userProto) {
+	public BasicUser setProto(DD4Protos.User userProto) {
 		this.userProto = userProto;
 		return this;
 	}
