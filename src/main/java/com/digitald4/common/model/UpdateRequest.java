@@ -1,11 +1,11 @@
-package com.digitald4.common.server;
+package com.digitald4.common.model;
 
 import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.Message;
 import org.json.JSONObject;
 
-public class UpdateRequest<T extends Message> {
+public class UpdateRequest<T> {
 	private final T entity;
 	private final FieldMask updateMask;
 
@@ -24,7 +24,7 @@ public class UpdateRequest<T extends Message> {
 
 	public JSONObject toJSON() {
 		return 	new JSONObject()
-				.put("entity", ProtoUtil.toJSON(entity))
+				.put("entity", ProtoUtil.toJSON((Message) entity))
 				.put("updateMask", ProtoUtil.toJSON(updateMask));
 	}
 }

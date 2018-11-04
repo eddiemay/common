@@ -78,14 +78,14 @@ public class ServletResponseResultWriterTest {
 
 	@Test
 	public void testWriteProto() throws Exception {
-		servletResponseResultWriter.write(User.newBuilder().setId(52L).setFullName("Eddie Mayfield").build());
-		// verify(printWriter).print("{\"id\":\"52\",\"fullName\":\"Eddie Mayfield\"}");
+		servletResponseResultWriter.write(User.newBuilder().setId(52L).setUsername("eddiemay").build());
+		// verify(printWriter).print("{\"id\":\"52\",\"username\":\"eddiemay\"}");
 	}
 
 	@Test
 	public void objectWriterWriteProto() throws Exception {
-		objectWriter.writeValue(printWriter, User.newBuilder().setId(52L).setFullName("Eddie Mayfield").build());
-		// verify(printWriter).write("{\"id\":52,\"typeId\":0,\"userName\":\"\",\"email\":\"\",\"firstName\":\"\",\"lastName\":\"\",\"fullName\":\"Eddie Mayfield\",\"disabled\":false,\"readOnly\":false,\"notes\":\"\",\"lastLogin\":0,\"idToken\":\"\",\"expTime\":0,\"password\":\"\"}");
+		objectWriter.writeValue(printWriter, User.newBuilder().setId(52L).setUsername("eddiemay").build());
+		// verify(printWriter).write("{\"id\":52,\"typeId\":0,\"username\":\"eddiemay\",\"email\":\"\",\"firstName\":\"\",\"lastName\":\"\",\"fullName\":\"\",\"disabled\":false,\"readOnly\":false,\"notes\":\"\",\"lastLogin\":0,\"idToken\":\"\",\"expTime\":0,\"password\":\"\"}");
 	}
 
 	public class Pojo {

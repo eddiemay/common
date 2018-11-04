@@ -2,15 +2,21 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
+import com.digitald4.common.model.User;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.proto.DD4Protos.DataFile;
-import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.server.FileService.FileJSONService;
+import com.digitald4.common.server.service.FileService;
+import com.digitald4.common.server.service.FileService.FileJSONService;
+import com.digitald4.common.server.service.JSONService;
+import com.digitald4.common.server.service.JSONServiceImpl;
+import com.digitald4.common.server.service.SingleProtoService;
+import com.digitald4.common.server.service.UserService;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.digitald4.common.storage.GenericStore;
+import com.digitald4.common.storage.BasicUserStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Encryptor;
@@ -56,13 +62,13 @@ public class ApiServiceServlet extends HttpServlet {
 	public ApiServiceServlet() {
 		Clock clock = Clock.systemUTC();
 
-		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<>(ActiveSession.class, daoProvider), clock);
+		userStore = new BasicUserStore(daoProvider, clock);
+
+		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<>(ActiveSession.class, daoProvider), userStore, clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
 		addService("generalData",
 				new JSONServiceImpl<>(new SingleProtoService<>(generalDataStore), false));
-
-		userStore = new UserStore(daoProvider, clock);
 		addService("user",
 				new UserService.UserJSONService(userService = new UserService(userStore, userProvider, idTokenResolver)));
 

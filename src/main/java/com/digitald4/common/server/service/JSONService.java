@@ -1,4 +1,4 @@
-package com.digitald4.common.server;
+package com.digitald4.common.server.service;
 
 import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.Message;

@@ -6,9 +6,17 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.digitald4.common.model.UpdateRequest;
+import com.digitald4.common.model.User;
+import com.digitald4.common.model.UserBasicImpl;
+import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
-import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.server.UserService.UserJSONService;
+import com.digitald4.common.server.service.GeneralDataService;
+import com.digitald4.common.server.service.JSONService;
+import com.digitald4.common.server.service.JSONServiceImpl;
+import com.digitald4.common.server.service.SingleProtoService;
+import com.digitald4.common.server.service.UserService;
+import com.digitald4.common.server.service.UserService.UserJSONService;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.storage.testing.DAOTestingImpl;
@@ -77,24 +85,23 @@ public class GeneralDataServiceTest {
 
 	@Test
 	public void testCreateUser() {
-		when(mockUserStore.getType()).thenReturn(User.getDefaultInstance());
+		when(mockUserStore.getType()).thenReturn(new UserBasicImpl());
 		when(mockUserStore.create(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
 		UserService userService = new UserService(mockUserStore, null, null);
 		UserJSONService jsonService = new UserJSONService(userService);
 
-		userService.create(User.newBuilder()
-				.setEmail("user@test.com")
-				.setFullName("Test User")
+		userService.create(new UserBasicImpl(DD4Protos.User.newBuilder()
+				.setUsername("user@test.com")
 				.setId(1)
-				.build());
+				.build()));
 
 		jsonService.performAction("create",
-				new JSONObject("{\"id\":1,\"fullName\":\"Test User\"}"));
+				new JSONObject("{\"id\":1,\"username\":\"Test User\"}"));
 
 		jsonService.performAction("create",
-				new JSONObject("{\"id\":2,\"fullName\":\"test 2\"}"));
+				new JSONObject("{\"id\":2,\"username\":\"test 2\"}"));
 
 		jsonService.performAction("create",
-				new JSONObject("{\"id\":3,\"fullName\":\"test 3\"}"));
+				new JSONObject("{\"id\":3,\"username\":\"test 3\"}"));
 	}
 }

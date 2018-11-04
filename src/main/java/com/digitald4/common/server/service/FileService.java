@@ -1,4 +1,4 @@
-package com.digitald4.common.server;
+package com.digitald4.common.server.service;
 
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4UIProtos;
@@ -53,7 +53,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 	private final Provider<HttpServletResponse> responseProvider;
 
 	@Inject
-	FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
+	public FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
 							Provider<HttpServletResponse> responseProvider) {
 		super(DD4UIProtos.DataFile.class, dataFileStore);
 		this.dataFileStore = dataFileStore;
@@ -143,10 +143,10 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 	private static final Function<DataFile, JSONObject> toJSON = dataFile ->
 			new JSONObject(ProtoUtil.print(dataFile.toBuilder().clearData().build()));
 
-	static class FileJSONService extends JSONServiceImpl<DD4UIProtos.DataFile> {
+	public static class FileJSONService extends JSONServiceImpl<DD4UIProtos.DataFile> {
 		private final FileService fileService;
 
-		FileJSONService(FileService fileService) {
+		public FileJSONService(FileService fileService) {
 			super(fileService, true);
 			this.fileService = fileService;
 		}

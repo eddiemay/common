@@ -1,38 +1,36 @@
-package com.digitald4.common.server;
+package com.digitald4.common.server.service;
 
 import static com.digitald4.common.util.ProtoUtil.toJSON;
 import static com.digitald4.common.util.ProtoUtil.toProto;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4Protos.User;
+import com.digitald4.common.model.UpdateRequest;
+import com.digitald4.common.model.User;
+import com.digitald4.common.model.UserBasicImpl;
+import com.digitald4.common.proto.DD4Protos;
+import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
+import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
+import com.digitald4.common.server.IdTokenResolver;
+import com.digitald4.common.server.IdTokenResolverDD4Impl;
 import com.digitald4.common.storage.UserStore;
 import com.google.api.server.spi.config.Api;
-import com.google.api.server.spi.config.ApiIssuer;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.protobuf.Empty;
+import com.google.protobuf.FieldMask;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
 @Api(
-		name = "user",
+		name = "users",
 		version = "v1",
 		namespace = @ApiNamespace(
-				ownerDomain = "nbastats.digitald4.com",
-				ownerName = "nbastats.digitald4.com"
-		),
-		// [START_EXCLUDE]
-		issuers = {
-				@ApiIssuer(
-						name = "firebase",
-						issuer = "https://securetoken.google.com/fantasy-predictor",
-						jwksUri =
-								"https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system"
-										+ ".gserviceaccount.com"
-				)
-		}
-		// [END_EXCLUDE]
+				ownerDomain = "common.digitald4.com",
+				ownerName = "common.digitald4.com"
+		)
 )
 public class UserService extends SingleProtoService<User> {
 
@@ -41,7 +39,7 @@ public class UserService extends SingleProtoService<User> {
 	private final IdTokenResolver idTokenResolver;
 
 	@Inject
-	UserService(UserStore userStore, Provider<User> userProvider, IdTokenResolver idTokenResolver) {
+	public UserService(UserStore userStore, Provider<User> userProvider, IdTokenResolver idTokenResolver) {
 		super(userStore);
 		this.userStore = userStore;
 		this.userProvider = userProvider;
@@ -63,16 +61,16 @@ public class UserService extends SingleProtoService<User> {
 	public Empty logout() {
 		User user = userProvider.get();
 		if (user != null) {
-			((IdTokenResolverDD4Impl) idTokenResolver).remove(user.getIdToken());
+			((IdTokenResolverDD4Impl) idTokenResolver).remove(user.getActiveSession().getIdToken());
 		}
 		return Empty.getDefaultInstance();
 	}
 
-	static class UserJSONService extends JSONServiceImpl<User> {
+	public static class UserJSONService implements JSONService {
+		private final DD4Protos.User type = DD4Protos.User.getDefaultInstance();
 		private final UserService userService;
 
 		public UserJSONService(UserService userService) {
-			super(userService, false);
 			this.userService = userService;
 		}
 		public boolean requiresLogin(String action) {
@@ -82,10 +80,27 @@ public class UserService extends SingleProtoService<User> {
 		@Override
 		public JSONObject performAction(String action, JSONObject jsonRequest) {
 			switch (action) {
+				case "create":
+					return toJSON(userService.create(new UserBasicImpl(toProto(type, jsonRequest))));
+				case "get":
+					return toJSON(userService.get(jsonRequest.getInt("id")));
+				/*case "list":
+					return toJSON(userService.list(toProto(ListRequest.getDefaultInstance(), jsonRequest)).getResults()
+					.stream().map(user -> user.toProto()).collect(Collectors.toList()));*/
+				case "update":
+					return toJSON(userService.update(
+							jsonRequest.getLong("id"),
+							new UpdateRequest<>(
+									new UserBasicImpl(toProto(type, jsonRequest.getJSONObject("entity"))),
+									FieldMask.newBuilder().addPaths(jsonRequest.getString("updateMask")).build())));
+				case "delete":
+					return toJSON(userService.delete(jsonRequest.getInt("id")));
+				case "batchDelete":
+					return toJSON(userService.batchDelete(toProto(BatchDeleteRequest.getDefaultInstance(), jsonRequest)));
 				case "active": return toJSON(userService.getActive());
 				case "login": return toJSON(userService.login(toProto(LoginRequest.getDefaultInstance(), jsonRequest)));
 				case "logout": return toJSON(userService.logout());
-				default: return super.performAction(action, jsonRequest);
+				default: throw new DD4StorageException("Invalid action: " + action, HttpServletResponse.SC_BAD_REQUEST);
 			}
 		}
 	}

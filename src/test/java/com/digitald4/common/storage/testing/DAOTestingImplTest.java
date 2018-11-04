@@ -20,15 +20,11 @@ public class DAOTestingImplTest {
 	@Test
 	public void testCreate() {
 		User user = userStore.create(User.newBuilder()
-				.setFirstName("Eddie")
-				.setLastName("Mayfield")
-				.setEmail("eddiemay@gmail.com")
+				.setUsername("eddiemay@gmail.com")
 				.setTypeId(56)
 				.build());
 		assertTrue(user.getId() > 0);
-		assertEquals("Eddie", user.getFirstName());
-		assertEquals("Mayfield", user.getLastName());
-		assertEquals("eddiemay@gmail.com", user.getEmail());
+		assertEquals("eddiemay@gmail.com", user.getUsername());
 		assertEquals(56, user.getTypeId());
 
 		assertEquals(user, userStore.get(user.getId()));
@@ -39,20 +35,16 @@ public class DAOTestingImplTest {
 		assertEquals(user, users.getResults().get(0));
 
 		user = userStore.update(user.getId(), user_ -> user_.toBuilder()
-				.setEmail("eddiemay1999@yahoo.com")
+				.setUsername("eddiemay1999@yahoo.com")
 				.build());
-		assertEquals("eddiemay1999@yahoo.com", user.getEmail());
+		assertEquals("eddiemay1999@yahoo.com", user.getUsername());
 
 		User user2 = userStore.create(User.newBuilder()
-				.setFirstName("Ben")
-				.setLastName("Frank")
-				.setEmail("benfrank@gmail.com")
+				.setUsername("benfrank@gmail.com")
 				.setTypeId(34)
 				.build());
 		assertTrue(user2.getId() > 0);
-		assertEquals("Ben", user2.getFirstName());
-		assertEquals("Frank", user2.getLastName());
-		assertEquals("benfrank@gmail.com", user2.getEmail());
+		assertEquals("benfrank@gmail.com", user2.getUsername());
 		assertEquals(34, user2.getTypeId());
 
 		users = userStore.list(Query.getDefaultInstance());

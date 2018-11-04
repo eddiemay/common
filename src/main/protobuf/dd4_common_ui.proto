@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package dd4.common_ui;
 
-import "dd4_common.proto";
-
 option java_package = "com.digitald4.common.proto";
 option java_outer_classname = "DD4UIProtos";
 

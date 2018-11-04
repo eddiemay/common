@@ -1,6 +1,7 @@
-package com.digitald4.common.server;
+package com.digitald4.common.server.service;
 
 import com.digitald4.common.proto.DD4Protos.GeneralData;
+import com.digitald4.common.server.service.SingleProtoService;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;

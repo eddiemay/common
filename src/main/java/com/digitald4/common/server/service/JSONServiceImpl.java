@@ -1,4 +1,4 @@
-package com.digitald4.common.server;
+package com.digitald4.common.server.service;
 
 import static com.digitald4.common.util.ProtoUtil.toJSON;
 import static com.digitald4.common.util.ProtoUtil.toProto;
@@ -6,18 +6,25 @@ import static com.digitald4.common.util.ProtoUtil.toProto;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
+import com.digitald4.common.model.UpdateRequest;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.Message;
 import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
-public class  JSONServiceImpl<T extends Message> implements JSONService {
+public class JSONServiceImpl<T extends Message> implements JSONService {
 	private final T type;
-	private final ProtoService<T> protoService;
+	private final EntityService<T> protoService;
 	private final boolean requiresLoginDefault;
 
-	public JSONServiceImpl(DualProtoService<T, ?> protoService, boolean requiresLoginDefault) {
-		this.type = protoService.getType();
+	public JSONServiceImpl(EntityService<T> protoService, boolean requiresLoginDefault) {
+		if (protoService instanceof DualProtoService) {
+			this.type = ((DualProtoService<T, ?>) protoService).getType();
+		} else if (protoService instanceof SingleProtoService) {
+			this.type = ((SingleProtoService<T>) protoService).getType();
+		} else {
+			throw new IllegalArgumentException("Unable to determine proto type");
+		}
 		this.protoService = protoService;
 		this.requiresLoginDefault = requiresLoginDefault;
 	}

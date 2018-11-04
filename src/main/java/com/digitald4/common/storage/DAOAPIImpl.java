@@ -4,7 +4,7 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
 import com.digitald4.common.server.APIConnector;
-import com.digitald4.common.server.UpdateRequest;
+import com.digitald4.common.model.UpdateRequest;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProtoUtil;

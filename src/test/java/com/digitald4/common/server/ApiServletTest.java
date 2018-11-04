@@ -4,6 +4,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
+import com.digitald4.common.server.service.JSONService;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;

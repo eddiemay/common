@@ -19,10 +19,7 @@ public class DAOProtoSQLImplTest {
 		DAOSQLImpl dao = new DAOSQLImpl(new DBConnectorThreadPoolImpl("com.mysql.jdbc.Driver",
 						"jdbc:mysql://localhost/cpr?autoReconnect=true", "dd4_user", "getSchooled85"));
 		User user = User.newBuilder()
-				.setFirstName("Test")
-				.setLastName("User")
-				.setUserName("testuser")
-				.setEmail("test@example.com")
+				.setUsername("testuser")
 				.setTypeId(4)
 				.setLastLogin(new DateTime("2005-06-18T19:30:15").getMillis())
 				.build();

@@ -1,10 +1,9 @@
-package com.digitald4.common.server;
+package com.digitald4.common.server.service;
 
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
 import com.digitald4.common.proto.DD4UIProtos.ListRequest;
+import com.digitald4.common.model.UpdateRequest;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
@@ -15,19 +14,11 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Empty;
 import com.google.protobuf.Message;
-import com.google.protobuf.util.FieldMaskUtil;
-import com.google.protobuf.util.FieldMaskUtil.MergeOptions;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DualProtoService<T extends Message, I extends Message>
-		implements ProtoService<T> {
-	private static final MergeOptions MERGE_OPTIONS = new MergeOptions();
-	static {
-		MERGE_OPTIONS.setReplaceRepeatedFields(true);
-	}
+public class DualProtoService<T extends Message, I extends Message> implements EntityService<T> {
 
 	private final Class<T> cls;
 	private final T type;
@@ -119,18 +110,14 @@ public class DualProtoService<T extends Message, I extends Message>
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "_")
 	public QueryResult<T> list(ListRequest request) {
-		return toListResponse(store.list(toQuery(request)));
+		return toListResponse(store.list(ProtoUtil.toQuery(request)));
 	}
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
 	public T update(@Named("id") long id, UpdateRequest<T> updateRequest) {
-		return getConverter().apply(store.update(id, internal -> {
-			Message.Builder builder = internal.toBuilder();
-			FieldMaskUtil.merge(updateRequest.getUpdateMask(),
-					getReverseConverter().apply(updateRequest.getEntity()), builder, MERGE_OPTIONS);
-			return (I) builder.build();
-		}));
+		return getConverter().apply(store.update(id, internal -> ProtoUtil.merge(
+				updateRequest.getUpdateMask(), getReverseConverter().apply(updateRequest.getEntity()), internal)));
 	}
 
 	@Override
@@ -144,7 +131,7 @@ public class DualProtoService<T extends Message, I extends Message>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE)
 	public BatchDeleteResponse batchDelete(BatchDeleteRequest request) {
 		return BatchDeleteResponse.newBuilder()
-				.setDeleted(store.delete(toQuery(request)))
+				.setDeleted(store.delete(ProtoUtil.toQuery(request)))
 				.build();
 	}
 
@@ -154,51 +141,5 @@ public class DualProtoService<T extends Message, I extends Message>
 						.map(getConverter())
 						.collect(Collectors.toList()),
 				queryResult.getTotalSize());
-	}
-
-	private Query toQuery(ListRequest request) {
-		Query.Builder query = Query.newBuilder()
-				.setLimit(request.getPageSize())
-				.setOffset(request.getPageToken());
-		if (!request.getFilter().isEmpty()) {
-			query.addAllFilter(Arrays.stream(request.getFilter().split(","))
-					.map(filter -> Query.Filter.newBuilder()
-							.setColumn(filter.split(" ")[0])
-							.setOperator(filter.split(" ")[1])
-							.setValue(filter.split(" ")[2])
-							.build())
-					.collect(Collectors.toList()));
-		}
-		if (!request.getOrderBy().isEmpty()) {
-			query.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
-					.map(orderBy -> OrderBy.newBuilder()
-							.setColumn(orderBy.split(" ")[0])
-							.setDesc(orderBy.endsWith("DESC"))
-							.build())
-					.collect(Collectors.toList()));
-		}
-		return query.build();
-	}
-
-	private Query toQuery(BatchDeleteRequest request) {
-		Query.Builder query = Query.newBuilder()
-				.setLimit(request.getPageSize())
-				.setOffset(request.getPageToken())
-				.addAllFilter(request.getFilterList().stream()
-						.map(filter -> Query.Filter.newBuilder()
-								.setColumn(filter.getColumn())
-								.setOperator(filter.getOperator())
-								.setValue(filter.getValue())
-								.build())
-						.collect(Collectors.toList()));
-		if (!request.getOrderBy().isEmpty()) {
-			query.addAllOrderBy(Arrays.stream(request.getOrderBy().split(","))
-					.map(orderBy -> OrderBy.newBuilder()
-							.setColumn(orderBy.split(" ")[0])
-							.setDesc(orderBy.endsWith("DESC"))
-							.build())
-					.collect(Collectors.toList()));
-		}
-		return query.build();
 	}
 }
