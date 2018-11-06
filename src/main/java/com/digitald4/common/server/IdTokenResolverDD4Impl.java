@@ -16,12 +16,12 @@ import javax.inject.Inject;
 public class IdTokenResolverDD4Impl implements IdTokenResolver {
 	private static final long SESSION_TIME = 30 * Calculate.ONE_MINUTE;
 	private final Store<ActiveSession> activeSessionStore;
-	private final UserStore userStore;
+	private final UserStore<User> userStore;
 	private final Clock clock;
 	private final Map<String, ActiveSession> activeSessions = new HashMap<>();
 
 	@Inject
-	IdTokenResolverDD4Impl(Store<ActiveSession> activeSessionStore, UserStore userStore, Clock clock) {
+	IdTokenResolverDD4Impl(Store<ActiveSession> activeSessionStore, UserStore<User> userStore, Clock clock) {
 		this.activeSessionStore = activeSessionStore;
 		this.userStore = userStore;
 		this.clock = clock;

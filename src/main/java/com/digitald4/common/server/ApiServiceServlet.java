@@ -70,7 +70,7 @@ public class ApiServiceServlet extends HttpServlet {
 		addService("generalData",
 				new JSONServiceImpl<>(new SingleProtoService<>(generalDataStore), false));
 		addService("user",
-				new UserService.UserJSONService(userService = new UserService(userStore, userProvider, idTokenResolver)));
+				new UserService.UserJSONService(userService = new UserService(userStore, userProvider, idTokenResolver, clock)));
 
 		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
 		FileService fileService = new FileService(dataFileStore, requestProvider, responseProvider);

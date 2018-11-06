@@ -70,18 +70,12 @@ public class BasicUserStore implements UserStore<BasicUser> {
 	}
 
 	@Override
-	public BasicUser updateLastLogin(BasicUser user)  {
-		return update(user.getId(), user_ -> user_.setLastLogin(clock.millis()));
-	}
-
-	@Override
-	public BasicUser getBy(String login, String password)  {
+	public BasicUser getBy(String username)  {
 		List<BasicUser> users = list(Query.newBuilder()
 				.addFilter(Filter.newBuilder()
-						.setColumn(login.contains("@") ? "email" : "user_name")
+						.setColumn(username.contains("@") ? "email" : "username")
 						.setOperator("=")
-						.setValue(login))
-				.addFilter(ProtoUtil.createFilter("password", "=", encodePassword(password)))
+						.setValue(username))
 				.build())
 				.getResults();
 		if (users.isEmpty()) {

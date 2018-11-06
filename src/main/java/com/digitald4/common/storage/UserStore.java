@@ -4,9 +4,5 @@ import com.digitald4.common.model.User;
 
 public interface UserStore<U extends User> extends Store<U> {
 
-	U get(long id);
-
-	U updateLastLogin(U user);
-
-	U getBy(String login, String password);
+	U getBy(String username);
 }

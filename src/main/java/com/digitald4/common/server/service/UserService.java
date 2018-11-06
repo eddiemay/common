@@ -4,9 +4,9 @@ import static com.digitald4.common.util.ProtoUtil.toJSON;
 import static com.digitald4.common.util.ProtoUtil.toProto;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.UpdateRequest;
 import com.digitald4.common.model.User;
-import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
@@ -17,6 +17,7 @@ import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.protobuf.Empty;
 import com.google.protobuf.FieldMask;
+import java.time.Clock;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.servlet.http.HttpServletResponse;
@@ -32,16 +33,18 @@ import org.json.JSONObject;
 )
 public class UserService extends SingleProtoService<User> {
 
-	private final UserStore userStore;
+	private final UserStore<User> userStore;
 	private final Provider<User> userProvider;
 	private final IdTokenResolver idTokenResolver;
+	private final Clock clock;
 
 	@Inject
-	public UserService(UserStore userStore, Provider<User> userProvider, IdTokenResolver idTokenResolver) {
+	public UserService(UserStore<User> userStore, Provider<User> userProvider, IdTokenResolver idTokenResolver, Clock clock) {
 		super(userStore);
 		this.userStore = userStore;
 		this.userProvider = userProvider;
 		this.idTokenResolver = idTokenResolver;
+		this.clock = clock;
 	}
 
 	public User getActive() {
@@ -49,11 +52,13 @@ public class UserService extends SingleProtoService<User> {
 	}
 
 	public User login(LoginRequest loginRequest) {
-		User user = userStore.getBy(loginRequest.getUsername(), loginRequest.getPassword());
+		User user = userStore.getBy(loginRequest.getUsername());
 		if (user == null) {
 			throw new DD4StorageException("Wrong username or password", 401);
 		}
-		return ((IdTokenResolverDD4Impl) idTokenResolver).put(userStore.updateLastLogin(user));
+		user.verifyPassword(loginRequest.getPassword());
+		return ((IdTokenResolverDD4Impl) idTokenResolver).put(
+				userStore.update(user.getId(), user_ -> user_.updateLastLogin(clock)));
 	}
 
 	public Empty logout() {

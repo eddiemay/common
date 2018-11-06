@@ -87,7 +87,7 @@ public class GeneralDataServiceTest {
 	public void testCreateUser() {
 		when(mockUserStore.getType()).thenReturn(new BasicUser());
 		when(mockUserStore.create(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
-		UserService userService = new UserService(mockUserStore, null, null);
+		UserService userService = new UserService(mockUserStore, null, null, null);
 		UserJSONService jsonService = new UserJSONService(userService);
 
 		userService.create(new BasicUser(DD4Protos.User.newBuilder()

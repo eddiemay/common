@@ -1,7 +1,9 @@
 package com.digitald4.common.model;
 
+import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
+import java.time.Clock;
 
 public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 	private DD4Protos.User userProto;
@@ -26,12 +28,6 @@ public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 	}
 
 	@Override
-	public BasicUser setTypeId(int typeId) {
-		userProto = userProto.toBuilder().setTypeId(typeId).build();
-		return this;
-	}
-
-	@Override
 	public String getUsername() {
 		return userProto.getUsername();
 	}
@@ -48,8 +44,8 @@ public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 	}
 
 	@Override
-	public BasicUser setLastLogin(long lastLogin) {
-		userProto = userProto.toBuilder().setLastLogin(lastLogin).build();
+	public BasicUser updateLastLogin(Clock clock) {
+		userProto = userProto.toBuilder().setLastLogin(clock.millis()).build();
 		return this;
 	}
 
@@ -84,5 +80,12 @@ public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 	public BasicUser setProto(DD4Protos.User userProto) {
 		this.userProto = userProto;
 		return this;
+	}
+
+	@Override
+	public void verifyPassword(String passwordDigest) {
+		if (!userProto.getPasswordInfo().getPasswordDigest().equals(passwordDigest)) {
+			throw new DD4StorageException("Wrong username or password", 401);
+		}
 	}
 }
