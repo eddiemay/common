@@ -1,8 +1,10 @@
 package com.digitald4.common.tools;
 
 import com.digitald4.common.proto.DD4Protos.GeneralData;
-import com.digitald4.common.proto.DD4Protos.Query;
+import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.DAO;
+import com.google.protobuf.Message;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -18,11 +20,11 @@ public class GenDataCompiler {
 	private static final String JS_ENTRY = "\t%s: %d,\n";
 
 	private final String project;
-	private final DAO dao;
+	private final DAO<Message> dao;
 	private final String javaFile;
 	private final String jsFile;
 
-	public GenDataCompiler(String project, DAO dao, String javaFile, String jsFile) {
+	public GenDataCompiler(String project, DAO<Message> dao, String javaFile, String jsFile) {
 		this.project = project;
 		this.dao = dao;
 		this.javaFile = javaFile;
@@ -30,7 +32,7 @@ public class GenDataCompiler {
 	}
 
 	public void compile() {
-		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, Query.getDefaultInstance())
+		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, new Query())
 				.getResults().stream()
 				.collect(Collectors.groupingBy(GeneralData::getGroupId));
 

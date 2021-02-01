@@ -1,11 +1,11 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.model.BasicUser;
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.util.Calculate;
-import com.digitald4.common.util.ProtoUtil;
+import com.google.common.collect.ImmutableList;
+import com.google.protobuf.Message;
+
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.util.List;
@@ -15,18 +15,13 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class BasicUserStore implements UserStore<BasicUser> {
-	private final Provider<DAO> daoProvider;
+	private final Provider<DAO<Message>> daoProvider;
 	private final Clock clock;
 
 	@Inject
-	public BasicUserStore(Provider<DAO> daoProvider, Clock clock) {
+	public BasicUserStore(Provider<DAO<Message>> daoProvider, Clock clock) {
 		this.daoProvider = daoProvider;
 		this.clock = clock;
-	}
-
-	@Override
-	public BasicUser getType() {
-		return new BasicUser();
 	}
 
 	@Override
@@ -71,12 +66,11 @@ public class BasicUserStore implements UserStore<BasicUser> {
 
 	@Override
 	public BasicUser getBy(String username)  {
-		List<BasicUser> users = list(Query.newBuilder()
-				.addFilter(Filter.newBuilder()
+		ImmutableList<BasicUser> users = list(new Query()
+				.setFilters(new Query.Filter()
 						.setColumn(username.contains("@") ? "email" : "username")
 						.setOperator("=")
-						.setValue(username))
-				.build())
+						.setValue(username)))
 				.getResults();
 		if (users.isEmpty()) {
 			return null;

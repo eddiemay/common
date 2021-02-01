@@ -7,7 +7,8 @@ public class EchoMessage {
 		return message;
 	}
 
-	public void setMessage(String message) {
+	public EchoMessage setMessage(String message) {
 		this.message = message;
+		return this;
 	}
 }

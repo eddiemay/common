@@ -5,10 +5,8 @@ import static com.digitald4.common.util.ProtoUtil.toProto;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.BasicUser;
-import com.digitald4.common.model.UpdateRequest;
 import com.digitald4.common.model.User;
 import com.digitald4.common.proto.DD4Protos;
-import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
 import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
 import com.digitald4.common.server.IdTokenResolver;
 import com.digitald4.common.server.IdTokenResolverDD4Impl;
@@ -86,20 +84,26 @@ public class UserService extends SingleProtoService<User> {
 				case "create":
 					return toJSON(userService.create(new BasicUser(toProto(type, jsonRequest))));
 				case "get":
-					return toJSON(userService.get(jsonRequest.getInt("id")));
-				/*case "list":
-					return toJSON(userService.list(toProto(ListRequest.getDefaultInstance(), jsonRequest)).getResults()
-					.stream().map(user -> user.toProto()).collect(Collectors.toList()));*/
+					return toJSON(userService.get(jsonRequest.optInt("id")));
+				case "list":
+					return toJSON(
+							userService.list(
+									jsonRequest.optString("filter"), jsonRequest.optString("orderBy"),
+									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken")));
 				case "update":
-					return toJSON(userService.update(
-							jsonRequest.getLong("id"),
-							new UpdateRequest<>(
-									new BasicUser(toProto(type, jsonRequest.getJSONObject("entity"))),
-									FieldMask.newBuilder().addPaths(jsonRequest.getString("updateMask")).build())));
+					return toJSON(
+							userService.update(
+									jsonRequest.getLong("id"),
+									new UpdateRequest<>(
+											new BasicUser(toProto(type, jsonRequest.optJSONObject("entity"))),
+											JSONServiceImpl.getStringArray(jsonRequest,"updateMask"))));
 				case "delete":
 					return toJSON(userService.delete(jsonRequest.getInt("id")));
 				case "batchDelete":
-					return toJSON(userService.batchDelete(toProto(BatchDeleteRequest.getDefaultInstance(), jsonRequest)));
+					return toJSON(
+							userService.batchDelete(
+									jsonRequest.optString("filter"), jsonRequest.optString("orderBy"),
+									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken")));
 				case "active": return toJSON(userService.getActive());
 				case "login": return toJSON(userService.login(toProto(LoginRequest.getDefaultInstance(), jsonRequest)));
 				case "logout": return toJSON(userService.logout());

@@ -2,11 +2,13 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.model.User;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
+import com.digitald4.common.storage.Query;
+import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Calculate;
+import com.google.common.collect.ImmutableList;
+
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
@@ -44,9 +46,9 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		long now = clock.millis();
 		ActiveSession activeSession = activeSessions.get(idToken);
 		if (activeSession == null) {
-			List<ActiveSession> list = activeSessionStore.list(Query.newBuilder()
-					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
-					.build()).getResults();
+			List<ActiveSession> list = activeSessionStore
+					.list(new Query().setFilters(new Filter().setColumn("id_token").setOperator("=").setValue(idToken)))
+					.getResults();
 			if (list.isEmpty()) {
 				return null;
 			}
@@ -78,9 +80,9 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 	public void remove(String idToken) {
 		ActiveSession activeSession = activeSessions.get(idToken);
 		if (activeSession == null) {
-			List<ActiveSession> list = activeSessionStore.list(Query.newBuilder()
-					.addFilter(Filter.newBuilder().setColumn("id_token").setValue(idToken))
-					.build()).getResults();
+			List<ActiveSession> list = activeSessionStore
+					.list(new Query().setFilters(new Filter().setColumn("id_token").setValue(idToken)))
+					.getResults();
 			if (!list.isEmpty()) {
 				activeSession = list.get(0);
 			}

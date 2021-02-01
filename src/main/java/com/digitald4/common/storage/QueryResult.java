@@ -1,16 +1,19 @@
 package com.digitald4.common.storage;
 
 import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.collect.Iterables;
 
 public class QueryResult<T> {
-	private final ImmutableList results;
+	private final ImmutableList<T> results;
 	private final int totalSize;
 
-	public QueryResult(List<T> results, int totalSize) {
+	public QueryResult(Iterable<T> results, int totalSize) {
 		this.results = ImmutableList.copyOf(results);
 		this.totalSize = totalSize;
+	}
+
+	public QueryResult(Iterable<T> results) {
+		this(results, Iterables.size(results));
 	}
 
 	public ImmutableList<T> getResults() {

@@ -2,11 +2,10 @@ package com.digitald4.common.tools;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOSQLImpl;
+import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.GeneratedMessageV3;
@@ -29,11 +28,11 @@ public class DataImporter {
 	}
 
 	public <T extends GeneratedMessageV3> void runFor(Class<T> c) throws IOException {
-		runFor(c, Query.getDefaultInstance());
+		runFor(c, new Query());
 	}
 
 	public <T extends GeneratedMessageV3> void runFor(Class<T> c, Query query) throws IOException {
-		String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s";
+		String url = apiConnector.formatUrl( c.getSimpleName() + "s");
 		List<T> results = dao.list(c, query).getResults();
 		if (!results.isEmpty()) {
 			T type = results.get(0);
@@ -50,13 +49,9 @@ public class DataImporter {
 	}
 
 	public <T extends GeneratedMessageV3> QueryResult<T> export(Class<T> c) throws IOException {
-		return export(c, ListRequest.getDefaultInstance());
-	}
-
-	public <T extends GeneratedMessageV3> QueryResult<T> export(Class<T> c, ListRequest request) throws IOException {
-		String url = apiConnector.getApiUrl() + "/" + c.getSimpleName() + "s";
+		String url = apiConnector.formatUrl( c.getSimpleName() + "s");
 		JSONObject response = new JSONObject(apiConnector.sendGet(url));
-		JSONArray resultArray = response.getJSONArray("result");
+		JSONArray resultArray = response.getJSONArray("results");
 		T type = ProtoUtil.getDefaultInstance(c);
 		List<T> results = new ArrayList<>(resultArray.length());
 		for (int x = 0; x < resultArray.length(); x++) {
@@ -67,7 +62,7 @@ public class DataImporter {
 
 	public static void main(String[] args) throws IOException {
 		DataImporter dataImporter = new DataImporter(
-				new APIConnector("\"https://ip360-179401.appspot.com/api\"").login(),
+				new APIConnector("\"https://ip360-179401.appspot.com/api\"", null).login(),
 				new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 						"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true",
 						"dd4_user", "getSchooled85"))

@@ -47,7 +47,12 @@ public class Echo {
 	public EchoMessage echo(EchoMessage message, @Named("n") @Nullable Integer n) {
 		return doEcho(message, n);
 	}
-	// [END echo_method]
+	// [END echo_method
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "hello")
+	public EchoMessage echoHello(@Named("n") @Nullable Integer n) throws UnauthorizedException {
+		return doEcho(new EchoMessage().setMessage("hello"), n);
+	}
 
 	/**
 	 * Echoes the received message back. If n is a non-negative integer, the message is copied that

@@ -1,19 +1,18 @@
 package com.digitald4.common.server.service;
 
 import com.digitald4.common.model.HasProto;
-import com.digitald4.common.model.UpdateRequest;
-import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
-import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
+import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.ProtoUtil;
 import com.google.api.server.spi.config.ApiMethod;
+import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
-import com.google.protobuf.Empty;
+import com.google.api.server.spi.config.Nullable;
 import com.google.protobuf.Message;
 
-public class SingleProtoService<T> implements EntityService<T> {
+public class SingleProtoService<T>
+		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T>, BulkDeleteable<T> {
 
 	private final Store<T> store;
 
@@ -21,26 +20,29 @@ public class SingleProtoService<T> implements EntityService<T> {
 		this.store = store;
 	}
 
-	protected T getType() {
-		return store.getType();
+	@Override
+	public Store<T> getStore() {
+		return store;
 	}
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "_")
 	public T create(T entity) {
-		return store.create(entity);
+		return getStore().create(entity);
 	}
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}")
 	public T get(@Named("id") long id) {
-		return store.get(id);
+		return getStore().get(id);
 	}
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "_")
-	public QueryResult<T> list(ListRequest request) {
-		return store.list(ProtoUtil.toQuery(request));
+	public QueryResult<T> list(
+			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken) {
+		return getStore().list(Query.forValues(filter, orderBy, pageSize, pageToken));
 	}
 
 	@Override
@@ -48,11 +50,11 @@ public class SingleProtoService<T> implements EntityService<T> {
 	public T update(@Named("id") long id, UpdateRequest<T> updateRequest) {
 		T entity = updateRequest.getEntity();
 		if (entity instanceof Message) {
-			return store.update(id, internal ->
-					(T) ProtoUtil.merge(updateRequest.getUpdateMask(), (Message) entity, (Message) internal));
+			return getStore().update(
+					id, internal -> (T) ProtoUtil.merge(updateRequest.updateMask(), (Message) entity, (Message) internal));
 		} else if (entity instanceof HasProto) {
-			return (T) store.update(id, internal ->
-					(T) ProtoUtil.merge(updateRequest.getUpdateMask(), (HasProto) entity, (HasProto) internal));
+			return (T) getStore().update(
+					id, internal -> (T) ProtoUtil.merge(updateRequest.updateMask(), (HasProto) entity, (HasProto) internal));
 		}
 		throw new IllegalArgumentException("Can not update type: " + entity.getClass());
 	}
@@ -60,15 +62,15 @@ public class SingleProtoService<T> implements EntityService<T> {
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "{id}")
 	public Empty delete(@Named("id") long id) {
-		store.delete(id);
-		return Empty.getDefaultInstance();
+		getStore().delete(id);
+		return Empty.getInstance();
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE)
-	public BatchDeleteResponse batchDelete(BatchDeleteRequest request) {
-		return BatchDeleteResponse.newBuilder()
-				.setDeleted(store.delete(ProtoUtil.toQuery(request)))
-				.build();
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "_")
+	public BatchDeleteResponse batchDelete(
+			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken) {
+		return new BatchDeleteResponse(getStore().delete(Query.forValues(filter, orderBy, pageSize, pageToken)));
 	}
 }

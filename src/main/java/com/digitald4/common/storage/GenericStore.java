@@ -1,28 +1,16 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.util.ProtoUtil;
-import com.google.protobuf.Message;
 import java.util.function.UnaryOperator;
-import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class GenericStore<T extends Message> implements Store<T> {
+public class GenericStore<R, T extends R> implements Store<T> {
 
 	private final Class<T> c;
-	private final T type;
-	private final Provider<DAO> daoProvider;
+	private final Provider<DAO<R>> daoProvider;
 
-	@Inject
-	public GenericStore(Class<T> c, Provider<DAO> daoProvider) {
+	public GenericStore(Class<T> c, Provider<DAO<R>> daoProvider) {
 		this.c = c;
-		this.type = ProtoUtil.getDefaultInstance(c);
 		this.daoProvider = daoProvider;
-	}
-	
-	@Override
-	public T getType() {
-		return type;
 	}
 	
 	@Override

@@ -1,8 +1,9 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4Protos;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
+import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProtoUtil;
@@ -13,10 +14,10 @@ import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.EntityQuery;
 import com.google.cloud.datastore.KeyFactory;
-import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery.CompositeFilter;
 import com.google.cloud.datastore.StructuredQuery.OrderBy;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -30,7 +31,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
 
-public class DAOCloudDS implements DAO {
+public class DAOCloudDS implements DAO<Message> {
 	private final Map<Class<?>, KeyFactory> keyFactories = new HashMap<>();
 	private final Datastore datastore;
 
@@ -52,8 +53,7 @@ public class DAOCloudDS implements DAO {
 			  } else {
 					entity = Entity.newBuilder(datastore.allocateId(getKeyFactory(t.getClass()).newKey()));
 				}
-				t.getAllFields()
-						.forEach((field, value) -> setObject(entity, t, field, value));
+				t.getAllFields().forEach((field, value) -> setObject(entity, t, field, value));
 				 return datastore.put(entity.build());
 			}
 		}.applyWithRetries(t));
@@ -70,22 +70,22 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T extends Message> QueryResult<T> list(Class<T> c, DD4Protos.Query query) {
-		return new RetryableFunction<DD4Protos.Query, QueryResult<T>>() {
+	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
+		return new RetryableFunction<Query, QueryResult<T>>() {
 			@Override
-			public QueryResult<T> apply(DD4Protos.Query request) {
-				EntityQuery.Builder query = Query.newEntityQueryBuilder()
+			public QueryResult<T> apply(Query request) {
+				EntityQuery.Builder query = com.google.cloud.datastore.Query.newEntityQueryBuilder()
 						.setKind(c.getSimpleName());
-				if (request.getFilterCount() > 0) {
+				if (!request.getFilters().isEmpty()) {
 					Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
-					if (request.getFilterCount() == 1) {
-						Filter filter = request.getFilter(0);
+					if (request.getFilters().size() == 1) {
+						Filter filter = request.getFilters().get(0);
 						query.setFilter(convertToPropertyFilter(filter, descriptor));
 					} else {
-						List<PropertyFilter> pfilters = request.getFilterList()
+						ImmutableList<PropertyFilter> pfilters = request.getFilters()
 								.stream()
 								.map(filter -> convertToPropertyFilter(filter, descriptor))
-								.collect(Collectors.toList());
+								.collect(toImmutableList());
 						query.setFilter(CompositeFilter.and(pfilters.get(0),
 								pfilters.subList(1, pfilters.size()).toArray(new PropertyFilter[pfilters.size() - 1])));
 					}
@@ -94,7 +94,7 @@ public class DAOCloudDS implements DAO {
 				if (request.getLimit() > 0) {
 					query.setLimit(request.getLimit());
 				}*/
-				request.getOrderByList().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
+				request.getOrderBys().forEach(orderBy -> query.addOrderBy(orderBy.getDesc()
 						? OrderBy.desc(orderBy.getColumn()) : OrderBy.asc(orderBy.getColumn())));
 				List<T> results = new ArrayList<>();
 				int[] count = new int[1];
@@ -117,23 +117,22 @@ public class DAOCloudDS implements DAO {
 			public T apply(Pair<Long, UnaryOperator<T>> pair) {
 				T t = updater.apply(get(c, id));
 				Entity.Builder entity = Entity.newBuilder(getKeyFactory(c).newKey(id));
-				t.getAllFields()
-						.forEach((field, value) -> setObject(entity, t, field, value));
+				t.getAllFields().forEach((field, value) -> setObject(entity, t, field, value));
 				return convert(c, datastore.put(entity.build()));
 			}
 		}.applyWithRetries(Pair.of(id, updater));
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, long id) {
+	public <T extends Message> void delete(Class<T> c, long id) {
 		deleteFunction.applyWithRetries(Pair.of(c, id));
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, DD4Protos.Query query) {
-		return new RetryableFunction<DD4Protos.Query, Integer>() {
+	public <T extends Message> int delete(Class<T> c, Query query) {
+		return new RetryableFunction<Query, Integer>() {
 			@Override
-			public Integer apply(DD4Protos.Query request) {
+			public Integer apply(Query request) {
 				List<T> results = list(c, request).getResults();
 				if (results.size() > 0) {
 					FieldDescriptor idField = ProtoUtil.getDefaultInstance(c)
@@ -157,8 +156,7 @@ public class DAOCloudDS implements DAO {
 		}
 	};
 
-	private static <T extends Message> void setObject(Entity.Builder entity, T t, FieldDescriptor field,
-																															 Object value) {
+	private static <T extends Message> void setObject(Entity.Builder entity, T t, FieldDescriptor field, Object value) {
 		String name = field.getName();
 		if (name.equals("id")) {
 			return;

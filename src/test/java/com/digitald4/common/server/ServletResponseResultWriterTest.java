@@ -1,26 +1,18 @@
 package com.digitald4.common.server;
 
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.util.ByteToBooleanTransformer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.api.server.spi.ConfiguredObjectMapper;
-import com.google.api.server.spi.ObjectMapperUtil;
 import com.google.api.server.spi.config.model.ApiSerializationConfig;
 import com.google.api.server.spi.response.ServletResponseResultWriter;
 import com.google.common.collect.ImmutableList;
 import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
-import java.io.PrintWriter;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import org.json.JSONObject;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;

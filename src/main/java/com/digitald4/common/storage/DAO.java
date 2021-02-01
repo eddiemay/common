@@ -1,20 +1,18 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.google.protobuf.Message;
 import java.util.function.UnaryOperator;
 
-public interface DAO {
+public interface DAO<R> {
 
-	<T extends Message> T create(T t);
+	<T extends R> T create(T t);
 
-	<T extends Message> T get(Class<T> c, long id);
+	<T extends R> T get(Class<T> c, long id);
 
-	<T extends Message> QueryResult<T> list(Class<T> c, Query query);
+	<T extends R> QueryResult<T> list(Class<T> c, Query query);
 
-	<T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater);
+	<T extends R> T update(Class<T> c, long id, UnaryOperator<T> updater);
 
-	<T> void delete(Class<T> c, long id);
+	<T extends R> void delete(Class<T> c, long id);
 
-	<T extends Message> int delete(Class<T> c, Query query);
+	<T extends R> int delete(Class<T> c, Query query);
 }

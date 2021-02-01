@@ -2,6 +2,7 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
+import com.digitald4.common.model.HasProto;
 import com.digitald4.common.model.User;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.proto.DD4Protos.DataFile;
@@ -11,13 +12,7 @@ import com.digitald4.common.server.service.JSONService;
 import com.digitald4.common.server.service.JSONServiceImpl;
 import com.digitald4.common.server.service.SingleProtoService;
 import com.digitald4.common.server.service.UserService;
-import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.DAOCloudDS;
-import com.digitald4.common.storage.DAOSQLImpl;
-import com.digitald4.common.storage.GeneralDataStore;
-import com.digitald4.common.storage.GenericStore;
-import com.digitald4.common.storage.BasicUserStore;
-import com.digitald4.common.storage.UserStore;
+import com.digitald4.common.storage.*;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Encryptor;
 import com.digitald4.common.util.Pair;
@@ -35,6 +30,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.google.protobuf.Message;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,14 +43,16 @@ public class ApiServiceServlet extends HttpServlet {
 
 	private final Map<String, JSONService> services = new HashMap<>();
 	private final IdTokenResolver idTokenResolver;
-	private DAO dao;
+	private DAO<Message> dao;
 	private Emailer emailer;
 	private Encryptor encryptor;
-	protected final Provider<DAO> daoProvider = () -> dao;
+	protected final Provider<DAO<Message>> daoProvider = () -> dao;
+	protected final DAO<HasProto> modelDao = new DAOModelWrapper(daoProvider);
+	protected final Provider<DAO<HasProto>> modelDaoProvider = () -> modelDao;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
 	protected final UserService userService;
-	protected final GenericStore<DataFile> dataFileStore;
+	protected final ProtoStore<DataFile> dataFileStore;
 	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
@@ -64,7 +63,7 @@ public class ApiServiceServlet extends HttpServlet {
 
 		userStore = new BasicUserStore(daoProvider, clock);
 
-		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<>(ActiveSession.class, daoProvider), userStore, clock);
+		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<Message, ActiveSession>(ActiveSession.class, daoProvider), userStore, clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
 		addService("generalData",
@@ -72,7 +71,7 @@ public class ApiServiceServlet extends HttpServlet {
 		addService("user",
 				new UserService.UserJSONService(userService = new UserService(userStore, userProvider, idTokenResolver, clock)));
 
-		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
+		dataFileStore = new ProtoStore<>(DataFile.class, daoProvider);
 		FileService fileService = new FileService(dataFileStore, requestProvider, responseProvider);
 		addService("file", new FileJSONService(fileService));
 	}

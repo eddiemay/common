@@ -67,19 +67,18 @@ public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 	}
 
 	@Override
-	public DD4Protos.User getProto() {
-		return userProto;
-	}
-
-	@Override
 	public DD4Protos.User toProto() {
 		return userProto;
 	}
 
 	@Override
-	public BasicUser setProto(DD4Protos.User userProto) {
+	public BasicUser update(DD4Protos.User userProto) {
 		this.userProto = userProto;
 		return this;
+	}
+
+	public static BasicUser fromProto(DD4Protos.User userProto) {
+		return new BasicUser().update(userProto);
 	}
 
 	@Override

@@ -1,28 +1,27 @@
 package com.digitald4.common.server.service;
 
-import com.digitald4.common.proto.DD4UIProtos.BatchDeleteRequest;
-import com.digitald4.common.proto.DD4UIProtos.BatchDeleteResponse;
-import com.digitald4.common.proto.DD4UIProtos.ListRequest;
-import com.digitald4.common.model.UpdateRequest;
+import com.digitald4.common.storage.ProtoStore;
+import com.digitald4.common.storage.Query;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.ApiMethod;
+import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
+import com.google.api.server.spi.config.Nullable;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.Empty;
 import com.google.protobuf.Message;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DualProtoService<T extends Message, I extends Message> implements EntityService<T> {
+public class DualProtoService<T extends Message, I extends Message>
+		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T>, BulkDeleteable<T> {
 
 	private final Class<T> cls;
 	private final T type;
-	private final Store<I> store;
+	private final ProtoStore<I> store;
 	private final Descriptor internalDescriptor;
 	private final Descriptor externalDescriptor;
 
@@ -71,16 +70,21 @@ public class DualProtoService<T extends Message, I extends Message> implements E
 		}
 	};
 	
-	public DualProtoService(Class<T> c, Store<I> store) {
+	public DualProtoService(Class<T> c, ProtoStore<I> store) {
 		this(ProtoUtil.getDefaultInstance(c), store);
 	}
 
-	protected DualProtoService(T type, Store<I> store) {
+	protected DualProtoService(T type, ProtoStore<I> store) {
 		this.cls = (Class<T>) type.getClass();
 		this.type = type;
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;
 		this.internalDescriptor = store.getType().getDescriptorForType();
+	}
+
+	@Override
+	public ProtoStore<T> getStore() {
+		return null;
 	}
 
 	protected T getType() {
@@ -109,30 +113,32 @@ public class DualProtoService<T extends Message, I extends Message> implements E
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "_")
-	public QueryResult<T> list(ListRequest request) {
-		return toListResponse(store.list(ProtoUtil.toQuery(request)));
+	public QueryResult<T> list(
+			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken) {
+		return toListResponse(store.list(Query.forValues(filter, orderBy, pageSize, pageToken)));
 	}
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
 	public T update(@Named("id") long id, UpdateRequest<T> updateRequest) {
 		return getConverter().apply(store.update(id, internal -> ProtoUtil.merge(
-				updateRequest.getUpdateMask(), getReverseConverter().apply(updateRequest.getEntity()), internal)));
+				updateRequest.updateMask(), getReverseConverter().apply(updateRequest.getEntity()), internal)));
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "{id}")
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "id/{id}")
 	public Empty delete(@Named("id") long id) {
-		store.delete(id);
-		return Empty.getDefaultInstance();
+		getStore().delete(id);
+		return Empty.getInstance();
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE)
-	public BatchDeleteResponse batchDelete(BatchDeleteRequest request) {
-		return BatchDeleteResponse.newBuilder()
-				.setDeleted(store.delete(ProtoUtil.toQuery(request)))
-				.build();
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
+	public BatchDeleteResponse batchDelete(
+			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken) {
+		return new BatchDeleteResponse(getStore().delete(Query.forValues(filter, orderBy, pageSize, pageToken)));
 	}
 
 	protected QueryResult<T> toListResponse(QueryResult<I> queryResult) {

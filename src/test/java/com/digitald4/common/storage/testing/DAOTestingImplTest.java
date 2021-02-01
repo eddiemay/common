@@ -3,19 +3,20 @@ package com.digitald4.common.storage.testing;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
+import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.QueryResult;
 import javax.inject.Provider;
+
+import com.google.protobuf.Message;
 import org.junit.Test;
 
 public class DAOTestingImplTest {
-	private final DAO dao = new DAOTestingImpl();
-	private final Provider<DAO> daoProvider = () -> dao;
-	private final GenericStore<User> userStore = new GenericStore<>(User.class, daoProvider);
+	private final DAO<Message> dao = new DAOTestingImpl();
+	private final Provider<DAO<Message>> daoProvider = () -> dao;
+	private final GenericStore<Message, User> userStore = new GenericStore<>(User.class, daoProvider);
 
 	@Test
 	public void testCreate() {
@@ -29,7 +30,7 @@ public class DAOTestingImplTest {
 
 		assertEquals(user, userStore.get(user.getId()));
 
-		QueryResult<User> users = userStore.list(Query.getDefaultInstance());
+		QueryResult<User> users = userStore.list(new Query());
 		assertEquals(1, users.getTotalSize());
 		assertEquals(1, users.getResults().size());
 		assertEquals(user, users.getResults().get(0));
@@ -47,15 +48,13 @@ public class DAOTestingImplTest {
 		assertEquals("benfrank@gmail.com", user2.getUsername());
 		assertEquals(34, user2.getTypeId());
 
-		users = userStore.list(Query.getDefaultInstance());
+		users = userStore.list(new Query());
 		assertEquals(2, users.getTotalSize());
 		assertEquals(2, users.getResults().size());
 		assertEquals(user, users.getResults().get(0));
 		assertEquals(user2, users.getResults().get(1));
 
-		users = userStore.list(Query.newBuilder()
-				.addFilter(Filter.newBuilder().setColumn("type_id").setValue("34"))
-				.build());
+		users = userStore.list(new Query().setFilters(new Query.Filter().setColumn("type_id").setValue("34")));
 		assertEquals(1, users.getTotalSize());
 		assertEquals(1, users.getResults().size());
 		assertEquals(user2, users.getResults().get(0));

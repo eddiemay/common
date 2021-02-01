@@ -1,8 +1,6 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.jdbc.DBConnector;
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProtoUtil;
@@ -29,7 +27,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
 
-public class DAOSQLImpl implements DAO {
+public class DAOSQLImpl implements DAO<Message> {
 	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
 	private static final String SELECT_SQL = "SELECT * FROM ";
 	private static final String WHERE_ID = " WHERE id=?;";
@@ -122,13 +120,13 @@ public class DAOSQLImpl implements DAO {
 				StringBuilder sql = new StringBuilder(SELECT_SQL).append(getView(c));
 				String where = "";
 				String countSql = null;
-				if (query.getFilterCount() > 0) {
-					sql.append(where = WHERE_SQL + String.join(" AND ", query.getFilterList().stream()
+				if (!query.getFilters().isEmpty()) {
+					sql.append(where = WHERE_SQL + String.join(" AND ", query.getFilters().stream()
 							.map(filter -> filter.getColumn() + " " + (filter.getOperator().isEmpty() ? "=" : filter.getOperator()) + " ?")
 							.collect(Collectors.toList())));
 				}
-				if (query.getOrderByCount() > 0) {
-					sql.append(ORDER_BY_SQL).append(String.join(",", query.getOrderByList().stream()
+				if (!query.getOrderBys().isEmpty()) {
+					sql.append(ORDER_BY_SQL).append(String.join(",", query.getOrderBys().stream()
 							.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
 							.collect(Collectors.toList())));
 				}
@@ -143,7 +141,7 @@ public class DAOSQLImpl implements DAO {
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql.toString())) {
 					int p = 1;
-					for (Filter filter : query.getFilterList()) {
+					for (Query.Filter filter : query.getFilters()) {
 						setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 					}
 					ResultSet rs = ps.executeQuery();
@@ -153,7 +151,7 @@ public class DAOSQLImpl implements DAO {
 					if (countSql != null) {
 						PreparedStatement ps2 = con.prepareStatement(countSql);
 						p = 1;
-						for (Filter filter : query.getFilterList()) {
+						for (Query.Filter filter : query.getFilters()) {
 							setObject(ps2, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 						}
 						rs = ps2.executeQuery();
@@ -228,7 +226,7 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, long id) {
+	public <T extends Message> void delete(Class<T> c, long id) {
 		if (!new RetryableFunction<Long, Boolean>() {
 			@Override
 			public Boolean apply(Long id) {
@@ -252,14 +250,14 @@ public class DAOSQLImpl implements DAO {
 			@Override
 			public Integer apply(Query query) {
 				StringBuilder sql = new StringBuilder(DELETE_SQL).append(getView(c));
-				if (query.getFilterCount() > 0) {
+				if (!query.getFilters().isEmpty()) {
 					sql.append(WHERE_SQL)
-							.append(String.join(" AND ", query.getFilterList().stream()
+							.append(String.join(" AND ", query.getFilters().stream()
 							.map(filter -> filter.getColumn() + " " + (filter.getOperator().isEmpty() ? "=" : filter.getOperator()) + " ?")
 							.collect(Collectors.toList())));
 				}
-				if (query.getOrderByCount() > 0) {
-					sql.append(ORDER_BY_SQL).append(String.join(",", query.getOrderByList().stream()
+				if (!query.getOrderBys().isEmpty()) {
+					sql.append(ORDER_BY_SQL).append(String.join(",", query.getOrderBys().stream()
 							.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
 							.collect(Collectors.toList())));
 				}
@@ -273,7 +271,7 @@ public class DAOSQLImpl implements DAO {
 				try (Connection con = connector.getConnection();
 						 PreparedStatement ps = con.prepareStatement(sql.toString())) {
 					int p = 1;
-					for (Filter filter : query.getFilterList()) {
+					for (Query.Filter filter : query.getFilters()) {
 						setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
 					}
 					return ps.executeUpdate();

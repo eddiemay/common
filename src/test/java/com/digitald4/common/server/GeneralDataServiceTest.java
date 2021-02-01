@@ -6,7 +6,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.digitald4.common.model.UpdateRequest;
+import com.digitald4.common.server.service.UpdateRequest;
 import com.digitald4.common.model.User;
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.proto.DD4Protos;
@@ -18,17 +18,18 @@ import com.digitald4.common.server.service.SingleProtoService;
 import com.digitald4.common.server.service.UserService;
 import com.digitald4.common.server.service.UserService.UserJSONService;
 import com.digitald4.common.storage.GeneralDataStore;
+import com.digitald4.common.storage.ProtoStore;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.storage.testing.DAOTestingImpl;
 import com.digitald4.common.util.ProtoUtil;
-import com.google.protobuf.FieldMask;
+import com.google.common.collect.ImmutableList;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.mockito.Mock;
 
 public class GeneralDataServiceTest {
-	@Mock private GeneralDataStore mockStore = mock(GeneralDataStore.class);
-	@Mock private UserStore mockUserStore = mock(UserStore.class);
+	@Mock private final ProtoStore mockStore = mock(GeneralDataStore.class);
+	@Mock private final UserStore mockUserStore = mock(UserStore.class);
 
 	@Test
 	public void testCreate() {
@@ -72,12 +73,12 @@ public class GeneralDataServiceTest {
 				gd.getId(),
 				new UpdateRequest<>(
 						GeneralData.newBuilder().setName("Test2").build(),
-						FieldMask.newBuilder().addPaths("name").build()));
+						ImmutableList.of("name")));
 		assertTrue(gd.getId() > 0);
 		assertEquals("Test2", gd.getName());
 
 		gd = ProtoUtil.toProto(GeneralData.getDefaultInstance(), jsonService.performAction("update",
-				new JSONObject("{\"id\":" + gd.getId() + ",\"entity\":{\"name\":\"test 3\"},\"updateMask\":\"name\"}}")));
+				new JSONObject("{\"id\":" + gd.getId() + ",\"entity\":{\"name\":\"test 3\"},\"updateMask\":[\"name\"]}}")));
 
 		assertTrue(gd.getId() > 0);
 		assertEquals("test 3", gd.getName());
@@ -85,7 +86,7 @@ public class GeneralDataServiceTest {
 
 	@Test
 	public void testCreateUser() {
-		when(mockUserStore.getType()).thenReturn(new BasicUser());
+		// when(mockUserStore.getType()).thenReturn(new BasicUser());
 		when(mockUserStore.create(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
 		UserService userService = new UserService(mockUserStore, null, null, null);
 		UserJSONService jsonService = new UserJSONService(userService);

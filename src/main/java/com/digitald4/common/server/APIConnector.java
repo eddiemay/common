@@ -10,19 +10,33 @@ import org.json.JSONObject;
 
 public class APIConnector {
 	private final String apiUrl;
+	private final String apiVersion;
+	private final long callInterval;
 	private String idToken;
+	private long lastCall;
 
-	public APIConnector(String apiUrl) {
+	public APIConnector(String apiUrl, String apiVersion, long callInterval) {
 		this.apiUrl = apiUrl;
+		this.apiVersion = apiVersion;
+		this.callInterval = callInterval;
 	}
 
-	public String getApiUrl() {
-		return apiUrl;
+	public APIConnector(String apiUrl, String apiVersion) {
+		this(apiUrl, apiVersion, 0);
+	}
+
+	public String formatUrl(String resourceName) {
+		String url = apiUrl + "/" + resourceName;
+		if (apiVersion != null && !apiVersion.isEmpty()) {
+			url += "/" + apiVersion;
+		}
+
+		return url;
 	}
 
 	public APIConnector login() throws IOException {
 		idToken = new JSONObject(
-				sendPost(getApiUrl() + "/users:login",
+				sendPost(apiUrl + "/users:login",
 						"json=%7B%22username%22:%22eddiemay@gmail.com%22,%22password%22:%22vxae11%22%7D"))
 				.getString("idToken");
 		System.out.println("IdToken: " + idToken);
@@ -38,6 +52,14 @@ public class APIConnector {
 	}
 
 	public String send(String method, String url, String payload) throws IOException {
+		long waitTime = (lastCall + callInterval) - System.currentTimeMillis();
+		if (waitTime > 0) {
+			try {
+				Thread.sleep(waitTime);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		long startTime = System.currentTimeMillis();
 		if (idToken != null) {
 			if (payload != null) {
@@ -51,15 +73,36 @@ public class APIConnector {
 			payload = null;
 		}
 		url = url.replaceAll(" ", "%20");
-		System.out.println("\nSending '" + method + "' request to URL: " + url);
+		System.out.println("\nSending '" + method + "' request to URL: " + url + " with payload: " + payload);
 		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 		con.setRequestMethod(method);
-		con.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-		con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+		con.setRequestProperty("Accept", "*/*");
+		con.setRequestProperty("Accept-Encoding", "zip, deflate, br");
+		con.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
+		con.setRequestProperty("Access-Control-Request-Headers", "x-nba-stats-origin,x-nba-stats-token");
+		con.setRequestProperty("Access-Control-Request-Method", "GET");
 		con.setRequestProperty("Cache-Control", "max-age=0");
 		con.setRequestProperty("Connection", "keep-alive");
 		con.setRequestProperty("Host", "stats.nba.com");
-		con.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36");
+		con.setRequestProperty("Origin", "https://www.nba.com");
+		con.setRequestProperty("Referer", "https://www.nba.com/");
+		con.setRequestProperty("Sec-Fetch-Dest", "empty");
+		con.setRequestProperty("Sec-Fetch-Dest", "cors");
+		con.setRequestProperty("Sec-Fetch-Dest", "same-site");
+		con.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36");
+		/* Accept: * /*
+	Accept-Encoding: gzip, deflate, br
+	Accept-Language: en-US,en;q=0.9
+	Access-Control-Request-Headers: x-nba-stats-origin,x-nba-stats-token
+	Access-Control-Request-Method: GET
+	Connection: keep-alive
+	Host: stats.nba.com
+	Origin: https://www.nba.com
+	Referer: https://www.nba.com/
+	Sec-Fetch-Dest: empty
+	Sec-Fetch-Mode: cors
+	Sec-Fetch-Site: same-site
+	User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36*/
 		if (payload != null) {
 			con.setDoOutput(true);
 			DataOutputStream dos = new DataOutputStream(con.getOutputStream());
@@ -80,7 +123,8 @@ public class APIConnector {
 		}
 		in.close();
 		// System.out.println("Response: " + response);
-		System.out.println("Time: " + (System.currentTimeMillis() - startTime) + "ms");
+		lastCall = System.currentTimeMillis();
+		System.out.println("Time: " + (lastCall - startTime) + "ms");
 		return response.toString();
 	}
 }

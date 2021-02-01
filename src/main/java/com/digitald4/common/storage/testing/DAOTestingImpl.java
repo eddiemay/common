@@ -1,9 +1,9 @@
 package com.digitald4.common.storage.testing;
 
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
-import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.Query;
+import com.digitald4.common.storage.Query.Filter;
+import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-public class DAOTestingImpl implements DAO {
+public class DAOTestingImpl implements DAO<Message> {
 	private AtomicLong idGenerator = new AtomicLong(5000);
 	private Map<Class, Map<Long, Message>> tables = new HashMap<>();
 
@@ -50,13 +50,13 @@ public class DAOTestingImpl implements DAO {
 			T type = ProtoUtil.getDefaultInstance(c);
 			Descriptor descriptor = type.getDescriptorForType();
 			List<T> results = table.values().stream().map(item -> (T) item).collect(Collectors.toList());
-			for (Filter filter : query.getFilterList()) {
+			for (Filter filter : query.getFilters()) {
 				FieldDescriptor field = descriptor.findFieldByName(filter.getColumn());
 				results = results.parallelStream()
 						.filter(t -> String.valueOf(t.getField(field)).equals(filter.getValue()))
 						.collect(Collectors.toList());
 			}
-			for (OrderBy orderBy : query.getOrderByList()) {
+			for (OrderBy orderBy : query.getOrderBys()) {
 				FieldDescriptor field = descriptor.findFieldByName(orderBy.getColumn());
 				results = results.stream()
 						.sorted((t1, t2) -> ((Comparable<Object>) t1.getField(field)).compareTo(t2.getField(field)))
@@ -85,7 +85,7 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, long id) {
+	public <T extends Message> void delete(Class<T> c, long id) {
 		Map<Long, ? extends Message> table = tables.get(c);
 		if (table != null) {
 			table.remove(id);
