@@ -1,6 +1,5 @@
 package com.digitald4.common.server.service;
 
-import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.QueryResult;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.DefaultValue;

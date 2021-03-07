@@ -10,7 +10,7 @@ import static java.util.function.Function.identity;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.digitald4.common.util.JSONUtil;
 import com.google.appengine.api.datastore.*;
 import com.google.appengine.api.datastore.Query.CompositeFilter;
 import com.google.appengine.api.datastore.Query.CompositeFilterOperator;
@@ -175,8 +175,7 @@ public class DAOCloudDS implements DAO {
 			}
 			try {
 				if (field.isObject()) {
-					ObjectMapper mapper = new ObjectMapper();
-					field.setMethod.invoke(t, mapper.readValue((String) value, field.getType()));
+					field.setMethod.invoke(t, JSONUtil.convertTo(field.getType(), (String) value));
 				} else {
 					switch (field.getType().getSimpleName()) {
 						case "ByteArray":

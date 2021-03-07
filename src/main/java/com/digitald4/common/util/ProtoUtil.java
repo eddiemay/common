@@ -58,7 +58,8 @@ public class ProtoUtil {
 		} else if (fromEntity instanceof HasProto) {
 			return (T) merge(toFieldMask(updateMask), (HasProto) fromEntity, (HasProto) toEntity);
 		}
-		throw new IllegalArgumentException("Can not update type: " + fromEntity.getClass());
+
+		return JSONUtil.merge(updateMask, fromEntity, toEntity);
 	}
 
 	public static <P extends Message, T extends HasProto<P>> T merge(FieldMask fieldMask, T fromEntity, T toEntity) {
