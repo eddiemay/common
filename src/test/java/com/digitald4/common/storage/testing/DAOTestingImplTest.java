@@ -4,19 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.GenericStore;
-import com.digitald4.common.storage.Query;
-import com.digitald4.common.storage.QueryResult;
-import javax.inject.Provider;
-
-import com.google.protobuf.Message;
+import com.digitald4.common.storage.*;
 import org.junit.Test;
 
 public class DAOTestingImplTest {
-	private final DAO<Message> dao = new DAOTestingImpl();
-	private final Provider<DAO<Message>> daoProvider = () -> dao;
-	private final GenericStore<Message, User> userStore = new GenericStore<>(User.class, daoProvider);
+	private final DAOTestingImpl messageDao = new DAOTestingImpl();
+	private final DAORouterImpl dao = new DAORouterImpl(messageDao, new HasProtoDAO(messageDao), null);
+	private final GenericStore<User> userStore = new GenericStore<>(User.class, () -> dao);
 
 	@Test
 	public void testCreate() {

@@ -1,32 +1,25 @@
 com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalData',
     function($http, $httpParamSerializer, globalData) {
-	this.baseUrl = 'api/';
-	this.$http = $http;
-	this.$httpParamSerializer = $httpParamSerializer;
+  this.baseUrl = '_ah/api/';
+  this.$http = $http;
+  this.$httpParamSerializer = $httpParamSerializer;
 
-	this.performRequest = function(method, url, params, successCallback, errorCallback) {
-	  globalData.extendTime();
+  this.performRequest = function(method, url, params, data, successCallback, errorCallback) {
+    globalData.extendTime();
     url = this.baseUrl + url;
-    var data = undefined;
-    var idToken = globalData.user ? globalData.user.idToken : undefined;
-    if (method == 'GET' || method == 'DELETE') {
-      params = params || {};
-      params.idToken = idToken;
-      var serializedParams = this.$httpParamSerializer(params);
-      if (params != undefined && serializedParams.length > 0) {
-        url += ((url.indexOf('?') === -1) ? '?' : '&') + serializedParams;
-      }
-    } else {
-      data = this.$httpParamSerializer({json: JSON.stringify(params), idToken: idToken});
+    params = params || {};
+    params.idToken = globalData.user ? globalData.user.idToken : undefined;
+    var serializedParams = this.$httpParamSerializer(params);
+    if (params != undefined && serializedParams.length > 0) {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
     }
+
     // Send
     this.$http({
       method: method,
       url: url,
-      data: data,
-      headers: {
-        'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      }
+      data: data ? JSON.stringify(data) : undefined,
+      headers: {'Content-type': 'application/json'}
     }).then(function(response) {
       successCallback(response.data);
     }, function(response) {

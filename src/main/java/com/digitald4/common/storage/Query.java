@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Query {
-  private static final Pattern FILTER_PATTERN = Pattern.compile("([A-Za-z ]+)([!=<>]+)([A-Za-z0-9- ]+)");
+  private static final Pattern FILTER_PATTERN = Pattern.compile("([A-Za-z_ ]+)([!=<>]+)([A-Za-z0-9-_ ]+)");
 
   private ImmutableList<Filter> filters = ImmutableList.of();
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();

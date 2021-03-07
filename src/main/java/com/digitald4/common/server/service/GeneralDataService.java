@@ -1,7 +1,6 @@
 package com.digitald4.common.server.service;
 
 import com.digitald4.common.proto.DD4Protos.GeneralData;
-import com.digitald4.common.server.service.SingleProtoService;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
@@ -27,7 +26,7 @@ import javax.inject.Inject;
 		}
 		// [END_EXCLUDE]
 )
-public class GeneralDataService extends SingleProtoService<GeneralData> {
+public class GeneralDataService extends EntityServiceImpl<GeneralData> {
 
 	@Inject
 	public GeneralDataService(GeneralDataStore generalDataStore) {

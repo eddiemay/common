@@ -3,16 +3,23 @@ package com.digitald4.common.storage;
 import java.util.function.UnaryOperator;
 import javax.inject.Provider;
 
-public class GenericStore<R, T extends R> implements Store<T> {
+public class GenericStore<T> implements Store<T> {
 
 	private final Class<T> c;
-	private final Provider<DAO<R>> daoProvider;
+	private final Provider<DAO> daoProvider;
+	private final T type;
 
-	public GenericStore(Class<T> c, Provider<DAO<R>> daoProvider) {
+	public GenericStore(Class<T> c, Provider<DAO> daoProvider) {
 		this.c = c;
 		this.daoProvider = daoProvider;
+		this.type = DAORouterImpl.getDefaultInstance(c);
 	}
-	
+
+	@Override
+	public T getType() {
+		return type;
+	}
+
 	@Override
 	public T create(T t) {
 		return daoProvider.get().create(t);

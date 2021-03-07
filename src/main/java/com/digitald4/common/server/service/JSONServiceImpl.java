@@ -1,20 +1,16 @@
 package com.digitald4.common.server.service;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.digitald4.common.util.ProtoUtil.toJSON;
 import static com.digitald4.common.util.ProtoUtil.toProto;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.storage.ProtoStore;
 import com.digitald4.common.storage.Store;
-import com.google.common.collect.ImmutableList;
+import com.digitald4.common.util.JSONUtil;
 import com.google.protobuf.Message;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.stream.IntStream;
 
 public class JSONServiceImpl<T extends Message> implements JSONService {
 	private static final DD4StorageException BAD_REQUEST =
@@ -27,10 +23,8 @@ public class JSONServiceImpl<T extends Message> implements JSONService {
 		Store<T> store = protoService.getStore();
 		if (protoService instanceof DualProtoService) {
 			this.type = ((DualProtoService<T, ?>) protoService).getType();
-		} else if (store instanceof ProtoStore) {
-			this.type = ((ProtoStore<T>) store).getType();
 		} else {
-			throw new IllegalArgumentException("Unable to determine proto type");
+			this.type = store.getType();
 		}
 		this.protoService = protoService;
 		this.requiresLoginDefault = requiresLoginDefault;
@@ -70,9 +64,8 @@ public class JSONServiceImpl<T extends Message> implements JSONService {
 					return toJSON(
 							((Updateable<T>) protoService).update(
 									jsonRequest.getLong("id"),
-									new UpdateRequest<>(
-											toProto(type, jsonRequest.getJSONObject("entity")),
-											getStringArray(jsonRequest,"updateMask"))));
+									toProto(type, jsonRequest.getJSONObject("entity")),
+									jsonRequest.getString("updateMask")));
 				}
 				throw BAD_REQUEST;
 			}
@@ -84,27 +77,13 @@ public class JSONServiceImpl<T extends Message> implements JSONService {
 			}
 			case "batchDelete": {
 				if (protoService instanceof BulkDeleteable) {
-					return toJSON(
-							((BulkDeleteable) protoService).batchDelete(
-									jsonRequest.optString("filter"), jsonRequest.optString("orderBy"),
-									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken")));
+					JSONArray ids = jsonRequest.getJSONArray("ids");
+					return toJSON(((BulkDeleteable) protoService).batchDelete(JSONUtil.transform(ids, ids::getLong)));
 				}
 				throw BAD_REQUEST;
 			}
 			default:
 				throw BAD_REQUEST;
 		}
-	}
-
-	public static ImmutableList<String> getStringArray(JSONObject json, String key) {
-		JSONArray jsonArray = json.optJSONArray(key);
-		if (jsonArray == null) {
-			return ImmutableList.of();
-		}
-
-		return IntStream.range(0, jsonArray.length())
-				.mapToObj(jsonArray::getString)
-				.collect(toImmutableList());
-
 	}
 }

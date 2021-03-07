@@ -16,17 +16,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
-public class DAOModelWrapperTest {
+public class HasProtoDAOTest {
   private static final long USER_ID = 123L;
   private static final DD4Protos.User USER_PROTO = DD4Protos.User.newBuilder()
       .setId(USER_ID)
       .setUsername("eddiemay")
       .build();
-  @Mock private final DAO<Message> messageDAO = mock(DAOCloudDS.class);
-  private final DAOModelWrapper modelDAO = new DAOModelWrapper(() -> messageDAO);
+  @Mock private final TypedDAO<Message> messageDAO = mock(DAOCloudDSProto.class);
+  private HasProtoDAO modelDAO;
 
   @Before
   public void setup() {
+    modelDAO = new HasProtoDAO(messageDAO);
     when(messageDAO.create(any(DD4Protos.User.class))).thenAnswer(i -> i.getArguments()[0]);
     when(messageDAO.get(DD4Protos.User.class, USER_ID)).thenReturn(USER_PROTO);
     when(messageDAO.list(eq(DD4Protos.User.class), any(Query.class)))

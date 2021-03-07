@@ -1,10 +1,9 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.jdbc.DBConnector;
+import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
-import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProtoUtil;
-import com.digitald4.common.util.RetryableFunction;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
@@ -19,23 +18,19 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
 
-public class DAOSQLImpl implements DAO<Message> {
-	private static final String INSERT_SQL = "INSERT INTO {TABLE}({COLUMNS}) VALUES({VALUES});";
-	private static final String SELECT_SQL = "SELECT * FROM ";
-	private static final String WHERE_ID = " WHERE id=?;";
-	private static final String UPDATE_SQL = "UPDATE {TABLE} SET {SETS}" + WHERE_ID;
-	private static final String DELETE_SQL = "DELETE FROM {TABLE}";
-	private static final String WHERE_SQL = " WHERE ";
-	private static final String ORDER_BY_SQL = " ORDER BY ";
-	private static final String LIMIT_SQL = " LIMIT ";
+public class DAOSQLImpl implements TypedDAO<Message> {
+	private static final String INSERT_SQL = "INSERT INTO %s(%s) VALUES(%s);";
+	private static final String SELECT_SQL = "SELECT * FROM %s WHERE id=?;";
+	private static final String SEARCH_SQL = "SELECT * FROM %s%s%s%s;";
+	private static final String UPDATE_SQL = "UPDATE %s SET %s WHERE id=?;";
+	private static final String DELETE_SQL = "DELETE FROM %s%s;";
+	private static final String BATCH_DELETE_SQL = "DELETE FROM %s%s%s%s;";
+	private static final String LIMIT_SQL = " LIMIT %s%d";
 	private static final String COUNT_SQL = "SELECT COUNT(*) FROM %s%s;";
 
 	private final DBConnector connector;
@@ -53,233 +48,207 @@ public class DAOSQLImpl implements DAO<Message> {
 
 	@Override
 	public <T extends Message> T create(T t) {
-		return new RetryableFunction<T, T>() {
-			@Override
-			public T apply(T t) {
-				String columns = "";
-				String values = "";
-				Map<FieldDescriptor, Object> valueMap = t.getAllFields();
-				for (FieldDescriptor field : valueMap.keySet()) {
-					if (columns.length() > 0) {
-						columns += ",";
-						values += ",";
-					}
-					columns += field.getName();
-					values += "?";
+		return Calculate.executeWithRetries(2, () -> {
+			String columns = "";
+			String values = "";
+			Map<FieldDescriptor, Object> valueMap = t.getAllFields();
+			for (FieldDescriptor field : valueMap.keySet()) {
+				if (columns.length() > 0) {
+					columns += ",";
+					values += ",";
 				}
-				String sql = INSERT_SQL.replaceAll("\\{TABLE\\}", t.getClass().getSimpleName())
-						.replaceAll("\\{COLUMNS\\}", columns)
-						.replaceAll("\\{VALUES\\}", values);
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-					int index = 1;
-					for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
-						setObject(ps, index++, t, entry.getKey(), entry.getValue());
-					}
-					ps.executeUpdate();
-					ResultSet rs = ps.getGeneratedKeys();
-					if (rs.next()) {
-						return get((Class<T>) t.getClass(), rs.getInt(1));
-					}
-					return t;
-				} catch (SQLException e) {
-					throw new RuntimeException("Error creating record: " + e.getMessage(), e);
-				}
+				columns += field.getName();
+				values += "?";
 			}
-		}.applyWithRetries(t);
+			String sql = String.format(INSERT_SQL, t.getClass().getSimpleName(), columns, values);
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+				int index = 1;
+				for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
+					setObject(ps, index++, t, entry.getKey(), entry.getValue());
+				}
+				ps.executeUpdate();
+				ResultSet rs = ps.getGeneratedKeys();
+				if (rs.next()) {
+					return get((Class<T>) t.getClass(), rs.getInt(1));
+				}
+				return t;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error creating record: " + e.getMessage(), e);
+			}
+		});
 	}
 
 	@Override
 	public <T extends Message> T get(Class<T> c, long id) {
-		return new RetryableFunction<Long, T>() {
-			@Override
-			public T apply(Long id) {
-				String sql = SELECT_SQL + getView(c) + WHERE_ID;
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql);) {
-					ps.setLong(1, id);
-					T result = null;
-					ResultSet rs = ps.executeQuery();
-					if (rs.next()) {
-						result = parseFromResultSet(c, rs);
-					}
-					rs.close();
-					return result;
-				} catch (SQLException e) {
-					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+		return Calculate.executeWithRetries(2, () -> {
+			String sql = String.format(SELECT_SQL, getView(c));
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql)) {
+				ps.setLong(1, id);
+				T result = null;
+				ResultSet rs = ps.executeQuery();
+				if (rs.next()) {
+					result = parseFromResultSet(c, rs);
 				}
+				rs.close();
+				return result;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 			}
-		}.applyWithRetries(id);
+		});
 	}
 
 	@Override
 	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
-		return new RetryableFunction<Query, QueryResult<T>>() {
-			@Override
-			public QueryResult<T> apply(Query query) {
-				StringBuilder sql = new StringBuilder(SELECT_SQL).append(getView(c));
-				String where = "";
-				String countSql = null;
-				if (!query.getFilters().isEmpty()) {
-					sql.append(where = WHERE_SQL + String.join(" AND ", query.getFilters().stream()
-							.map(filter -> filter.getColumn() + " " + (filter.getOperator().isEmpty() ? "=" : filter.getOperator()) + " ?")
-							.collect(Collectors.toList())));
-				}
-				if (!query.getOrderBys().isEmpty()) {
-					sql.append(ORDER_BY_SQL).append(String.join(",", query.getOrderBys().stream()
-							.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
-							.collect(Collectors.toList())));
-				}
-				if (query.getLimit() > 0) {
-					sql.append(LIMIT_SQL)
-							.append(query.getOffset() > 0 ? query.getOffset() + "," : "")
-							.append(String.valueOf(query.getLimit()));
-					countSql = String.format(COUNT_SQL, getView(c), where);
-				}
-				sql.append(";");
-				Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql.toString())) {
-					int p = 1;
-					for (Query.Filter filter : query.getFilters()) {
-						setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
-					}
-					ResultSet rs = ps.executeQuery();
-					List<T> results = process(c, rs);
-					int totalSize = results.size();
-					rs.close();
-					if (countSql != null) {
-						PreparedStatement ps2 = con.prepareStatement(countSql);
-						p = 1;
-						for (Query.Filter filter : query.getFilters()) {
-							setObject(ps2, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
-						}
-						rs = ps2.executeQuery();
-						if (rs.next()) {
-							totalSize = rs.getInt(1);
-						}
-						rs.close();
-						ps2.close();
-					}
-					return new QueryResult<>(results, totalSize);
-				} catch (SQLException e) {
-					throw new RuntimeException("Error reading record: " + e.getMessage(), e);
-				}
+		return Calculate.executeWithRetries(2, () -> {
+			String where = query.getFilters().isEmpty() ? "" :
+					query.getFilters().stream()
+							.map(filter -> filter.getColumn() + filter.getOperator() + "?")
+							.collect(Collectors.joining(" AND ", " WHERE ", ""));
+			String orderBy = query.getOrderBys().isEmpty() ? "" :
+					query.getOrderBys().stream()
+							.map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : ""))
+							.collect(Collectors.joining(", ", " ORDER BY ", ""));
+			String limit = "";
+			String countSql = null;
+			if (query.getLimit() > 0) {
+				limit = String.format(LIMIT_SQL, query.getOffset() > 0 ? query.getOffset() + "," : "", query.getLimit());
+				countSql = String.format(COUNT_SQL, getView(c), where);
 			}
-		}.applyWithRetries(query);
+
+			String sql = String.format(SEARCH_SQL, getView(c), where, orderBy, limit);
+			Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql)) {
+				int p = 1;
+				for (Query.Filter filter : query.getFilters()) {
+					setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
+				}
+				ResultSet rs = ps.executeQuery();
+				List<T> results = process(c, rs);
+				int totalSize = results.size();
+				rs.close();
+				if (countSql != null) {
+					PreparedStatement ps2 = con.prepareStatement(countSql);
+					p = 1;
+					for (Query.Filter filter : query.getFilters()) {
+						setObject(ps2, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
+					}
+					rs = ps2.executeQuery();
+					if (rs.next()) {
+						totalSize = rs.getInt(1);
+					}
+					rs.close();
+					ps2.close();
+				}
+				return new QueryResult<>(results, totalSize);
+			} catch (SQLException e) {
+				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+			}
+		});
 	}
 
 	@Override
 	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
-		return new RetryableFunction<Pair<Long, UnaryOperator<T>>, T>() {
-			@Override
-			public T apply(Pair<Long, UnaryOperator<T>> pair) {
-				long id = pair.getLeft();
-				UnaryOperator<T> updater = pair.getRight();
-				T orig = get(c, id);
-				T updated = updater.apply(orig);
-				String sets = "";
+		return Calculate.executeWithRetries(2, () -> {
+			T orig = get(c, id);
+			T updated = updater.apply(orig);
 
-				// Find all the fields that were modified in the updated proto.
-				Map<FieldDescriptor, Object> valueMap = updated.getAllFields();
-				List<Map.Entry<FieldDescriptor, Object>> modified = new ArrayList<>();
-				for (Map.Entry<FieldDescriptor, Object> entry : valueMap.entrySet()) {
-					FieldDescriptor field = entry.getKey();
-					if (!valueMap.get(field).equals(orig.getField(field))) {
-						if (sets.length() > 0) {
-							sets += ", ";
+			// Find all the fields that were modified in the updated proto.
+			Map<FieldDescriptor, Object> valueMap = updated.getAllFields();
+			List<Map.Entry<FieldDescriptor, Object>> modified = new ArrayList<>();
+			String sets = valueMap.entrySet().stream()
+					.map(entry -> {
+						FieldDescriptor field = entry.getKey();
+						if (!valueMap.get(field).equals(orig.getField(field))) {
+							modified.add(entry);
+							return field.getName() + "=?";
 						}
-						modified.add(entry);
-						sets += field.getName() + " = ?";
-					}
-				}
 
-				// Find all the fields that have been removed from the update set them to null.
-				for (FieldDescriptor field : orig.getAllFields().keySet()) {
-					if (!valueMap.containsKey(field)) {
-						if (sets.length() > 0) {
-							sets += ", ";
-						}
-						sets += field.getName() + " = NULL";
+						return null;
+					})
+					.filter(Objects::nonNull)
+					.collect(Collectors.joining(", "));
+
+			// Find all the fields that have been removed from the update set them to null.
+			for (FieldDescriptor field : orig.getAllFields().keySet()) {
+				if (!valueMap.containsKey(field)) {
+					if (sets.length() > 0) {
+						sets += ", ";
 					}
+					sets += field.getName() + "=NULL";
 				}
-				if (sets.isEmpty()) {
-					System.out.println("Nothing changed, returning");
-				} else {
-					String sql = UPDATE_SQL.replaceAll("\\{TABLE\\}", getTable(c))
-							.replaceAll("\\{SETS\\}", sets);
-					try (Connection con = connector.getConnection();
-							 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-						int index = 1;
-						for (Map.Entry<FieldDescriptor, Object> entry : modified) {
-							setObject(ps, index++, updated, entry.getKey(), entry.getValue());
-						}
-						ps.setLong(index, id);
-						ps.executeUpdate();
-					} catch (Exception e) {
-						throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
-					}
-				}
-				return get(c, id);
 			}
-		}.applyWithRetries(Pair.of(id, updater));
+
+			if (sets.isEmpty()) {
+				throw new RuntimeException("Nothing changed, returning");
+			} else {
+				String sql = String.format(UPDATE_SQL, getTable(c), sets);
+				try (Connection con = connector.getConnection();
+						 PreparedStatement ps = con.prepareStatement(sql)) {
+					int index = 1;
+					for (Map.Entry<FieldDescriptor, Object> entry : modified) {
+						setObject(ps, index++, updated, entry.getKey(), entry.getValue());
+					}
+					ps.setLong(index, id);
+					ps.executeUpdate();
+				} catch (Exception e) {
+					throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
+				}
+			}
+			return get(c, id);
+		});
 	}
 
 	@Override
 	public <T extends Message> void delete(Class<T> c, long id) {
-		if (!new RetryableFunction<Long, Boolean>() {
-			@Override
-			public Boolean apply(Long id) {
-				String sql = (DELETE_SQL + WHERE_ID).replaceAll("\\{TABLE\\}", getTable(c));
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql);) {
-					ps.setLong(1, id);
-					return ps.executeUpdate() > 0;
-				} catch (SQLException e) {
-					throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
-				}
+		if (!Calculate.executeWithRetries(2, () -> {
+			String sql = String.format(DELETE_SQL, getTable(c),  " WHERE id=?");
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql);) {
+				ps.setLong(1, id);
+
+				return ps.executeUpdate() > 0;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
 			}
-		}.applyWithRetries(id)) {
+		})) {
 			throw new RuntimeException("Error deleting record: " + c.getSimpleName() + " " + id);
 		}
 	}
 
 	@Override
 	public <T extends Message> int delete(Class<T> c, Query query) {
-		return new RetryableFunction<Query, Integer>() {
-			@Override
-			public Integer apply(Query query) {
-				StringBuilder sql = new StringBuilder(DELETE_SQL).append(getView(c));
-				if (!query.getFilters().isEmpty()) {
-					sql.append(WHERE_SQL)
-							.append(String.join(" AND ", query.getFilters().stream()
-							.map(filter -> filter.getColumn() + " " + (filter.getOperator().isEmpty() ? "=" : filter.getOperator()) + " ?")
-							.collect(Collectors.toList())));
-				}
-				if (!query.getOrderBys().isEmpty()) {
-					sql.append(ORDER_BY_SQL).append(String.join(",", query.getOrderBys().stream()
-							.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
-							.collect(Collectors.toList())));
-				}
-				if (query.getLimit() > 0) {
-					sql.append(LIMIT_SQL)
-							.append(query.getOffset() > 0 ? query.getOffset() + "," : "")
-							.append(String.valueOf(query.getLimit()));
-				}
-				sql.append(";");
-				Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
-				try (Connection con = connector.getConnection();
-						 PreparedStatement ps = con.prepareStatement(sql.toString())) {
-					int p = 1;
-					for (Query.Filter filter : query.getFilters()) {
-						setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
-					}
-					return ps.executeUpdate();
-				} catch (SQLException e) {
-					throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
-				}
+		return Calculate.executeWithRetries(2, () -> {
+			String where = query.getFilters().isEmpty() ? "" :
+					query.getFilters().stream()
+							.map(filter -> filter.getColumn() + filter.getOperator() + "?")
+							.collect(Collectors.joining(" AND ", " WHERE ", ""));
+			String orderBy = query.getOrderBys().isEmpty() ? "" :
+					query.getOrderBys().stream()
+							.map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : ""))
+							.collect(Collectors.joining(", ", " ORDER BY ", ""));
+			String limit = "";
+			String countSql = null;
+			if (query.getLimit() > 0) {
+				limit = String.format(LIMIT_SQL, query.getOffset() > 0 ? query.getOffset() + "," : "", query.getLimit());
+				countSql = String.format(COUNT_SQL, getView(c), where);
 			}
-		}.applyWithRetries(query);
+
+			String sql = String.format(BATCH_DELETE_SQL, getView(c), where, orderBy, limit);
+			Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql.toString())) {
+				int p = 1;
+				for (Query.Filter filter : query.getFilters()) {
+					setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
+				}
+				return ps.executeUpdate();
+			} catch (SQLException e) {
+				throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
+			}
+		});
 	}
 
 	private String getTable(Class<?> c) {
@@ -312,7 +281,7 @@ public class DAOSQLImpl implements DAO<Message> {
 						if (field.getName().endsWith("id")) {
 							ps.setObject(index, value);
 						} else {
-							ps.setTimestamp(index, new Timestamp((Long.valueOf(value.toString()))));
+							ps.setTimestamp(index, new Timestamp((Long.parseLong(value.toString()))));
 						}
 						break;
 					case MESSAGE:

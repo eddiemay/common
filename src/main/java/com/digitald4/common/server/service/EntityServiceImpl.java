@@ -11,12 +11,12 @@ import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.protobuf.Message;
 
-public class SingleProtoService<T>
-		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T>, BulkDeleteable<T> {
+import java.util.Arrays;
+
+public class EntityServiceImpl<T> implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T> {
 
 	private final Store<T> store;
-
-	public SingleProtoService(Store<T> store) {
+	public EntityServiceImpl(Store<T> store) {
 		this.store = store;
 	}
 
@@ -47,16 +47,8 @@ public class SingleProtoService<T>
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
-	public T update(@Named("id") long id, UpdateRequest<T> updateRequest) {
-		T entity = updateRequest.getEntity();
-		if (entity instanceof Message) {
-			return getStore().update(
-					id, internal -> (T) ProtoUtil.merge(updateRequest.updateMask(), (Message) entity, (Message) internal));
-		} else if (entity instanceof HasProto) {
-			return (T) getStore().update(
-					id, internal -> (T) ProtoUtil.merge(updateRequest.updateMask(), (HasProto) entity, (HasProto) internal));
-		}
-		throw new IllegalArgumentException("Can not update type: " + entity.getClass());
+	public T update(@Named("id") long id, T entity, @Named("updateMask") String updateMask) {
+		return getStore().update(id, internal -> ProtoUtil.merge(updateMask, entity, internal));
 	}
 
 	@Override
@@ -64,13 +56,5 @@ public class SingleProtoService<T>
 	public Empty delete(@Named("id") long id) {
 		getStore().delete(id);
 		return Empty.getInstance();
-	}
-
-	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "_")
-	public BatchDeleteResponse batchDelete(
-			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken) {
-		return new BatchDeleteResponse(getStore().delete(Query.forValues(filter, orderBy, pageSize, pageToken)));
 	}
 }

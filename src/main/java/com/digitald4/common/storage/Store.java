@@ -3,6 +3,8 @@ package com.digitald4.common.storage;
 import java.util.function.UnaryOperator;
 
 public interface Store<T> {
+	T getType();
+
 	T create(T t);
 
 	T get(long id);

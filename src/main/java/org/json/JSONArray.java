@@ -166,6 +166,9 @@ public class JSONArray {
      */
     public JSONArray(Object array) throws JSONException {
         this();
+        if (array instanceof Collection) {
+            array = ((Collection) array).toArray();
+        }
         if (array.getClass().isArray()) {
             int length = Array.getLength(array);
             for (int i = 0; i < length; i += 1) {

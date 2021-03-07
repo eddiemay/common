@@ -113,7 +113,7 @@ public class FormatText {
 		return out.toString();
 	}
 
-	public static String toUnderScoreCased(String camelCase){
+	public static String toUnderScoreCase(String camelCase) {
 		StringBuilder out = new StringBuilder();
 		char ch;       // One of the characters in str.
 		if(camelCase.length() > 0)

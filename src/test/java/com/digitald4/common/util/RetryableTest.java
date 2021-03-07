@@ -1,24 +1,23 @@
 package com.digitald4.common.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 public class RetryableTest {
 
 	@Test
-	public void test() throws Exception {
-		String out = new Retryable<String, StringBuffer>() {
-			@Override
-			public String execute(StringBuffer data) throws Exception {
-				if (data.length() == 0) {
-					data.append("done");
-					throw new IllegalArgumentException("Retry test planned error");
-				}
-				return data.toString();
+	public void test() {
+		StringBuilder data = new StringBuilder();
+		String out = Calculate.executeWithRetries(2, () -> {
+			if (data.length() == 0) {
+				data.append("done");
+				throw new IllegalArgumentException("Retry test planned error");
 			}
-		}.run(new StringBuffer(""));
+
+			return data.toString();
+		});
+
 		assertEquals("done", out);
 	}
-
 }

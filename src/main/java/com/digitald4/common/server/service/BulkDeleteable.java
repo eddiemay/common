@@ -7,7 +7,5 @@ import com.google.api.server.spi.config.Nullable;
 
 public interface BulkDeleteable<T> extends EntityService<T> {
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-  BatchDeleteResponse batchDelete(
-      @Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-      @Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken);
+  BatchDeleteResponse batchDelete(@Named("id") Iterable<Long> ids);
 }

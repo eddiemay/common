@@ -18,11 +18,11 @@ public interface User<P extends Message, PI> extends HasProto<P> {
 
 	User updateLastLogin(Clock clock);
 
-	User setPasswordInfo(PI passwordInfo);
+	User updatePasswordInfo(PI passwordInfo);
 
-	ActiveSession getActiveSession();
+	ActiveSession activeSession();
 
-	User setActiveSession(ActiveSession activeSession);
+	User activeSession(ActiveSession activeSession);
 
 	/**
 	 * Attemps to verfiy the password provided by the user.

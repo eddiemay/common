@@ -1,8 +1,11 @@
 package com.digitald4.common.util;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.HasProto;
 import com.digitald4.common.storage.QueryResult;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Any;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -13,6 +16,7 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,19 +52,27 @@ public class ProtoUtil {
 		}
 	}
 
-	public static <T extends Message> T merge(FieldMask fieldMask, T fromProto, T toProto) {
-		T.Builder builder = toProto.toBuilder();
-		merge(fieldMask, fromProto, builder);
-		return (T) builder.build();
+	public static <T> T merge(String updateMask, T fromEntity, T toEntity) {
+		if (fromEntity instanceof Message) {
+			return (T) merge(toFieldMask(updateMask), (Message) fromEntity, (Message) toEntity);
+		} else if (fromEntity instanceof HasProto) {
+			return (T) merge(toFieldMask(updateMask), (HasProto) fromEntity, (HasProto) toEntity);
+		}
+		throw new IllegalArgumentException("Can not update type: " + fromEntity.getClass());
 	}
 
-	public static <T extends Message, E extends HasProto<T>> E merge(FieldMask fieldMask, E fromEntity, E toEntity) {
-		toEntity.update(merge(fieldMask, fromEntity.toProto(), toEntity.toProto()));
+	public static <P extends Message, T extends HasProto<P>> T merge(FieldMask fieldMask, T fromEntity, T toEntity) {
+		toEntity.fromProto(merge(fieldMask, fromEntity.toProto(), toEntity.toProto()));
 		return toEntity;
 	}
 
-	public static <T extends Message> void merge(FieldMask fieldMask, T fromProto, T.Builder toBuilder) {
-		FieldMaskUtil.merge(fieldMask, fromProto, toBuilder, MERGE_OPTIONS);
+	public static <T extends Message> T merge(FieldMask fieldMask, T fromProto, T toProto) {
+		return merge(fieldMask, fromProto, toProto.toBuilder());
+	}
+
+	public static <T extends Message> T merge(FieldMask fieldMask, T fromProto, T.Builder builder) {
+		FieldMaskUtil.merge(fieldMask, fromProto, builder, MERGE_OPTIONS);
+		return (T) builder.build();
 	}
 
 	public static String print(Message message) {
@@ -108,6 +120,12 @@ public class ProtoUtil {
 		} catch (InvalidProtocolBufferException e) {
 			throw new DD4StorageException(String.format("Error unpacking any: %s of type %s ", any, c), e);
 		}
+	}
+
+	public static FieldMask toFieldMask(String updateMask) {
+		return FieldMask.newBuilder()
+				.addAllPaths(isNullOrEmpty(updateMask) ? ImmutableList.of() : Arrays.asList(updateMask.split(",")))
+				.build();
 	}
 
 	@SuppressWarnings("unchecked")

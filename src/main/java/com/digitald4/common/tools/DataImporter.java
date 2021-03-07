@@ -3,7 +3,7 @@ package com.digitald4.common.tools;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.server.APIConnector;
-import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.TypedDAO;
 import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.QueryResult;
@@ -19,10 +19,10 @@ import org.json.JSONObject;
 
 public class DataImporter {
 	private final APIConnector apiConnector;
-	private final DAO dao;
+	private final TypedDAO dao;
 	private String idToken;
 
-	public DataImporter(APIConnector apiConnector, DAO dao) {
+	public DataImporter(APIConnector apiConnector, TypedDAO dao) {
 		this.apiConnector = apiConnector;
 		this.dao = dao;
 	}

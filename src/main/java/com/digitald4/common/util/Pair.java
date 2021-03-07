@@ -1,16 +1,17 @@
 package com.digitald4.common.util;
 
 public class Pair<L, R> implements Comparable<Pair<L, R>> {
+	public enum Side{LEFT, RIGHT};
+
 	private final L left;
 	private final R right;
-	public enum Side{LEFT, RIGHT};
-	private Side firstCompare; 
+	private final Side firstCompare;
 	
-	public Pair(L left, R right) {
+	private Pair(L left, R right) {
 		this(left, right, Side.LEFT);
 	}
 	
-	public Pair(L left, R right, Side firstCompare) {
+	private Pair(L left, R right, Side firstCompare) {
 		this.left = left;
 		this.right = right;
 		this.firstCompare = firstCompare;

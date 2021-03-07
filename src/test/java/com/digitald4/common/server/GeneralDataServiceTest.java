@@ -6,7 +6,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.digitald4.common.server.service.UpdateRequest;
 import com.digitald4.common.model.User;
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.proto.DD4Protos;
@@ -14,28 +13,25 @@ import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.server.service.GeneralDataService;
 import com.digitald4.common.server.service.JSONService;
 import com.digitald4.common.server.service.JSONServiceImpl;
-import com.digitald4.common.server.service.SingleProtoService;
+import com.digitald4.common.server.service.EntityServiceImpl;
 import com.digitald4.common.server.service.UserService;
 import com.digitald4.common.server.service.UserService.UserJSONService;
-import com.digitald4.common.storage.GeneralDataStore;
-import com.digitald4.common.storage.ProtoStore;
-import com.digitald4.common.storage.UserStore;
+import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.testing.DAOTestingImpl;
 import com.digitald4.common.util.ProtoUtil;
-import com.google.common.collect.ImmutableList;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.mockito.Mock;
 
 public class GeneralDataServiceTest {
-	@Mock private final ProtoStore mockStore = mock(GeneralDataStore.class);
+	@Mock private final GeneralDataStore mockStore = mock(GeneralDataStore.class);
 	@Mock private final UserStore mockUserStore = mock(UserStore.class);
 
 	@Test
 	public void testCreate() {
 		when(mockStore.getType()).thenReturn(GeneralData.getDefaultInstance());
 		when(mockStore.create(any(GeneralData.class))).thenAnswer(i -> i.getArguments()[0]);
-		SingleProtoService<GeneralData> protoService = new SingleProtoService<>(mockStore);
+		EntityServiceImpl<GeneralData> protoService = new EntityServiceImpl<>(mockStore);
 		JSONService jsonService = new JSONServiceImpl<>(protoService, false);
 
 		protoService.create(GeneralData.newBuilder()
@@ -55,7 +51,8 @@ public class GeneralDataServiceTest {
 
 	@Test
 	public void testUpdate() {
-		DAOTestingImpl dao = new DAOTestingImpl();
+		DAOTestingImpl messageDao = new DAOTestingImpl();
+		DAORouterImpl dao = new DAORouterImpl(messageDao, new HasProtoDAO(messageDao), null);
 		GeneralDataService protoService = new GeneralDataService(new GeneralDataStore(() -> dao));
 		JSONService jsonService = new JSONServiceImpl<>(protoService, false);
 
@@ -69,16 +66,12 @@ public class GeneralDataServiceTest {
 		assertTrue(gd.getId() > 0);
 		assertEquals("Test", gd.getName());
 
-		gd = protoService.update(
-				gd.getId(),
-				new UpdateRequest<>(
-						GeneralData.newBuilder().setName("Test2").build(),
-						ImmutableList.of("name")));
+		gd = protoService.update(gd.getId(), GeneralData.newBuilder().setName("Test2").build(), "name");
 		assertTrue(gd.getId() > 0);
 		assertEquals("Test2", gd.getName());
 
 		gd = ProtoUtil.toProto(GeneralData.getDefaultInstance(), jsonService.performAction("update",
-				new JSONObject("{\"id\":" + gd.getId() + ",\"entity\":{\"name\":\"test 3\"},\"updateMask\":[\"name\"]}}")));
+				new JSONObject("{\"id\":" + gd.getId() + ",\"entity\":{\"name\":\"test 3\"},\"updateMask\":\"name\"}}")));
 
 		assertTrue(gd.getId() > 0);
 		assertEquals("test 3", gd.getName());

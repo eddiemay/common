@@ -3,7 +3,6 @@ package com.digitald4.common.server.service;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.proto.DD4Protos.DataFile;
 import com.digitald4.common.proto.DD4UIProtos;
-import com.digitald4.common.storage.ProtoStore;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.ProtoUtil;
 import com.google.api.server.spi.config.Api;
@@ -55,7 +54,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 	private final Provider<HttpServletResponse> responseProvider;
 
 	@Inject
-	public FileService(ProtoStore<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
+	public FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
 										 Provider<HttpServletResponse> responseProvider) {
 		super(DD4UIProtos.DataFile.class, dataFileStore);
 		this.dataFileStore = dataFileStore;

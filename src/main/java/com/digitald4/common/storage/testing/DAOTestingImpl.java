@@ -1,6 +1,6 @@
 package com.digitald4.common.storage.testing;
 
-import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.TypedDAO;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-public class DAOTestingImpl implements DAO<Message> {
+public class DAOTestingImpl implements TypedDAO<Message> {
 	private AtomicLong idGenerator = new AtomicLong(5000);
 	private Map<Class, Map<Long, Message>> tables = new HashMap<>();
 

@@ -29,11 +29,13 @@ import java.util.Date;
 import java.sql.Time;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.OptionalDouble;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.joda.time.DateTime;
+
+import static java.lang.Thread.sleep;
 
 
 /**
@@ -539,9 +541,10 @@ public class Calculate {
 			case MONTH: return getMonthRange(refDate.getYear(), refDate.getMonthOfYear());
 			case CAL_MONTH: return getCalMonthRange(refDate.getYear(), refDate.getMonthOfYear());
 			case YEAR: return getYearRange(refDate.getYear());
-			case UNKNOWN: return new Pair<DateTime, DateTime>(null, null);
+			case UNKNOWN:
+			default:
+				return Pair.of(null, null);
 		}
-		return new Pair<DateTime, DateTime>(null, null);
 	}
 	
 	public static Pair<DateTime, DateTime> getWeekRange(DateTime refDate) {
@@ -549,7 +552,7 @@ public class Calculate {
  		DateTime start = refDate.minusDays(refDate.getDayOfWeek() % 7).minus(refDate.getMillisOfDay());
 		// Move forward to last day of the week (Saturday).
 		DateTime end = refDate.plusDays(6 - (refDate.getDayOfWeek() % 7)).plus(LAST_MILLI_OF_DAY);
-		return new Pair<DateTime, DateTime>(start, end);
+		return Pair.of(start, end);
 	}
 	
 	public static Pair<DateTime, DateTime> getMonthRange(int year, int month) {
@@ -557,7 +560,7 @@ public class Calculate {
 		DateTime start = DateTime.parse(year + "-" + month + "-01");
  		// Last day of the month on the last millisecond
 		DateTime end = DateTime.parse(year + "-" + month + "-01").plusMonths(1).minus(1);
-		return new Pair<DateTime, DateTime>(start, end);
+		return Pair.of(start, end);
 	}
 	
 	public static Pair<DateTime, DateTime> getCalMonthRange(int year, int month) {
@@ -569,7 +572,7 @@ public class Calculate {
 		DateTime end = DateTime.parse(year + "-" + month + "-01").plusMonths(1).minus(1);
 		// Move forward to last day of the week (Saturday).
 		end = end.plusDays(6 - (end.getDayOfWeek() % 7));
-		return new Pair<DateTime, DateTime>(start, end);
+		return Pair.of(start, end);
 	}
 	
 	public static Pair<DateTime, DateTime> getYearRange(int year) {
@@ -577,7 +580,7 @@ public class Calculate {
 		DateTime start = DateTime.parse(year + "-01-01");
  		// Start with the last day of the month on the last millisecond
 		DateTime end = DateTime.parse(year + "-12-31T23:59:59.999");
-		return new Pair<DateTime, DateTime>(start, end);
+		return Pair.of(start, end);
 	}
 	
 	public static int parseInt(String input) {
@@ -624,5 +627,30 @@ public class Calculate {
 			partialFac *= i;
 		}
 		return partialFac / factorial(r);
+	}
+
+	public static <T> T executeWithRetries(int tryLimit, Supplier<T> supplier) {
+		int failures = 0;
+		while (failures < tryLimit) {
+			try {
+				return supplier.get();
+			} catch (Exception e) {
+				if (++failures == tryLimit) {
+					throw e;
+				}
+				System.out.println("Retrying in .25 secs...");
+				pause(250);
+			}
+		}
+
+		throw new RuntimeException("Out of retries");
+	}
+
+	public static void pause(long millis) {
+		try {
+			sleep(millis);
+		} catch (InterruptedException ie) {
+			throw new RuntimeException(ie);
+		}
 	}
 }

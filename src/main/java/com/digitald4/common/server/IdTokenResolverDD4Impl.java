@@ -7,7 +7,6 @@ import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Calculate;
-import com.google.common.collect.ImmutableList;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -36,7 +35,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 			return null;
 		}
 		return userStore.get(activeSession.getUserId())
-				.setActiveSession(activeSession);
+				.activeSession(activeSession);
 	}
 
 	private ActiveSession getActiveSession(String idToken) {
@@ -69,7 +68,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 
 	public User put(User user) {
 		String idToken = String.valueOf((int) (Math.random() * Integer.MAX_VALUE));
-		return user.setActiveSession(
+		return user.activeSession(
 				activeSessions.put(idToken, activeSessionStore.create(ActiveSession.newBuilder()
 						.setIdToken(idToken)
 						.setExpTime(clock.millis() + SESSION_TIME)

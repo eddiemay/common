@@ -2,7 +2,7 @@ package com.digitald4.common.tools;
 
 import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.storage.Query;
-import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.TypedDAO;
 import com.google.protobuf.Message;
 
 import java.io.BufferedWriter;
@@ -20,11 +20,11 @@ public class GenDataCompiler {
 	private static final String JS_ENTRY = "\t%s: %d,\n";
 
 	private final String project;
-	private final DAO<Message> dao;
+	private final TypedDAO<Message> dao;
 	private final String javaFile;
 	private final String jsFile;
 
-	public GenDataCompiler(String project, DAO<Message> dao, String javaFile, String jsFile) {
+	public GenDataCompiler(String project, TypedDAO<Message> dao, String javaFile, String jsFile) {
 		this.project = project;
 		this.dao = dao;
 		this.javaFile = javaFile;

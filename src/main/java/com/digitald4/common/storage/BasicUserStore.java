@@ -4,24 +4,27 @@ import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.util.Calculate;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.Message;
-
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
-import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class BasicUserStore implements UserStore<BasicUser> {
-	private final Provider<DAO<Message>> daoProvider;
+	private final Provider<DAO> daoProvider;
 	private final Clock clock;
+	private final BasicUser type = new BasicUser();
 
 	@Inject
-	public BasicUserStore(Provider<DAO<Message>> daoProvider, Clock clock) {
+	public BasicUserStore(Provider<DAO> daoProvider, Clock clock) {
 		this.daoProvider = daoProvider;
 		this.clock = clock;
+	}
+
+	@Override
+	public BasicUser getType() {
+		return type;
 	}
 
 	@Override

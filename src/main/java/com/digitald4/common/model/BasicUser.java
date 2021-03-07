@@ -22,9 +22,19 @@ public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 		return userProto.getId();
 	}
 
+	public BasicUser setId(long id) {
+		userProto = userProto.toBuilder().setId(id).build();
+		return this;
+	}
+
 	@Override
 	public int getTypeId() {
 		return userProto.getTypeId();
+	}
+
+	public BasicUser setTypeId(int typeId) {
+		userProto = userProto.toBuilder().setTypeId(typeId).build();
+		return this;
 	}
 
 	@Override
@@ -43,25 +53,29 @@ public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 		return userProto.getLastLogin();
 	}
 
-	@Override
-	public BasicUser updateLastLogin(Clock clock) {
-		userProto = userProto.toBuilder().setLastLogin(clock.millis()).build();
+	public BasicUser setLastLogin(long lastLogin) {
+		userProto = userProto.toBuilder().setLastLogin(lastLogin).build();
 		return this;
 	}
 
 	@Override
-	public BasicUser setPasswordInfo(DD4Protos.PasswordInfo passwordInfo) {
+	public BasicUser updateLastLogin(Clock clock) {
+		return setLastLogin(clock.millis());
+	}
+
+	@Override
+	public BasicUser updatePasswordInfo(DD4Protos.PasswordInfo passwordInfo) {
 		userProto = userProto.toBuilder().setPasswordInfo(passwordInfo).build();
 		return this;
 	}
 
 	@Override
-	public ActiveSession getActiveSession() {
+	public ActiveSession activeSession() {
 		return activeSession;
 	}
 
 	@Override
-	public BasicUser setActiveSession(ActiveSession activeSession) {
+	public BasicUser activeSession(ActiveSession activeSession) {
 		this.activeSession = activeSession;
 		return this;
 	}
@@ -71,14 +85,9 @@ public class BasicUser implements User<DD4Protos.User, DD4Protos.PasswordInfo> {
 		return userProto;
 	}
 
-	@Override
-	public BasicUser update(DD4Protos.User userProto) {
+	public BasicUser fromProto(DD4Protos.User userProto) {
 		this.userProto = userProto;
 		return this;
-	}
-
-	public static BasicUser fromProto(DD4Protos.User userProto) {
-		return new BasicUser().update(userProto);
 	}
 
 	@Override

@@ -11,14 +11,17 @@ import com.digitald4.common.proto.DD4UIProtos.LoginRequest;
 import com.digitald4.common.server.IdTokenResolver;
 import com.digitald4.common.server.IdTokenResolverDD4Impl;
 import com.digitald4.common.storage.UserStore;
+import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.protobuf.Empty;
-import com.google.protobuf.FieldMask;
+
 import java.time.Clock;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.servlet.http.HttpServletResponse;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 @Api(
@@ -29,7 +32,7 @@ import org.json.JSONObject;
 				ownerName = "common.digitald4.com"
 		)
 )
-public class UserService extends SingleProtoService<User> {
+public class UserService extends EntityServiceImpl<User> {
 
 	private final UserStore<User> userStore;
 	private final Provider<User> userProvider;
@@ -62,7 +65,7 @@ public class UserService extends SingleProtoService<User> {
 	public Empty logout() {
 		User user = userProvider.get();
 		if (user != null) {
-			((IdTokenResolverDD4Impl) idTokenResolver).remove(user.getActiveSession().getIdToken());
+			((IdTokenResolverDD4Impl) idTokenResolver).remove(user.activeSession().getIdToken());
 		}
 		return Empty.getDefaultInstance();
 	}
@@ -94,16 +97,10 @@ public class UserService extends SingleProtoService<User> {
 					return toJSON(
 							userService.update(
 									jsonRequest.getLong("id"),
-									new UpdateRequest<>(
-											new BasicUser(toProto(type, jsonRequest.optJSONObject("entity"))),
-											JSONServiceImpl.getStringArray(jsonRequest,"updateMask"))));
+									new BasicUser(toProto(type, jsonRequest.optJSONObject("entity"))),
+									jsonRequest.getString("updateMask")));
 				case "delete":
 					return toJSON(userService.delete(jsonRequest.getInt("id")));
-				case "batchDelete":
-					return toJSON(
-							userService.batchDelete(
-									jsonRequest.optString("filter"), jsonRequest.optString("orderBy"),
-									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken")));
 				case "active": return toJSON(userService.getActive());
 				case "login": return toJSON(userService.login(toProto(LoginRequest.getDefaultInstance(), jsonRequest)));
 				case "logout": return toJSON(userService.logout());

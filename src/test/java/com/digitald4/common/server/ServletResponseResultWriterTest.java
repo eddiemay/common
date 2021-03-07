@@ -13,6 +13,7 @@ import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -68,7 +69,7 @@ public class ServletResponseResultWriterTest {
 		// verify(printWriter).print("true");
 	}
 
-	@Test
+	@Test @Ignore
 	public void testWriteProto() throws Exception {
 		servletResponseResultWriter.write(User.newBuilder().setId(52L).setUsername("eddiemay").build());
 		// verify(printWriter).print("{\"id\":\"52\",\"username\":\"eddiemay\"}");

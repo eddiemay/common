@@ -1,6 +1,6 @@
 package com.digitald4.common.server.service;
 
-import com.digitald4.common.storage.ProtoStore;
+import com.digitald4.common.storage.Store;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.common.storage.QueryResult;
@@ -17,11 +17,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DualProtoService<T extends Message, I extends Message>
-		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T>, BulkDeleteable<T> {
+		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T> {
 
-	private final Class<T> cls;
 	private final T type;
-	private final ProtoStore<I> store;
+	private final Store<I> store;
 	private final Descriptor internalDescriptor;
 	private final Descriptor externalDescriptor;
 
@@ -33,13 +32,11 @@ public class DualProtoService<T extends Message, I extends Message>
 				FieldDescriptor field = externalDescriptor.findFieldByName(entry.getKey().getName());
 				if (field != null) {
 					try {
-						switch (field.getJavaType()) {
-							case ENUM:
-								builder.setField(field, field.getEnumType()
-										.findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
-								break;
-							default:
-								builder.setField(field, entry.getValue());
+						if (field.getJavaType() == FieldDescriptor.JavaType.ENUM) {
+							builder.setField(field, field.getEnumType()
+									.findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
+						} else {
+							builder.setField(field, entry.getValue());
 						}
 					} catch (IllegalArgumentException iae) {
 						throw new IllegalArgumentException("for field: " + field + " value: " + entry.getValue(), iae);
@@ -57,12 +54,11 @@ public class DualProtoService<T extends Message, I extends Message>
 			for (Map.Entry<FieldDescriptor, Object> entry : external.getAllFields().entrySet()) {
 				FieldDescriptor field = internalDescriptor.findFieldByName(entry.getKey().getName());
 				if (field != null) {
-					switch (field.getJavaType()) {
-						case ENUM:
-							builder.setField(field, field.getEnumType()
-									.findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
-							break;
-						default: builder.setField(field, entry.getValue());
+					if (field.getJavaType() == FieldDescriptor.JavaType.ENUM) {
+						builder.setField(field, field.getEnumType()
+								.findValueByNumber(((Descriptors.EnumValueDescriptor) entry.getValue()).getNumber()));
+					} else {
+						builder.setField(field, entry.getValue());
 					}
 				}
 			}
@@ -70,12 +66,11 @@ public class DualProtoService<T extends Message, I extends Message>
 		}
 	};
 	
-	public DualProtoService(Class<T> c, ProtoStore<I> store) {
+	public DualProtoService(Class<T> c, Store<I> store) {
 		this(ProtoUtil.getDefaultInstance(c), store);
 	}
 
-	protected DualProtoService(T type, ProtoStore<I> store) {
-		this.cls = (Class<T>) type.getClass();
+	protected DualProtoService(T type, Store<I> store) {
 		this.type = type;
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;
@@ -83,7 +78,7 @@ public class DualProtoService<T extends Message, I extends Message>
 	}
 
 	@Override
-	public ProtoStore<T> getStore() {
+	public Store<T> getStore() {
 		return null;
 	}
 
@@ -121,9 +116,9 @@ public class DualProtoService<T extends Message, I extends Message>
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
-	public T update(@Named("id") long id, UpdateRequest<T> updateRequest) {
-		return getConverter().apply(store.update(id, internal -> ProtoUtil.merge(
-				updateRequest.updateMask(), getReverseConverter().apply(updateRequest.getEntity()), internal)));
+	public T update(@Named("id") long id, T entity, @Named("updateMask") String updateMask) {
+		return getConverter().apply(
+				store.update(id, internal -> ProtoUtil.merge(updateMask, getReverseConverter().apply(entity), internal)));
 	}
 
 	@Override
@@ -133,19 +128,9 @@ public class DualProtoService<T extends Message, I extends Message>
 		return Empty.getInstance();
 	}
 
-	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-	public BatchDeleteResponse batchDelete(
-			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken) {
-		return new BatchDeleteResponse(getStore().delete(Query.forValues(filter, orderBy, pageSize, pageToken)));
-	}
-
 	protected QueryResult<T> toListResponse(QueryResult<I> queryResult) {
 		return new QueryResult<>(
-				queryResult.getResults().stream()
-						.map(getConverter())
-						.collect(Collectors.toList()),
+				queryResult.getResults().stream().map(getConverter()).collect(Collectors.toList()),
 				queryResult.getTotalSize());
 	}
 }

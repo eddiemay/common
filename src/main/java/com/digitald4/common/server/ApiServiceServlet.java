@@ -2,7 +2,6 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.model.HasProto;
 import com.digitald4.common.model.User;
 import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.proto.DD4Protos.DataFile;
@@ -10,7 +9,7 @@ import com.digitald4.common.server.service.FileService;
 import com.digitald4.common.server.service.FileService.FileJSONService;
 import com.digitald4.common.server.service.JSONService;
 import com.digitald4.common.server.service.JSONServiceImpl;
-import com.digitald4.common.server.service.SingleProtoService;
+import com.digitald4.common.server.service.EntityServiceImpl;
 import com.digitald4.common.server.service.UserService;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.Emailer;
@@ -31,6 +30,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.cloud.datastore.DatastoreOptions;
 import com.google.protobuf.Message;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,16 +44,14 @@ public class ApiServiceServlet extends HttpServlet {
 
 	private final Map<String, JSONService> services = new HashMap<>();
 	private final IdTokenResolver idTokenResolver;
-	private DAO<Message> dao;
+	private DAO dao;
 	private Emailer emailer;
 	private Encryptor encryptor;
-	protected final Provider<DAO<Message>> daoProvider = () -> dao;
-	protected final DAO<HasProto> modelDao = new DAOModelWrapper(daoProvider);
-	protected final Provider<DAO<HasProto>> modelDaoProvider = () -> modelDao;
+	protected final Provider<DAO> daoProvider = () -> dao;
 	protected final GeneralDataStore generalDataStore;
 	protected final UserStore userStore;
 	protected final UserService userService;
-	protected final ProtoStore<DataFile> dataFileStore;
+	protected final Store<DataFile> dataFileStore;
 	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
@@ -63,15 +62,15 @@ public class ApiServiceServlet extends HttpServlet {
 
 		userStore = new BasicUserStore(daoProvider, clock);
 
-		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<Message, ActiveSession>(ActiveSession.class, daoProvider), userStore, clock);
+		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<ActiveSession>(ActiveSession.class, daoProvider), userStore, clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
 		addService("generalData",
-				new JSONServiceImpl<>(new SingleProtoService<>(generalDataStore), false));
+				new JSONServiceImpl<>(new EntityServiceImpl<>(generalDataStore), false));
 		addService("user",
 				new UserService.UserJSONService(userService = new UserService(userStore, userProvider, idTokenResolver, clock)));
 
-		dataFileStore = new ProtoStore<>(DataFile.class, daoProvider);
+		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
 		FileService fileService = new FileService(dataFileStore, requestProvider, responseProvider);
 		addService("file", new FileJSONService(fileService));
 	}
@@ -79,19 +78,24 @@ public class ApiServiceServlet extends HttpServlet {
 	public void init() {
 		ServletContext sc = getServletContext();
 		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
+		TypedDAO<Message> messageDAO;
+		DAO defaultDAO;
 		if (serverType == ServerType.TOMCAT) {
 			// We use Tomcat with MySQL, so if Tomcat, MySQL
-			dao = new DAOSQLImpl(
+			messageDAO = new DAOSQLImpl(
 					new DBConnectorThreadPoolImpl(
 							sc.getInitParameter("dbdriver"),
 							sc.getInitParameter("dburl"),
 							sc.getInitParameter("dbuser"),
 							sc.getInitParameter("dbpass")),
 					useViews);
+			defaultDAO = null;
 		} else {
 			// We use CloudDataStore with AppEngine.
-			dao = new DAOCloudDS();
+			messageDAO = new DAOCloudDSProto(DatastoreOptions.getDefaultInstance().getService());
+			defaultDAO = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService());
 		}
+		dao = new DAORouterImpl(messageDAO, new HasProtoDAO(messageDAO), defaultDAO);
 	}
 
 	protected ApiServiceServlet addService(String entity, JSONService service) {
