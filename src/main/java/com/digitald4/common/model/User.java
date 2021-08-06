@@ -1,24 +1,22 @@
 package com.digitald4.common.model;
 
-import com.digitald4.common.proto.DD4Protos.ActiveSession;
-import com.google.protobuf.Message;
 import java.time.Clock;
 
-public interface User<P extends Message, PI> extends HasProto<P> {
+public interface User {
 
 	long getId();
-
-	int getTypeId();
 
 	String getUsername();
 
 	User setUsername(String username);
 
+	int getTypeId();
+
 	long getLastLogin();
 
 	User updateLastLogin(Clock clock);
 
-	User updatePasswordInfo(PI passwordInfo);
+	User updatePasswordInfo(PasswordInfo passwordInfo);
 
 	ActiveSession activeSession();
 

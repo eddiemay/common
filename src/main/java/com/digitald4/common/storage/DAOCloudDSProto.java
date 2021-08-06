@@ -1,6 +1,7 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.storage.Query.Filter;
@@ -8,10 +9,7 @@ import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.ProtoUtil;
 import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.EntityQuery;
-import com.google.cloud.datastore.KeyFactory;
+import com.google.cloud.datastore.*;
 import com.google.cloud.datastore.StructuredQuery.CompositeFilter;
 import com.google.cloud.datastore.StructuredQuery.OrderBy;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
@@ -116,14 +114,16 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, Query query) {
-		ImmutableList<T> results = list(c, query).getResults();
-		if (results.size() > 0) {
-			FieldDescriptor idField = ProtoUtil.getDefaultInstance(c).getDescriptorForType().findFieldByName("id");
-			results.parallelStream().forEach(t -> delete(c, (Long) t.getField(idField)));
-		}
+	public <T extends Message> int delete(Class<T> c, Iterable<Long> ids) {
+		return Calculate.executeWithRetries(2, () -> {
+			KeyFactory keyFactory = getKeyFactory(c);
+			ImmutableList<Key> keys = stream(ids)
+					.map(keyFactory::newKey)
+					.peek(datastore::delete)
+					.collect(toImmutableList());
 
-		return results.size();
+			return keys.size();
+		});
 	}
 
 	private <T extends Message> void setObject(Entity.Builder entity, T t, FieldDescriptor field, Object value) {
@@ -207,58 +207,59 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 		if (field == null) {
 			throw new DD4StorageException("Unknown column: " + columName);
 		}
+		String value = filter.getValue().toString();
 		switch (filter.getOperator()) {
 			case "<" : {
 				switch (field.getJavaType()) {
-					case BOOLEAN: return PropertyFilter.lt(columName, Boolean.parseBoolean(filter.getValue()));
+					case BOOLEAN: return PropertyFilter.lt(columName, Boolean.parseBoolean(value));
 					case FLOAT:
-					case DOUBLE: return PropertyFilter.lt(columName, Double.parseDouble(filter.getValue()));
-					case INT: return PropertyFilter.lt(columName, Integer.parseInt(filter.getValue()));
-					case LONG: return PropertyFilter.lt(columName, Long.parseLong(filter.getValue()));
-					case STRING: return PropertyFilter.lt(columName, filter.getValue());
-					default: return PropertyFilter.lt(columName, filter.getValue());
+					case DOUBLE: return PropertyFilter.lt(columName, Double.parseDouble(value));
+					case INT: return PropertyFilter.lt(columName, Integer.parseInt(value));
+					case LONG: return PropertyFilter.lt(columName, Long.parseLong(value));
+					case STRING: return PropertyFilter.lt(columName, value);
+					default: return PropertyFilter.lt(columName, value);
 				}
 			}
 			case "<=" :
 				switch (field.getJavaType()) {
-					case BOOLEAN: return PropertyFilter.le(columName, Boolean.parseBoolean(filter.getValue()));
+					case BOOLEAN: return PropertyFilter.le(columName, Boolean.parseBoolean(value));
 					case FLOAT:
-					case DOUBLE: return PropertyFilter.le(columName, Double.parseDouble(filter.getValue()));
-					case INT: return PropertyFilter.le(columName, Integer.parseInt(filter.getValue()));
-					case LONG: return PropertyFilter.le(columName, Long.parseLong(filter.getValue()));
-					case STRING: return PropertyFilter.le(columName, filter.getValue());
-					default: return PropertyFilter.le(columName, filter.getValue());
+					case DOUBLE: return PropertyFilter.le(columName, Double.parseDouble(value));
+					case INT: return PropertyFilter.le(columName, Integer.parseInt(value));
+					case LONG: return PropertyFilter.le(columName, Long.parseLong(value));
+					case STRING: return PropertyFilter.le(columName, value);
+					default: return PropertyFilter.le(columName, value);
 				}
 			case "=" :
 			case "" :
 				switch (field.getJavaType()) {
-					case BOOLEAN: return PropertyFilter.eq(columName, Boolean.parseBoolean(filter.getValue()));
+					case BOOLEAN: return PropertyFilter.eq(columName, Boolean.parseBoolean(value));
 					case FLOAT:
-					case DOUBLE: return PropertyFilter.eq(columName, Double.parseDouble(filter.getValue()));
-					case INT: return PropertyFilter.eq(columName, Integer.parseInt(filter.getValue()));
-					case LONG: return PropertyFilter.eq(columName, Long.parseLong(filter.getValue()));
-					case STRING: return PropertyFilter.eq(columName, filter.getValue());
-					default: return PropertyFilter.eq(columName, filter.getValue());
+					case DOUBLE: return PropertyFilter.eq(columName, Double.parseDouble(value));
+					case INT: return PropertyFilter.eq(columName, Integer.parseInt(value));
+					case LONG: return PropertyFilter.eq(columName, Long.parseLong(value));
+					case STRING: return PropertyFilter.eq(columName, value);
+					default: return PropertyFilter.eq(columName, value);
 				}
 			case ">=" :
 				switch (field.getJavaType()) {
-					case BOOLEAN: return PropertyFilter.ge(columName, Boolean.parseBoolean(filter.getValue()));
+					case BOOLEAN: return PropertyFilter.ge(columName, Boolean.parseBoolean(value));
 					case FLOAT:
-					case DOUBLE: return PropertyFilter.ge(columName, Double.parseDouble(filter.getValue()));
-					case INT: return PropertyFilter.ge(columName, Integer.parseInt(filter.getValue()));
-					case LONG: return PropertyFilter.ge(columName, Long.parseLong(filter.getValue()));
-					case STRING: return PropertyFilter.ge(columName, filter.getValue());
-					default: PropertyFilter.ge(columName, filter.getValue());
+					case DOUBLE: return PropertyFilter.ge(columName, Double.parseDouble(value));
+					case INT: return PropertyFilter.ge(columName, Integer.parseInt(value));
+					case LONG: return PropertyFilter.ge(columName, Long.parseLong(value));
+					case STRING: return PropertyFilter.ge(columName, value);
+					default: PropertyFilter.ge(columName, value);
 				}
 			case ">" :
 				switch (field.getJavaType()) {
-					case BOOLEAN: return PropertyFilter.gt(columName, Boolean.parseBoolean(filter.getValue()));
+					case BOOLEAN: return PropertyFilter.gt(columName, Boolean.parseBoolean(value));
 					case FLOAT:
-					case DOUBLE: return PropertyFilter.gt(columName, Double.parseDouble(filter.getValue()));
-					case INT: return PropertyFilter.gt(columName, Integer.parseInt(filter.getValue()));
-					case LONG: return PropertyFilter.gt(columName, Long.parseLong(filter.getValue()));
-					case STRING: return PropertyFilter.gt(columName, filter.getValue());
-					default: return PropertyFilter.gt(columName, filter.getValue());
+					case DOUBLE: return PropertyFilter.gt(columName, Double.parseDouble(value));
+					case INT: return PropertyFilter.gt(columName, Integer.parseInt(value));
+					case LONG: return PropertyFilter.gt(columName, Long.parseLong(value));
+					case STRING: return PropertyFilter.gt(columName, value);
+					default: return PropertyFilter.gt(columName, value);
 				}
 			default: throw new IllegalArgumentException("Unknown operator " + filter.getOperator());
 		}

@@ -1,5 +1,6 @@
 package com.digitald4.common.storage;
 
+import com.digitald4.common.util.JSONUtil;
 import java.util.function.UnaryOperator;
 import javax.inject.Provider;
 
@@ -12,7 +13,7 @@ public class GenericStore<T> implements Store<T> {
 	public GenericStore(Class<T> c, Provider<DAO> daoProvider) {
 		this.c = c;
 		this.daoProvider = daoProvider;
-		this.type = DAORouterImpl.getDefaultInstance(c);
+		this.type = JSONUtil.getDefaultInstance(c);
 	}
 
 	@Override
@@ -46,7 +47,7 @@ public class GenericStore<T> implements Store<T> {
 	}
 
 	@Override
-	public int delete(Query query) {
-		return daoProvider.get().delete(c, query);
+	public int delete(Iterable<Long> ids) {
+		return daoProvider.get().delete(c, ids);
 	}
 }

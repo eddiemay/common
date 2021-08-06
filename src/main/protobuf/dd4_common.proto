@@ -57,12 +57,6 @@ message GPSAddress {
   string unit = 4;
 }
 
-message PasswordInfo {
-  string password_digest = 1;
-  string password_reset_token = 2;
-  int64 password_reset_sent_at = 3;
-}
-
 message User {
 	int64 id = 1;
 	int32 type_id = 2;
@@ -71,15 +65,19 @@ message User {
 	bool read_only = 5;
 	int64 last_login = 6;
 
+  message ActiveSession {
+    int64 id = 1;
+    string id_token = 2;
+    int64 exp_time = 3;
+    int64 user_id = 4;
+  }
   ActiveSession active_session = 8;
 
   // This should not be put into the UI model.
+  message PasswordInfo {
+    string password_digest = 1;
+    string password_reset_token = 2;
+    int64 password_reset_sent_at = 3;
+  }
   PasswordInfo password_info = 7;
-}
-
-message ActiveSession {
-  int64 id = 1;
-  string id_token = 2;
-  int64 exp_time = 3;
-  int64 user_id = 4;
 }

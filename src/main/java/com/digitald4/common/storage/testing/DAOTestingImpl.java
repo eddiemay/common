@@ -1,109 +1,109 @@
 package com.digitald4.common.storage.testing;
 
-import com.digitald4.common.storage.TypedDAO;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.stream;
+
+import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.util.ProtoUtil;
-import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.Message;
-import java.util.ArrayList;
+import com.digitald4.common.util.JSONUtil;
+import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
+import org.json.JSONObject;
 
-public class DAOTestingImpl implements TypedDAO<Message> {
-	private AtomicLong idGenerator = new AtomicLong(5000);
-	private Map<Class, Map<Long, Message>> tables = new HashMap<>();
+public class DAOTestingImpl implements DAO {
+	private final AtomicLong idGenerator = new AtomicLong(5000);
+	private final Map<Class<?>, Map<Long, JSONObject>> tables = new HashMap<>();
 
 	@Override
-	public <T extends Message> T create(T t) {
-		Map<Long, Message> table = tables.computeIfAbsent(t.getClass(), c -> new HashMap<Long, Message>());
-		FieldDescriptor idField = t.getDescriptorForType().findFieldByName("id");
-		Long id = (Long) t.getField(idField);
+	public <T> T create(T t) {
+		Map<Long, JSONObject> table = tables.computeIfAbsent(t.getClass(), c -> new HashMap<>());
+		JSONObject jsonObject = JSONUtil.toJSON(t);
+		long id = jsonObject.optLong("id");
 		if (id == 0L) {
-			id = idGenerator.incrementAndGet();
-			t = (T) t.toBuilder().setField(idField, id).build();
+			jsonObject.put("id", id = idGenerator.incrementAndGet());
 		}
-		table.put(id, t);
-		return t;
+		table.put(id, jsonObject);
+		return JSONUtil.toObject((Class<T>) t.getClass(), jsonObject);
 	}
 
 	@Override
-	public <T extends Message> T get(Class<T> c, long id) {
-		Map<Long, ? extends Message> table = tables.get(c);
+	public <T> T get(Class<T> c, long id) {
+		Map<Long, JSONObject> table = tables.get(c);
 		if (table == null) {
 			return null;
 		}
-		return (T) table.get(id);
+
+		return JSONUtil.toObject(c, table.get(id));
 	}
 
 	@Override
-	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
-		Map<Long, ? extends Message> table = tables.get(c);
+	public <T> QueryResult<T> list(Class<T> c, Query query) {
+		Map<Long, JSONObject> table = tables.get(c);
 		if (table != null) {
-			T type = ProtoUtil.getDefaultInstance(c);
-			Descriptor descriptor = type.getDescriptorForType();
-			List<T> results = table.values().stream().map(item -> (T) item).collect(Collectors.toList());
+			ImmutableList<JSONObject> results = ImmutableList.copyOf(table.values());
 			for (Filter filter : query.getFilters()) {
-				FieldDescriptor field = descriptor.findFieldByName(filter.getColumn());
+				String field = filter.getColumn();
 				results = results.parallelStream()
-						.filter(t -> String.valueOf(t.getField(field)).equals(filter.getValue()))
-						.collect(Collectors.toList());
+						.filter(json -> json.opt(field).equals(filter.getValue()))
+						.collect(toImmutableList());
 			}
+
 			for (OrderBy orderBy : query.getOrderBys()) {
-				FieldDescriptor field = descriptor.findFieldByName(orderBy.getColumn());
+				String field = orderBy.getColumn();
 				results = results.stream()
-						.sorted((t1, t2) -> ((Comparable<Object>) t1.getField(field)).compareTo(t2.getField(field)))
-						.collect(Collectors.toList());
+						.sorted((json1, json2) -> ((Comparable<Object>) json1.get(field)).compareTo(json2.get(field)))
+						.collect(toImmutableList());
 			}
+
+			int totalSize = results.size();
 			if (query.getOffset() > 0) {
 				results = results.subList(query.getOffset(), results.size());
 			}
+
 			if (query.getLimit() > 0 && results.size() > query.getLimit()) {
 				results = results.subList(0, query.getLimit());
 			}
-			return new QueryResult<>(results, results.size() + query.getOffset());
+
+			return new QueryResult<>(
+					results.stream().map(json -> JSONUtil.toObject(c, json)).collect(toImmutableList()), totalSize);
 		}
-		return new QueryResult<>(new ArrayList<>(), 0);
+
+		return new QueryResult<>(ImmutableList.of(), 0);
 	}
 
 	@Override
-	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T> T update(Class<T> c, long id, UnaryOperator<T> updater) {
 		T t = get(c, id);
 		if (t != null) {
 			t = updater.apply(t);
-			Map<Long, Message> table = tables.get(c);
-			table.put(id, t);
+			Map<Long, JSONObject> table = tables.get(c);
+			table.put(id, JSONUtil.toJSON(t));
 		}
+
 		return t;
 	}
 
 	@Override
-	public <T extends Message> void delete(Class<T> c, long id) {
-		Map<Long, ? extends Message> table = tables.get(c);
+	public <T> void delete(Class<T> c, long id) {
+		Map<Long, JSONObject> table = tables.get(c);
 		if (table != null) {
 			table.remove(id);
 		}
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, Query query) {
-		Map<Long, ? extends Message> table = tables.get(c);
+	public <T> int delete(Class<T> c, Iterable<Long> ids) {
+		Map<Long, JSONObject> table = tables.get(c);
 		if (table != null) {
-			List<T> results = list(c, query).getResults();
-			if (results.size() > 0) {
-				FieldDescriptor idField = ProtoUtil.getDefaultInstance(c)
-						.getDescriptorForType().findFieldByName("id");
-				results.parallelStream().forEach(t -> table.remove((Long) t.getField(idField)));
-			}
-			return results.size();
+			return (int) stream(ids).filter(id -> table.remove(id) != null).count();
 		}
+
 		return 0;
 	}
 }

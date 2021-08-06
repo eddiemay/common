@@ -1,19 +1,15 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.exception.DD4StorageException;
+import static com.digitald4.common.util.JSONUtil.getDefaultInstance;
+
 import com.digitald4.common.model.HasProto;
 import com.digitald4.common.storage.Annotations.DefaultDAO;
-import com.digitald4.common.util.ProtoUtil;
 import com.google.protobuf.Message;;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 public class DAORouterImpl implements DAO {
-  private static final Map<Class<?>, Object> defaultInstances = new HashMap<>();
   private final TypedDAO<Message> messageDao;
   private final TypedDAO<HasProto> hasProtoDao;
   private final DAO defaultDao;
@@ -104,34 +100,17 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> int delete(Class<T> c, Query query) {
+  public <T> int delete(Class<T> c, Iterable<Long> ids) {
     Object o = getDefaultInstance(c);
 
     if (o instanceof Message) {
-      return messageDao.delete((Class<Message>) c, query);
+      return messageDao.delete((Class<Message>) c, ids);
     }
 
     if (o instanceof HasProto && hasProtoDao != null) {
-      return hasProtoDao.delete((Class<HasProto>) c, query);
+      return hasProtoDao.delete((Class<HasProto>) c, ids);
     }
 
-    return defaultDao.delete(c, query);
-  }
-
-  static <T> T getDefaultInstance(Class<T> c) {
-    return (T) defaultInstances.computeIfAbsent(c, cls -> newInstance(c));
-  }
-
-  static <T> T newInstance(Class<T> c) {
-    try {
-      return c.getConstructor().newInstance();
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      // If this class does not have a default constructor then he may be a proto message.
-      try {
-        return (T) ProtoUtil.getDefaultInstance((Class<Message>) c);
-      } catch (Exception se) {
-        throw new DD4StorageException("Error getting default instance for type: " + c, e);
-      }
-    }
+    return defaultDao.delete(c, ids);
   }
 }

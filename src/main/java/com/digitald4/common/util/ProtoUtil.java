@@ -29,8 +29,8 @@ public class ProtoUtil {
 		MERGE_OPTIONS.setReplaceRepeatedFields(true);
 	}
 	private static final Map<Class<?>, Message> defaultInstances = new HashMap<>();
-	private static Parser parser = JsonFormat.parser();
-	private static Printer printer = JsonFormat.printer();
+	private static final Parser parser = JsonFormat.parser();
+	private static final Printer printer = JsonFormat.printer();
 
 	private ProtoUtil() {}
 
@@ -52,28 +52,22 @@ public class ProtoUtil {
 		}
 	}
 
-	public static <T> T merge(String updateMask, T fromEntity, T toEntity) {
-		if (fromEntity instanceof Message) {
-			return (T) merge(toFieldMask(updateMask), (Message) fromEntity, (Message) toEntity);
-		} else if (fromEntity instanceof HasProto) {
-			return (T) merge(toFieldMask(updateMask), (HasProto) fromEntity, (HasProto) toEntity);
-		}
-
-		return JSONUtil.merge(updateMask, fromEntity, toEntity);
-	}
-
-	public static <P extends Message, T extends HasProto<P>> T merge(FieldMask fieldMask, T fromEntity, T toEntity) {
-		toEntity.fromProto(merge(fieldMask, fromEntity.toProto(), toEntity.toProto()));
-		return toEntity;
+	public static <T extends Message> T merge(FieldMask fieldMask, T fromProto, T.Builder builder) {
+		FieldMaskUtil.merge(fieldMask, fromProto, builder, MERGE_OPTIONS);
+		return (T) builder.build();
 	}
 
 	public static <T extends Message> T merge(FieldMask fieldMask, T fromProto, T toProto) {
 		return merge(fieldMask, fromProto, toProto.toBuilder());
 	}
 
-	public static <T extends Message> T merge(FieldMask fieldMask, T fromProto, T.Builder builder) {
-		FieldMaskUtil.merge(fieldMask, fromProto, builder, MERGE_OPTIONS);
-		return (T) builder.build();
+	public static <T extends Message> T merge(String updateMask, T fromProto, T toProto) {
+		return merge(toFieldMask(updateMask), fromProto, toProto.toBuilder());
+	}
+
+	public static <P extends Message, T extends HasProto<P>> T merge(FieldMask fieldMask, T fromEntity, T toEntity) {
+		toEntity.fromProto(merge(fieldMask, fromEntity.toProto(), toEntity.toProto()));
+		return toEntity;
 	}
 
 	public static String print(Message message) {

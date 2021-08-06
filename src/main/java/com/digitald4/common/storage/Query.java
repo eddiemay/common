@@ -91,7 +91,7 @@ public class Query {
   public static class Filter {
     private String column;
     private String operator = "=";
-    private String value;
+    private Object value;
 
     public String getColumn() {
       return column;
@@ -111,13 +111,17 @@ public class Query {
       return this;
     }
 
-    public String getValue() {
+    public Object getValue() {
       return value;
     }
 
-    public Filter setValue(String value) {
+    public Filter setValue(Object value) {
       this.value = value;
       return this;
+    }
+
+    public <T> T getVal() {
+      return (T) value;
     }
   }
 

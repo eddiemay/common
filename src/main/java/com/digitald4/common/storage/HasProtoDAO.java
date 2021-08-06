@@ -50,8 +50,8 @@ public class HasProtoDAO implements TypedDAO<HasProto> {
   }
 
   @Override
-  public <T extends HasProto> int delete(Class<T> c, Query query) {
-    return messageDAO.delete(getProtoType(c), query);
+  public <T extends HasProto> int delete(Class<T> c, Iterable<Long> ids) {
+    return messageDAO.delete(getProtoType(c), ids);
   }
 
   public static <T extends HasProto> T fromProto(Class<T> c, Message m) {

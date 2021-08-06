@@ -1,21 +1,21 @@
 package com.digitald4.common.server;
 
+import static java.util.stream.Collectors.joining;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.model.User;
-import com.digitald4.common.proto.DD4Protos.ActiveSession;
-import com.digitald4.common.proto.DD4Protos.DataFile;
-import com.digitald4.common.server.service.FileService;
-import com.digitald4.common.server.service.FileService.FileJSONService;
-import com.digitald4.common.server.service.JSONService;
-import com.digitald4.common.server.service.JSONServiceImpl;
-import com.digitald4.common.server.service.EntityServiceImpl;
-import com.digitald4.common.server.service.UserService;
+import com.digitald4.common.model.*;
+import com.digitald4.common.server.service.*;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Encryptor;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.cloud.datastore.DatastoreOptions;
+import com.google.protobuf.Message;
+
+import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,10 +29,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.cloud.datastore.DatastoreOptions;
-import com.google.protobuf.Message;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,16 +39,16 @@ public class ApiServiceServlet extends HttpServlet {
 	private static final List<String> SPECIAL_PARAMETERS = Arrays.asList("json", "idToken", "orderBy", "pageSize", "pageToken");
 
 	private final Map<String, JSONService> services = new HashMap<>();
-	private final IdTokenResolver idTokenResolver;
+	private final IdTokenResolver<BasicUser> idTokenResolver;
 	private DAO dao;
 	private Emailer emailer;
 	private Encryptor encryptor;
 	protected final Provider<DAO> daoProvider = () -> dao;
 	protected final GeneralDataStore generalDataStore;
-	protected final UserStore userStore;
+	protected final BasicUserStore userStore;
 	protected final UserService userService;
 	protected final Store<DataFile> dataFileStore;
-	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
+	protected final ProviderThreadLocalImpl<BasicUser> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
 	protected boolean useViews;
@@ -60,19 +56,17 @@ public class ApiServiceServlet extends HttpServlet {
 	public ApiServiceServlet() {
 		Clock clock = Clock.systemUTC();
 
-		userStore = new BasicUserStore(daoProvider, clock);
+		userStore = new BasicUserStore(daoProvider);
 
-		idTokenResolver = new IdTokenResolverDD4Impl(new GenericStore<ActiveSession>(ActiveSession.class, daoProvider), userStore, clock);
+		idTokenResolver = new IdTokenResolverDD4Impl<>(
+				new GenericStore<>(ActiveSession.class, daoProvider), userStore, clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
-		addService("generalData",
-				new JSONServiceImpl<>(new EntityServiceImpl<>(generalDataStore), false));
-		addService("user",
-				new UserService.UserJSONService(userService = new UserService(userStore, userProvider, idTokenResolver, clock)));
+		addService("generalData", new GeneralDataService(generalDataStore));
+		addService("user", userService = new UserService<BasicUser>(userStore, userProvider, idTokenResolver, clock));
 
 		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
-		FileService fileService = new FileService(dataFileStore, requestProvider, responseProvider);
-		addService("file", new FileJSONService(fileService));
+		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
 	}
 
 	public void init() {
@@ -229,10 +223,15 @@ public class ApiServiceServlet extends HttpServlet {
 
 	private Pair<EntityKey, JSONObject> parseRequest(HttpServletRequest request) {
 		List<EntityKey> entitykeys = getEntitykeys(request);
-		String payload = request.getParameter("json");
 		try {
+			JSONObject json = new JSONObject();
+			String payload = request.getReader() == null
+					? null : request.getReader().lines().collect(joining(System.lineSeparator()));
+			if (payload != null) {
+				json.put("_payload", new JSONObject(payload));
+			}
+
 			EntityKey entity = entitykeys.get(entitykeys.size() - 1);
-			JSONObject json = payload != null ? new JSONObject(payload) : new JSONObject();
 			json.put("id", entity.key);
 			for (int i = 0; i < entitykeys.size() - 1; i++) {
 				EntityKey entitykey = entitykeys.get(i);
@@ -262,7 +261,7 @@ public class ApiServiceServlet extends HttpServlet {
 				json.put("filter", parameters);
 			}
 			return Pair.of(entity, json);
-		} catch (JSONException e) {
+		} catch (IOException e) {
 			throw new DD4StorageException("Malformed request", e, HttpServletResponse.SC_BAD_REQUEST);
 		}
 	}

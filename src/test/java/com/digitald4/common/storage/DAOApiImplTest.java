@@ -42,7 +42,7 @@ public class DAOApiImplTest {
     assertEquals(10, user.getTypeId());
 
     verify(connector).sendPost(
-        "http://test.server.net/api/basicusers/v1/_",
+        "http://test.server.net/api/basicUsers/v1/_",
         "{\"lastLogin\":0,\"typeId\":10,\"id\":0,\"username\":\"user@name\"}");
   }
 
@@ -54,7 +54,7 @@ public class DAOApiImplTest {
     assertEquals(BASIC_USER.getUsername(), user.getUsername());
     assertEquals(BASIC_USER.getTypeId(), user.getTypeId());
 
-    verify(connector).sendGet("http://test.server.net/api/basicusers/v1/123");
+    verify(connector).sendGet("http://test.server.net/api/basicUsers/v1/123");
   }
 
   @Test
@@ -62,7 +62,7 @@ public class DAOApiImplTest {
     when(connector.sendGet(anyString()))
         .thenReturn(new JSONObject(new QueryResult<>(ImmutableList.of(BASIC_USER), 5)).toString());
     QueryResult<BasicUser> queryResult =
-        dao.list(BasicUser.class, Query.forValues("last_login>1000,type_id=10", "username", 1, 20));
+        dao.list(BasicUser.class, Query.forValues("lastLogin>1000,typeId=10", "username", 1, 20));
 
     assertEquals(5, queryResult.getTotalSize());
     assertEquals(1, queryResult.getResults().size());
@@ -73,7 +73,7 @@ public class DAOApiImplTest {
     assertEquals(BASIC_USER.getTypeId(), user.getTypeId());
 
     verify(connector).sendGet(
-        "http://test.server.net/api/basicusers/v1/_?filter=last_login>1000,type_id=10&orderBy=username&pageSize=1&pageToken=20");
+        "http://test.server.net/api/basicUsers/v1/_?filter=lastLogin>1000,typeId=10&orderBy=username&pageSize=1&pageToken=20");
   }
 
   @Test
@@ -88,7 +88,7 @@ public class DAOApiImplTest {
 
     verify(connector).send(
         "PUT",
-        "http://test.server.net/api/basicusers/v1/123?updateMask=type_id",
+        "http://test.server.net/api/basicUsers/v1/123?updateMask=typeId",
         "{\"lastLogin\":0,\"typeId\":14,\"id\":123,\"username\":\"user@name\"}");
   }
 
@@ -98,18 +98,17 @@ public class DAOApiImplTest {
 
     dao.delete(BasicUser.class, USER_ID);
 
-    verify(connector).send("DELETE", "http://test.server.net/api/basicusers/v1/123", null);
+    verify(connector).send("DELETE", "http://test.server.net/api/basicUsers/v1/123", null);
   }
 
   @Test
   public void batchDelete() {
-    when(connector.send(anyString(), anyString(), anyString())).thenReturn("{deleted: 16}");
+    when(connector.send(anyString(), anyString(), anyString())).thenReturn("{deleted: 3}");
 
-    int deleted = dao.delete(BasicUser.class,
-        new Query().setFilters(new Query.Filter().setColumn("type_id").setOperator(">=").setValue("10")));
+    int deleted = dao.delete(BasicUser.class, ImmutableList.of(123L, 456L, 789L));
 
-    assertEquals(16, deleted);
+    assertEquals(3, deleted);
     verify(connector).send(
-        "DELETE", "http://test.server.net/api/basicusers/v1:batchDelete?filter=type_id>=10", null);
+        "POST", "http://test.server.net/api/basicUsers/v1:batchDelete", "[123,456,789]");
   }
 }

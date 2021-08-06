@@ -133,25 +133,10 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, Query query) {
-		StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + ":batchDelete?");
+	public <T extends Message> int delete(Class<T> c, Iterable<Long> ids) {
+		String url = apiConnector.formatUrl(getResourceName(c)) + ":batchDelete";
 
-		url.append(query.getFilters().stream()
-				.map(filter -> filter.getColumn() + "=" + filter.getOperator() + filter.getValue())
-				.collect(Collectors.joining("&")));
-		if (!query.getOrderBys().isEmpty()) {
-			url.append("&orderBy").append("=").append(query.getOrderBys().stream()
-					.map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
-					.collect(Collectors.joining(",")));
-		}
-		if (query.getLimit() > 0) {
-			url.append("&pageSize").append("=").append(query.getLimit());
-		}
-		if (query.getOffset() > 0) {
-			url.append("&pageToken").append("=").append(query.getOffset());
-		}
-		JSONObject response = new JSONObject(apiConnector.send("DELETE", url.toString(), null));
-		return response.getInt("deleted");
+		return new JSONObject(apiConnector.send("DELETE", url, new JSONArray(ids).toString())).getInt("deleted");
 	}
 
 	private static String getResourceName(Class<?> cls) {

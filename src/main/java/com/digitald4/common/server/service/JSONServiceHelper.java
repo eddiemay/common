@@ -1,32 +1,30 @@
 package com.digitald4.common.server.service;
 
-import static com.digitald4.common.util.ProtoUtil.toJSON;
-import static com.digitald4.common.util.ProtoUtil.toProto;
+import static com.digitald4.common.util.JSONUtil.toJSON;
+import static com.digitald4.common.util.JSONUtil.toObject;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.JSONUtil;
-import com.google.protobuf.Message;
 import javax.servlet.http.HttpServletResponse;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class JSONServiceImpl<T extends Message> implements JSONService {
+public class JSONServiceHelper<T> implements JSONService {
 	private static final DD4StorageException BAD_REQUEST =
 			new DD4StorageException("Invalid action", HttpServletResponse.SC_BAD_REQUEST);
-	private final T type;
-	private final EntityService<T> protoService;
+	private final Class<T> cls;
+	private final EntityService<T> entityService;
 	private final boolean requiresLoginDefault;
 
-	public JSONServiceImpl(EntityService<T> protoService, boolean requiresLoginDefault) {
-		Store<T> store = protoService.getStore();
-		if (protoService instanceof DualProtoService) {
-			this.type = ((DualProtoService<T, ?>) protoService).getType();
+	public JSONServiceHelper(EntityService<T> entityService, boolean requiresLoginDefault) {
+		Store<T> store = entityService.getStore();
+		if (entityService instanceof DualProtoService) {
+			this.cls = (Class<T>) ((DualProtoService<?, ?>) entityService).getType().getClass();
 		} else {
-			this.type = store.getType();
+			this.cls = (Class<T>) store.getType().getClass();
 		}
-		this.protoService = protoService;
+		this.entityService = entityService;
 		this.requiresLoginDefault = requiresLoginDefault;
 	}
 
@@ -39,46 +37,46 @@ public class JSONServiceImpl<T extends Message> implements JSONService {
 	public JSONObject performAction(String action, JSONObject jsonRequest) {
 		switch (action) {
 			case "create": {
-				if (protoService instanceof Createable) {
-					return toJSON(((Createable<T>) protoService).create(toProto(type, jsonRequest)));
+				if (entityService instanceof Createable) {
+					return toJSON(((Createable<T>) entityService).create(toObject(cls, jsonRequest.getJSONObject("entity"))));
 				}
 				throw BAD_REQUEST;
 			}
 			case "get": {
-				if (protoService instanceof Getable) {
-					return toJSON(((Getable<?>) protoService).get(jsonRequest.getInt("id")));
+				if (entityService instanceof Getable) {
+					return toJSON(((Getable<?>) entityService).get(jsonRequest.getInt("id")));
 				}
 				throw BAD_REQUEST;
 			}
 			case "list": {
-				if (protoService instanceof Listable) {
+				if (entityService instanceof Listable) {
 					return toJSON(
-							((Listable<?>) protoService).list(
+							((Listable<?>) entityService).list(
 									jsonRequest.optString("filter"), jsonRequest.optString("orderBy"),
 									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken")));
 				}
 				throw BAD_REQUEST;
 			}
 			case "update": {
-				if (protoService instanceof Updateable) {
+				if (entityService instanceof Updateable) {
 					return toJSON(
-							((Updateable<T>) protoService).update(
+							((Updateable<T>) entityService).update(
 									jsonRequest.getLong("id"),
-									toProto(type, jsonRequest.getJSONObject("entity")),
+									toObject(cls, jsonRequest.getJSONObject("entity")),
 									jsonRequest.getString("updateMask")));
 				}
 				throw BAD_REQUEST;
 			}
 			case "delete": {
-				if (protoService instanceof Deleteable) {
-					return toJSON(((Deleteable) protoService).delete(jsonRequest.getInt("id")));
+				if (entityService instanceof Deleteable) {
+					return toJSON(((Deleteable) entityService).delete(jsonRequest.getInt("id")));
 				}
 				throw BAD_REQUEST;
 			}
 			case "batchDelete": {
-				if (protoService instanceof BulkDeleteable) {
+				if (entityService instanceof BulkDeleteable) {
 					JSONArray ids = jsonRequest.getJSONArray("ids");
-					return toJSON(((BulkDeleteable) protoService).batchDelete(JSONUtil.transform(ids, ids::getLong)));
+					return toJSON(((BulkDeleteable) entityService).batchDelete(JSONUtil.transform(ids, ids::getLong)));
 				}
 				throw BAD_REQUEST;
 			}

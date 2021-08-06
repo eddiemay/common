@@ -1,41 +1,41 @@
 package com.digitald4.common.server;
 
+import com.digitald4.common.model.ActiveSession;
 import com.digitald4.common.model.User;
-import com.digitald4.common.proto.DD4Protos.ActiveSession;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.Calculate;
+import com.google.common.collect.ImmutableList;
 
 import java.time.Clock;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 
-public class IdTokenResolverDD4Impl implements IdTokenResolver {
+public class IdTokenResolverDD4Impl<U extends User> implements IdTokenResolver<U> {
 	private static final long SESSION_TIME = 30 * Calculate.ONE_MINUTE;
 	private final Store<ActiveSession> activeSessionStore;
-	private final UserStore<User> userStore;
+	private final UserStore<U> userStore;
 	private final Clock clock;
 	private final Map<String, ActiveSession> activeSessions = new HashMap<>();
 
 	@Inject
-	IdTokenResolverDD4Impl(Store<ActiveSession> activeSessionStore, UserStore<User> userStore, Clock clock) {
+	IdTokenResolverDD4Impl(Store<ActiveSession> activeSessionStore, UserStore<U> userStore, Clock clock) {
 		this.activeSessionStore = activeSessionStore;
 		this.userStore = userStore;
 		this.clock = clock;
 	}
 
 	@Override
-	public User resolve(String idToken) {
+	public U resolve(String idToken) {
 		ActiveSession activeSession = getActiveSession(idToken);
 		if (activeSession == null) {
 			return null;
 		}
-		return userStore.get(activeSession.getUserId())
-				.activeSession(activeSession);
+
+		return (U) userStore.get(activeSession.getUserId()).activeSession(activeSession);
 	}
 
 	private ActiveSession getActiveSession(String idToken) {
@@ -45,7 +45,7 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 		long now = clock.millis();
 		ActiveSession activeSession = activeSessions.get(idToken);
 		if (activeSession == null) {
-			List<ActiveSession> list = activeSessionStore
+			ImmutableList<ActiveSession> list = activeSessionStore
 					.list(new Query().setFilters(new Filter().setColumn("id_token").setOperator("=").setValue(idToken)))
 					.getResults();
 			if (list.isEmpty()) {
@@ -58,10 +58,9 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 			remove(idToken);
 			return null;
 		} else if (activeSession.getExpTime() < SESSION_TIME / 2 + now) {
-			activeSessions.put(idToken, activeSession = activeSessionStore.update(activeSession.getId(),
-					activeSession_ -> activeSession_.toBuilder()
-							.setExpTime(now + SESSION_TIME)
-							.build()));
+			activeSessions.put(idToken,
+					activeSession = activeSessionStore.update(activeSession.getId(),
+							activeSession_ -> activeSession_.setExpTime(now + SESSION_TIME)));
 		}
 		return activeSession;
 	}
@@ -69,17 +68,17 @@ public class IdTokenResolverDD4Impl implements IdTokenResolver {
 	public User put(User user) {
 		String idToken = String.valueOf((int) (Math.random() * Integer.MAX_VALUE));
 		return user.activeSession(
-				activeSessions.put(idToken, activeSessionStore.create(ActiveSession.newBuilder()
-						.setIdToken(idToken)
-						.setExpTime(clock.millis() + SESSION_TIME)
-						.setUserId(user.getId())
-						.build())));
+				activeSessions.put(idToken,
+						activeSessionStore.create(new ActiveSession()
+								.setIdToken(idToken)
+								.setExpTime(clock.millis() + SESSION_TIME)
+								.setUserId(user.getId()))));
 	}
 
 	public void remove(String idToken) {
 		ActiveSession activeSession = activeSessions.get(idToken);
 		if (activeSession == null) {
-			List<ActiveSession> list = activeSessionStore
+			ImmutableList<ActiveSession> list = activeSessionStore
 					.list(new Query().setFilters(new Filter().setColumn("id_token").setValue(idToken)))
 					.getResults();
 			if (!list.isEmpty()) {

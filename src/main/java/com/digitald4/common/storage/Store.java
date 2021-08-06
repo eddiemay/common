@@ -15,5 +15,5 @@ public interface Store<T> {
 
 	void delete(long id);
 
-	int delete(Query query);
+	int delete(Iterable<Long> ids);
 }

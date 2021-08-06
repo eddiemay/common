@@ -1,10 +1,8 @@
 package com.digitald4.common.server.service;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.proto.DD4Protos.DataFile;
-import com.digitald4.common.proto.DD4UIProtos;
+import com.digitald4.common.model.DataFile;
 import com.digitald4.common.storage.Store;
-import com.digitald4.common.util.ProtoUtil;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
 import com.google.api.server.spi.config.ApiNamespace;
@@ -46,7 +44,7 @@ import org.json.JSONObject;
 		}
 		// [END_EXCLUDE]
 )
-public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile> {
+public class FileService extends EntityServiceImpl<DataFile> implements JSONService {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
 	private final Store<DataFile> dataFileStore;
@@ -55,8 +53,8 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 
 	@Inject
 	public FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
-										 Provider<HttpServletResponse> responseProvider) {
-		super(DD4UIProtos.DataFile.class, dataFileStore);
+					   Provider<HttpServletResponse> responseProvider) {
+		super(dataFileStore);
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;
 		this.responseProvider = responseProvider;
@@ -80,11 +78,9 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		try {
 			response.getOutputStream().write(bytes);
 		} catch (IOException ioe) {
-			throw new DD4StorageException(
-			    "Error fetching file",
-          ioe,
-          HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new DD4StorageException("Error fetching file", ioe, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+
 		return null;
 	}
 
@@ -94,10 +90,7 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		int id = Integer.parseInt(urlParts[urlParts.length - 1]);
 		try {
 			DataFile replacement = converter.apply(request.getPart("file"));
-			return toJSON.apply(dataFileStore.update(id, dataFile -> dataFile.toBuilder()
-					.mergeFrom(replacement)
-					.build())
-			);
+			return toJSON.apply(dataFileStore.update(id, dataFile -> replacement));
 		} catch (ServletException | IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -129,12 +122,11 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 			String fileName = getFileName(filePart);
 			// LOGGER.log(Level.INFO, "File {0} being uploaded.", fileName);
 			byte[] data = buffer.toByteArray();
-			return DataFile.newBuilder()
+			return new DataFile()
 					.setName(fileName)
 					.setType(fileName.substring(fileName.length() - 4))
 					.setSize(data.length)
-					.setData(ByteString.copyFrom(data))
-					.build();
+					.setData(ByteString.copyFrom(data));
 		} catch (IOException e) {
 			e.printStackTrace();
 			LOGGER.log(Level.SEVERE, "Problems during file upload. Error: {0}", e.getMessage());
@@ -144,25 +136,23 @@ public class FileService extends DualProtoService<DD4UIProtos.DataFile, DataFile
 		}
 	};
 
-	private static final Function<DataFile, JSONObject> toJSON = dataFile ->
-			new JSONObject(ProtoUtil.print(dataFile.toBuilder().clearData().build()));
+	private static final Function<DataFile, JSONObject> toJSON = dataFile -> new JSONObject(dataFile.setData(null));
 
-	public static class FileJSONService extends JSONServiceImpl<DD4UIProtos.DataFile> {
-		private final FileService fileService;
-
-		public FileJSONService(FileService fileService) {
-			super(fileService, true);
-			this.fileService = fileService;
+	@Override
+	public JSONObject performAction(String action, JSONObject request) {
+		switch (action) {
+			case "create": return create();
+			case "update": return update();
+			case "delete":
+				case "list": // super.performAction(action, request);
+			case "get":
+				default:
+					return get(request);
 		}
+	}
 
-		@Override
-		public JSONObject performAction(String action, JSONObject request) {
-			switch (action) {
-				case "create": return fileService.create();
-				case "update": return fileService.update();
-				case "delete": case "list": super.performAction(action, request);
-				case "get": default: return fileService.get(request);
-			}
-		}
+	@Override
+	public boolean requiresLogin(String action) {
+		return false;
 	}
 }

@@ -1,17 +1,13 @@
 package com.digitald4.common.server.service;
 
-import com.digitald4.common.model.HasProto;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.storage.Store;
-import com.digitald4.common.util.ProtoUtil;
+import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
-import com.google.protobuf.Message;
-
-import java.util.Arrays;
 
 public class EntityServiceImpl<T> implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T> {
 
@@ -42,13 +38,14 @@ public class EntityServiceImpl<T> implements Createable<T>, Getable<T>, Listable
 	public QueryResult<T> list(
 			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
 			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken) {
-		return getStore().list(Query.forValues(filter, orderBy, pageSize, pageToken));
+		return getStore().list(Query.forValues(filter, orderBy, pageSize, pageToken))
+				.setFilter(filter).setOrderBy(orderBy).setPageSize(pageSize).setPageToken(pageToken);
 	}
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
 	public T update(@Named("id") long id, T entity, @Named("updateMask") String updateMask) {
-		return getStore().update(id, internal -> ProtoUtil.merge(updateMask, entity, internal));
+		return getStore().update(id, current -> JSONUtil.merge(updateMask, entity, current));
 	}
 
 	@Override

@@ -1,10 +1,12 @@
 package com.digitald4.common.server.service;
 
-import com.digitald4.common.proto.DD4Protos.GeneralData;
+import com.digitald4.common.model.GeneralData;
 import com.digitald4.common.storage.GeneralDataStore;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
 import com.google.api.server.spi.config.ApiNamespace;
+import org.json.JSONObject;
+
 import javax.inject.Inject;
 
 @Api(
@@ -26,10 +28,20 @@ import javax.inject.Inject;
 		}
 		// [END_EXCLUDE]
 )
-public class GeneralDataService extends EntityServiceImpl<GeneralData> {
+public class GeneralDataService extends EntityServiceImpl<GeneralData> implements JSONService {
 
 	@Inject
 	public GeneralDataService(GeneralDataStore generalDataStore) {
 		super(generalDataStore);
+	}
+
+	@Override
+	public JSONObject performAction(String action, JSONObject request) {
+		return null;
+	}
+
+	@Override
+	public boolean requiresLogin(String action) {
+		return false;
 	}
 }

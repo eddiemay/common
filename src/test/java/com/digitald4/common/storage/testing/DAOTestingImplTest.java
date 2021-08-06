@@ -8,8 +8,7 @@ import com.digitald4.common.storage.*;
 import org.junit.Test;
 
 public class DAOTestingImplTest {
-	private final DAOTestingImpl messageDao = new DAOTestingImpl();
-	private final DAORouterImpl dao = new DAORouterImpl(messageDao, new HasProtoDAO(messageDao), null);
+	private final DAOTestingImpl dao = new DAOTestingImpl();
 	private final GenericStore<User> userStore = new GenericStore<>(User.class, () -> dao);
 
 	@Test
@@ -48,7 +47,7 @@ public class DAOTestingImplTest {
 		assertEquals(user, users.getResults().get(0));
 		assertEquals(user2, users.getResults().get(1));
 
-		users = userStore.list(new Query().setFilters(new Query.Filter().setColumn("type_id").setValue("34")));
+		users = userStore.list(new Query().setFilters(new Query.Filter().setColumn("typeId").setValue(34)));
 		assertEquals(1, users.getTotalSize());
 		assertEquals(1, users.getResults().size());
 		assertEquals(user2, users.getResults().get(0));

@@ -178,22 +178,31 @@ public class FormatText {
 	 * @param str
 	 * @return
 	 */
-	public static String toLowerCamel(String str){
+	public static String toLowerCamel(String str) {
 		StringBuilder result = new StringBuilder();
 		char ch;       // One of the characters in str.
 		char prevCh;   // The character that comes before ch in the string.
 		int i;         // A position in str, from 0 to str.length()-1.
 		prevCh = 'a';  // Prime the loop with any letter character.
+		boolean foundNonLetter = false;
 		for ( i = 0;  i < str.length();  i++ ) {
 			ch = str.charAt(i);
-			if ( Character.isLetter(ch)  &&  ! Character.isLetter(prevCh) )
+			if (Character.isLetter(ch) && !Character.isLetter(prevCh)) {
 				result.append(Character.toUpperCase(ch));
-			else if(Character.isLetter(ch))
+			} else if (Character.isLetter(ch)) {
 				result.append(Character.toLowerCase(ch));
-			else if(Character.isDigit(ch))
+			} else if (Character.isDigit(ch)) {
 				result.append(ch);
+			} else {
+				foundNonLetter = true;
+			}
 			prevCh = ch;
 		}
+
+		if (!foundNonLetter) {
+			return str.substring(0, 1).toLowerCase() + str.substring(1);
+		}
+
 		return result.toString();
 	}
 
@@ -202,25 +211,27 @@ public class FormatText {
 	 * @param str
 	 * @return
 	 */
-	public static String toUpperCamel(String str){
-		String letter="";
+	public static String toUpperCamel(String str) {
+		StringBuilder result = new StringBuilder();
 		char ch;       // One of the characters in str.
 		char prevCh;   // The character that comes before ch in the string.
 		int i;         // A position in str, from 0 to str.length()-1.
 		prevCh = '.';  // Prime the loop with any non-letter character.
 		for ( i = 0;  i < str.length();  i++ ) {
 			ch = str.charAt(i);
-			if (Character.isLetter(ch)){
-				if(!Character.isLetter(prevCh))
-					letter+=Character.toUpperCase(ch);
-				else
-					letter+=Character.toLowerCase(ch);
+			if (Character.isLetter(ch)) {
+				if (!Character.isLetter(prevCh)) {
+					result.append(Character.toUpperCase(ch));
+				} else {
+					result.append(Character.toLowerCase(ch));
+				}
+			} else if (ch != ' ' && ch != '_' && ch != '.') {
+				result.append(ch);
 			}
-			else if(ch!=' ' && ch!='_' && ch!='.')
-				letter+=ch;
 			prevCh = ch;
 		}
-		return letter;
+
+		return result.toString();
 	}
 
 	/**

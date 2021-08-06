@@ -85,7 +85,7 @@ com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError
 */
 com.digitald4.common.JSONService.prototype.list_ = function(urlParams, listOptions, onSuccess, onError) {
   this.performRequest('GET', urlParams, listOptions, undefined, function(response) {
-    response.result = response.result || [];
+    response.results = response.results || [];
     onSuccess(response);
   }, onError);
 };

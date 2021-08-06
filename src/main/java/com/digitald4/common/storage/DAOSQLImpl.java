@@ -1,5 +1,8 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.Streams.stream;
+import static java.util.stream.Collectors.joining;
+
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
@@ -20,7 +23,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import org.json.JSONObject;
 
 public class DAOSQLImpl implements TypedDAO<Message> {
@@ -29,13 +31,12 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	private static final String SEARCH_SQL = "SELECT * FROM %s%s%s%s;";
 	private static final String UPDATE_SQL = "UPDATE %s SET %s WHERE id=?;";
 	private static final String DELETE_SQL = "DELETE FROM %s%s;";
-	private static final String BATCH_DELETE_SQL = "DELETE FROM %s%s%s%s;";
+	private static final String BATCH_DELETE_SQL = "DELETE FROM %s WHERE id IN (%s);";
 	private static final String LIMIT_SQL = " LIMIT %s%d";
 	private static final String COUNT_SQL = "SELECT COUNT(*) FROM %s%s;";
 
 	private final DBConnector connector;
 	private final boolean useViews;
-	private final Map<Class<?>, Message> defaultInstances = new HashMap<>();
 
 	public DAOSQLImpl(DBConnector connector) {
 		this(connector, false);
@@ -105,11 +106,11 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 			String where = query.getFilters().isEmpty() ? "" :
 					query.getFilters().stream()
 							.map(filter -> filter.getColumn() + filter.getOperator() + "?")
-							.collect(Collectors.joining(" AND ", " WHERE ", ""));
+							.collect(joining(" AND ", " WHERE ", ""));
 			String orderBy = query.getOrderBys().isEmpty() ? "" :
 					query.getOrderBys().stream()
 							.map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : ""))
-							.collect(Collectors.joining(", ", " ORDER BY ", ""));
+							.collect(joining(", ", " ORDER BY ", ""));
 			String limit = "";
 			String countSql = null;
 			if (query.getLimit() > 0) {
@@ -169,7 +170,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 						return null;
 					})
 					.filter(Objects::nonNull)
-					.collect(Collectors.joining(", "));
+					.collect(joining(", "));
 
 			// Find all the fields that have been removed from the update set them to null.
 			for (FieldDescriptor field : orig.getAllFields().keySet()) {
@@ -206,7 +207,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 		if (!Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(DELETE_SQL, getTable(c),  " WHERE id=?");
 			try (Connection con = connector.getConnection();
-					 PreparedStatement ps = con.prepareStatement(sql);) {
+					 PreparedStatement ps = con.prepareStatement(sql)) {
 				ps.setLong(1, id);
 
 				return ps.executeUpdate() > 0;
@@ -219,31 +220,11 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, Query query) {
+	public <T extends Message> int delete(Class<T> c, Iterable<Long> ids) {
 		return Calculate.executeWithRetries(2, () -> {
-			String where = query.getFilters().isEmpty() ? "" :
-					query.getFilters().stream()
-							.map(filter -> filter.getColumn() + filter.getOperator() + "?")
-							.collect(Collectors.joining(" AND ", " WHERE ", ""));
-			String orderBy = query.getOrderBys().isEmpty() ? "" :
-					query.getOrderBys().stream()
-							.map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : ""))
-							.collect(Collectors.joining(", ", " ORDER BY ", ""));
-			String limit = "";
-			String countSql = null;
-			if (query.getLimit() > 0) {
-				limit = String.format(LIMIT_SQL, query.getOffset() > 0 ? query.getOffset() + "," : "", query.getLimit());
-				countSql = String.format(COUNT_SQL, getView(c), where);
-			}
-
-			String sql = String.format(BATCH_DELETE_SQL, getView(c), where, orderBy, limit);
-			Descriptor descriptor = ProtoUtil.getDefaultInstance(c).getDescriptorForType();
+			String sql = String.format(BATCH_DELETE_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
 			try (Connection con = connector.getConnection();
-					 PreparedStatement ps = con.prepareStatement(sql.toString())) {
-				int p = 1;
-				for (Query.Filter filter : query.getFilters()) {
-					setObject(ps, p++, null, descriptor.findFieldByName(filter.getColumn()), filter.getValue());
-				}
+					 PreparedStatement ps = con.prepareStatement(sql)) {
 				return ps.executeUpdate();
 			} catch (SQLException e) {
 				throw new RuntimeException("Error deleting record: " + e.getMessage(), e);

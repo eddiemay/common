@@ -14,5 +14,5 @@ public interface TypedDAO<R> {
 
 	<T extends R> void delete(Class<T> c, long id);
 
-	<T extends R> int delete(Class<T> c, Query query);
+	<T extends R> int delete(Class<T> c, Iterable<Long> ids);
 }

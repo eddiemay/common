@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.appengine.api.datastore.Query.SortDirection.ASCENDING;
 import static com.google.appengine.api.datastore.Query.SortDirection.DESCENDING;
+import static com.google.common.collect.Streams.stream;
 import static java.util.Arrays.stream;
 import static java.util.function.Function.identity;
 
@@ -22,10 +23,12 @@ import com.google.protobuf.ByteString;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class DAOCloudDS implements DAO {
@@ -86,12 +89,13 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T> int delete(Class<T> c, Query query) {
+	public <T> int delete(Class<T> c, Iterable<Long> ids) {
 		return Calculate.executeWithRetries(2, () -> {
-			ImmutableList<Entity> results = listEntities(c, query).getResults();
-			results.forEach(entity -> delete(c, entity.getKey().getId()));
+			ImmutableList<Key> keys =
+					stream(ids).map(id -> KeyFactory.createKey(c.getSimpleName(), id)).collect(toImmutableList());
+			datastoreService.delete(keys);
 
-			return results.size();
+			return keys.size();
 		});
 	}
 
@@ -142,7 +146,7 @@ public class DAOCloudDS implements DAO {
 		String colName = FormatText.toUnderScoreCase(fieldName);
 
 		Object value = json.get(fieldName);
-		if (value instanceof JSONObject) {
+		if (value instanceof JSONObject || value instanceof JSONArray) {
 			entity.setProperty(colName, value.toString());
 		} else {
 			entity.setProperty(colName, value);
@@ -155,16 +159,14 @@ public class DAOCloudDS implements DAO {
 		}
 
 		ImmutableMap<String, Field> fieldMap = getFields(c);
-		T t = DAORouterImpl.newInstance(c);
+		// T t = JSONUtil.newInstance(c);
+		JSONObject jsonObject = new JSONObject();
 		Field idField = fieldMap.get("id");
 		if (idField != null && idField.setMethod != null) {
-			try {
-				idField.setMethod.invoke(t, entity.getKey().getId());
-			} catch (IllegalAccessException | InvocationTargetException e) {
-				throw new RuntimeException(e);
-			}
+			jsonObject.put("id", entity.getKey().getId());
 		}
 		entity.getProperties().forEach((colName, value) -> {
+			String javaName = FormatText.toLowerCamel(colName);
 			Field field = fieldMap.get(colName);
 			if (field == null) {
 				throw new DD4StorageException("Unknown field: " + colName + " for Object: " + c.getSimpleName());
@@ -173,71 +175,68 @@ public class DAOCloudDS implements DAO {
 			if (field.getSetMethod() == null) {
 				return;
 			}
-			try {
-				if (field.isObject()) {
-					field.setMethod.invoke(t, JSONUtil.convertTo(field.getType(), (String) value));
-				} else {
-					switch (field.getType().getSimpleName()) {
-						case "ByteArray":
-							field.setMethod.invoke(t, ByteString.copyFrom(value.toString().getBytes()));
-							break;
-						case "Integer":
-						case "int":
-							field.setMethod.invoke(t, ((Long) value).intValue());
-							break;
-						case "Long":
-						case "long":
-							if (colName.endsWith("id")) {
-								field.setMethod.invoke(t, value);
-							} else {
-								field.setMethod.invoke(t, value);
-								// field.setMethod.invoke(t, new java.sql.Timestamp((Long.parseLong(value.toString()))));
-							}
-							break;
-						case "String":
-						default:
-							field.setMethod.invoke(t, value);
-							break;
-					}
+
+			if (field.isCollection()) {
+				jsonObject.put(javaName, new JSONArray((String) value));
+			} else if (field.isObject()) {
+				jsonObject.put(javaName, new JSONObject((String) value));
+			} else {
+				switch (field.getType().getSimpleName()) {
+					case "ByteArray":
+						jsonObject.put(javaName, ByteString.copyFrom(value.toString().getBytes()));
+						break;
+					case "Integer":
+					case "int":
+						jsonObject.put(javaName, ((Long) value).intValue());
+						break;
+					case "Long":
+					case "long":
+						if (colName.endsWith("id")) {
+							jsonObject.put(javaName, value);
+						} else {
+							jsonObject.put(javaName, value);
+							// field.invokeSet(t, new java.sql.Timestamp((Long.parseLong(value.toString()))));
+						}
+						break;
+					case "String":
+					default:
+						jsonObject.put(javaName, value);
+						break;
 				}
-			} catch (Exception e) {
-				throw new DD4StorageException(
-						String.format(
-								"%s for column: %s value: %s field type: %s", e.getMessage(), colName, value, field.getType()), e);
 			}
 		});
 
-		return t;
+		return JSONUtil.toObject(c, jsonObject);
 	}
 
 	private FilterPredicate convertToPropertyFilter(Class<?> c, Query.Filter filter) {
-		String columName = filter.getColumn();
-		Field field = getFields(c).get(columName);
+		String colName = FormatText.toUnderScoreCase(filter.getColumn());
+		Field field = getFields(c).get(colName);
 		if (field == null) {
-			throw new DD4StorageException("Unknown column: " + columName);
+			throw new DD4StorageException("Unknown column: " + colName);
 		}
 
 		Object value;
 		switch (field.getType().getSimpleName()) {
 			case "Long":
 			case "long":
-				value = Long.parseLong(filter.getValue());
+				value = Long.parseLong(filter.getValue().toString());
 				break;
 			case "Integer":
 			case "int":
-				value = Integer.parseInt(filter.getValue());
+				value = Integer.parseInt(filter.getValue().toString());
 				break;
 			case "Boolean":
 			case "boolean":
-				value = Boolean.parseBoolean(filter.getValue());
+				value = Boolean.parseBoolean(filter.getValue().toString());
 				break;
 			case "Double":
 			case "double":
-				value = Double.parseDouble(filter.getValue());
+				value = Double.parseDouble(filter.getValue().toString());
 				break;
 			case "Float":
 			case "float":
-				value = Float.parseFloat(filter.getValue());
+				value = Float.parseFloat(filter.getValue().toString());
 				break;
 			default:
 				value = filter.getValue();
@@ -245,16 +244,16 @@ public class DAOCloudDS implements DAO {
 
 		switch (filter.getOperator()) {
 			case "<":
-				return new FilterPredicate(filter.getColumn(), FilterOperator.LESS_THAN, value);
+				return new FilterPredicate(colName, FilterOperator.LESS_THAN, value);
 			case "<=":
-				return new FilterPredicate(filter.getColumn(), FilterOperator.LESS_THAN_OR_EQUAL, value);
+				return new FilterPredicate(colName, FilterOperator.LESS_THAN_OR_EQUAL, value);
 			case "=":
 			case "":
-				return new FilterPredicate(filter.getColumn(), FilterOperator.EQUAL, value);
+				return new FilterPredicate(colName, FilterOperator.EQUAL, value);
 			case ">=":
-				return new FilterPredicate(filter.getColumn(), FilterOperator.GREATER_THAN_OR_EQUAL, value);
+				return new FilterPredicate(colName, FilterOperator.GREATER_THAN_OR_EQUAL, value);
 			case ">":
-				return new FilterPredicate(filter.getColumn(), FilterOperator.GREATER_THAN, value);
+				return new FilterPredicate(colName, FilterOperator.GREATER_THAN, value);
 			default:
 				throw new IllegalArgumentException("Unknown operator " + filter.getOperator());
 		}
@@ -271,21 +270,34 @@ public class DAOCloudDS implements DAO {
 									&& (method.getName().startsWith("get") || method.getName().startsWith("is")))
 					.map(method -> {
 						String name = method.getName().substring(method.getName().startsWith("is") ? 2 : 3);
-						return new Field(name, method.getReturnType(), methods.get("set" + name));
+						Field field = new Field(name, method, methods.get("set" + name));
+						if (field.isCollection()) {
+							// field.verifyCollectionTypeSet();
+						}
+
+						return field;
 					})
 					.collect(toImmutableMap(Field::getColName, identity()));
 		});
 	}
 
 	private static class Field {
+		private final String javaName;
 		private final String colName;
 		private final Class<?> type;
+		private final Method getMethod;
 		private final Method setMethod;
 
-		public Field(String name, Class<?> type, Method setMethod) {
+		public Field(String name, Method getMethod, Method setMethod) {
+			this.javaName = name.substring(0, 1).toLowerCase() + name.substring(1);
 			this.colName = FormatText.toUnderScoreCase(name);
-			this.type = type;
+			this.type = getMethod.getReturnType();
+			this.getMethod = getMethod;
 			this.setMethod = setMethod;
+		}
+
+		public String getJavaName() {
+			return javaName;
 		}
 
 		public String getColName() {
@@ -296,6 +308,10 @@ public class DAOCloudDS implements DAO {
 			return type;
 		}
 
+		public Method getGetMethod() {
+			return getMethod;
+		}
+
 		public Method getSetMethod() {
 			return setMethod;
 		}
@@ -304,13 +320,21 @@ public class DAOCloudDS implements DAO {
 			try {
 				setMethod.invoke(t, value);
 			} catch (IllegalAccessException | InvocationTargetException e) {
-				throw new RuntimeException(e);
+				throw new DD4StorageException("Error invoking set method", e);
 			}
 			return t;
 		}
 
 		public boolean isObject() {
 			return !getType().isPrimitive() && getType() != String.class;
+		}
+
+		public boolean isCollection() {
+			return isCollection(getType());
+		}
+
+		public static boolean isCollection(Class<?> cls) {
+			return cls.getName().startsWith("com.google.common.collect.") || cls.getName().startsWith("java.util.");
 		}
 	}
 }

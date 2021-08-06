@@ -1,6 +1,6 @@
 package com.digitald4.common.report;
 
-import com.digitald4.common.proto.DD4Protos.Company;
+import com.digitald4.common.model.Company;
 import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;

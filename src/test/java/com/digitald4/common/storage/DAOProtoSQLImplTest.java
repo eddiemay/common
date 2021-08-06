@@ -8,6 +8,7 @@ import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.proto.DD4Protos.User;
 import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.storage.Query;
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -98,11 +99,9 @@ public class DAOProtoSQLImplTest {
 	@Test
 	public void batchDelete() throws SQLException {
 		when(ps.executeUpdate()).thenReturn(5);
-		int deleted = daoSql.delete(User.class, Query.forValues("read_only=true,type_id>20", null, 0, 0));
+		int deleted = daoSql.delete(User.class, ImmutableList.of(123L, 456L, 789L));
 
 		assertEquals(5, deleted);
-		verify(connection).prepareStatement("DELETE FROM User WHERE read_only=? AND type_id>?;");
-		verify(ps).setObject(1, "true");
-		verify(ps).setObject(2, "20");
+		verify(connection).prepareStatement("DELETE FROM User WHERE id IN (123,456,789);");
 	}
 }

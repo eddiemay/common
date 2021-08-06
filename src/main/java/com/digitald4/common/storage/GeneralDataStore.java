@@ -1,6 +1,6 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.proto.DD4Protos.GeneralData;
+import com.digitald4.common.model.GeneralData;
 import javax.inject.Inject;
 import javax.inject.Provider;
 

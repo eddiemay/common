@@ -85,7 +85,6 @@ public class DAOApiImpl implements DAO {
           .build()
           .stream()
           .filter(field -> !Objects.equals(origJson.get(field), updatedJson.get(field)))
-          .map(FormatText::toUnderScoreCase)
           .collect(Collectors.joining(","));
 
       if (updateMask.isEmpty()) {
@@ -105,25 +104,10 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T> int delete(Class<T> c, Query query) {
-    StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + ":batchDelete?");
+  public <T> int delete(Class<T> c, Iterable<Long> ids) {
+    String url = apiConnector.formatUrl(getResourceName(c)) + ":batchDelete";
 
-    url.append("filter=").append(query.getFilters().stream()
-        .map(filter -> filter.getColumn() + filter.getOperator() + filter.getValue())
-        .collect(Collectors.joining(",")));
-    if (!query.getOrderBys().isEmpty()) {
-      url.append("&orderBy=").append(query.getOrderBys().stream()
-          .map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
-          .collect(Collectors.joining(",")));
-    }
-    if (query.getLimit() > 0) {
-      url.append("&pageSize").append("=").append(query.getLimit());
-    }
-    if (query.getOffset() > 0) {
-      url.append("&pageToken").append("=").append(query.getOffset());
-    }
-
-    return new JSONObject(apiConnector.send("DELETE", url.toString(), null)).getInt("deleted");
+    return new JSONObject(apiConnector.send("POST", url, new JSONArray(ids).toString())).getInt("deleted");
   }
 
   private <T> T convert(Class<T> c, String content) {
@@ -135,6 +119,6 @@ public class DAOApiImpl implements DAO {
   }
 
   private static String getResourceName(Class<?> cls) {
-    return FormatText.toLowerCamel(cls.getSimpleName()) + "s";
+    return cls.getSimpleName().substring(0, 1).toLowerCase() + cls.getSimpleName().substring(1) + "s";
   }
 }

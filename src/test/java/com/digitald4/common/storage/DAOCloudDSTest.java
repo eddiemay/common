@@ -1,16 +1,16 @@
 package com.digitald4.common.storage;
 
+import static junit.framework.TestCase.*;
+
 import com.digitald4.common.model.BasicUser;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import static junit.framework.TestCase.*;
 
 public class DAOCloudDSTest {
 	private static final long ID = 123;
@@ -40,14 +40,62 @@ public class DAOCloudDSTest {
 	}
 
 	@Test
-	public void get() {
-		dao.create(new BasicUser().setUsername("user@name").updateLastLogin(Clock.systemUTC()));
+	public void createComplex() {
+		ComplexObj complex = new ComplexObj()
+				.setName("test")
+				.setSubComplexes(
+						ImmutableList.of(
+								new ComplexObj.SubComplex().setBrand("A").setHistory(ImmutableList.of("A1", "A2", "A3")),
+								new ComplexObj.SubComplex().setBrand("B").setHistory(ImmutableList.of("B1", "B2"))));
 
+		ComplexObj result = dao.create(complex);
+
+		assertTrue(result.getId() > 0);
+		assertEquals(complex.getName(), result.getName());
+		assertEquals(complex.getSubComplexes().size(), result.getSubComplexes().size());
+	}
+
+	@Test
+	public void get() {
 		BasicUser user = dao.get(BasicUser.class, ID);
 
 		assertEquals(ID, user.getId());
 		assertEquals("user@name", user.getUsername());
 		assertEquals(10, user.getTypeId());
+	}
+
+	@Test
+	public void getComplex() {
+		long id = 200;
+		ComplexObj complex = new ComplexObj()
+				.setId(id)
+				.setName("test")
+				.setSubComplexes(
+						ImmutableList.of(
+								new ComplexObj.SubComplex().setBrand("A").setHistory(ImmutableList.of("A1", "A2", "A3")),
+								new ComplexObj.SubComplex().setBrand("B").setHistory(ImmutableList.of("B1", "B2"))));
+		dao.create(complex);
+
+		// assertEquals(200, complex.getId());
+
+		ComplexObj result = dao.get(ComplexObj.class, complex.getId());
+
+		assertTrue(result.getId() > 0);
+		assertEquals(complex.getName(), result.getName());
+		assertEquals(complex.getSubComplexes().size(), result.getSubComplexes().size());
+
+		ComplexObj.SubComplex subComplex = complex.getSubComplexes().get(0);
+		assertEquals("A", subComplex.getBrand());
+		assertEquals(3, subComplex.getHistory().size());
+		assertEquals("A1", subComplex.getHistory().get(0));
+		assertEquals("A2", subComplex.getHistory().get(1));
+		assertEquals("A3", subComplex.getHistory().get(2));
+
+		subComplex = complex.getSubComplexes().get(1);
+		assertEquals("B", subComplex.getBrand());
+		assertEquals(2, subComplex.getHistory().size());
+		assertEquals("B1", subComplex.getHistory().get(0));
+		assertEquals("B2", subComplex.getHistory().get(1));
 	}
 
 	@Test
@@ -127,7 +175,7 @@ public class DAOCloudDSTest {
 
 	@Test
 	public void batchDelete() {
-		int deleted = dao.delete(BasicUser.class, Query.forValues("type_id>=10", null, 0, 0));
+		int deleted = dao.delete(BasicUser.class, ImmutableList.of(123L, 456L, 789L));
 
 		assertEquals(3, deleted);
 	}
@@ -138,5 +186,61 @@ public class DAOCloudDSTest {
 		dao.create(new BasicUser().setUsername("user3").setTypeId(18));
 		dao.create(new BasicUser().setUsername("user4").setTypeId(22));
 		dao.create(new BasicUser().setUsername("user5").setTypeId(2));
+	}
+
+	public static class ComplexObj {
+		private long id;
+		private String name;
+		private ImmutableList<SubComplex> subComplexes = ImmutableList.of();
+
+		public long getId() {
+			return id;
+		}
+
+		public ComplexObj setId(long id) {
+			this.id = id;
+			return this;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public ComplexObj setName(String name) {
+			this.name = name;
+			return this;
+		}
+
+		public ImmutableList<SubComplex> getSubComplexes() {
+			return subComplexes;
+		}
+
+		public ComplexObj setSubComplexes(Iterable<SubComplex> subComplexes) {
+			this.subComplexes = ImmutableList.copyOf(subComplexes);
+			return this;
+		}
+
+		public static class SubComplex {
+			private String brand;
+			private ImmutableList<String> history;
+
+			public String getBrand() {
+				return brand;
+			}
+
+			public SubComplex setBrand(String brand) {
+				this.brand = brand;
+				return this;
+			}
+
+			public ImmutableList<String> getHistory() {
+				return history;
+			}
+
+			public SubComplex setHistory(Iterable<String> history) {
+				this.history = ImmutableList.copyOf(history);
+				return this;
+			}
+		}
 	}
 }

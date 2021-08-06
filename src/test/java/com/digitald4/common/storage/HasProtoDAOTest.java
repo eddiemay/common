@@ -2,13 +2,19 @@ package com.digitald4.common.storage;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.digitald4.common.model.BasicUser;
+import com.digitald4.common.model.ActiveSession;
+import com.digitald4.common.model.HasProto;
+import com.digitald4.common.model.PasswordInfo;
+import com.digitald4.common.model.User;
 import com.digitald4.common.proto.DD4Protos;
 import com.google.common.collect.ImmutableList;
+
+import java.time.Clock;
 import java.util.function.UnaryOperator;
 
 import com.google.protobuf.Message;
@@ -34,19 +40,20 @@ public class HasProtoDAOTest {
         .thenReturn(new QueryResult<>(ImmutableList.of(USER_PROTO)));
    when(messageDAO.update(eq(DD4Protos.User.class), eq(USER_ID), any()))
        .thenAnswer(i -> i.getArgumentAt(2, UnaryOperator.class).apply(USER_PROTO));
-    when(messageDAO.delete(eq(DD4Protos.User.class), any(Query.class))).thenReturn(62);
+    when(messageDAO.delete(eq(DD4Protos.User.class), anyList()))
+        .thenAnswer(i -> ((ImmutableList<Long>) i.getArguments()[1]).size());
   }
 
   @Test
   public void testCreate() {
-    BasicUser user = modelDAO.create(new BasicUser().setUsername("eddiemay"));
+    HasProtoUser user = modelDAO.create(new HasProtoUser().setUsername("eddiemay"));
 
     assertEquals("eddiemay", user.getUsername());
   }
 
   @Test
   public void testGet() {
-    BasicUser user = modelDAO.get(BasicUser.class, USER_ID);
+    HasProtoUser user = modelDAO.get(HasProtoUser.class, USER_ID);
 
     assertEquals(USER_ID, user.getId());
     assertEquals("eddiemay", user.getUsername());
@@ -54,17 +61,17 @@ public class HasProtoDAOTest {
 
   @Test
   public void testList() {
-    QueryResult<BasicUser> result = modelDAO.list(BasicUser.class, new Query());
+    QueryResult<HasProtoUser> result = modelDAO.list(HasProtoUser.class, new Query());
 
     assertEquals(1, result.getTotalSize());
-    BasicUser user = result.getResults().get(0);
+    HasProtoUser user = result.getResults().get(0);
     assertEquals(USER_ID, user.getId());
     assertEquals("eddiemay", user.getUsername());
   }
 
   @Test
   public void testUpdate() {
-    BasicUser user = modelDAO.update(BasicUser.class, USER_ID, u -> u.setUsername("username_change"));
+    HasProtoUser user = modelDAO.update(HasProtoUser.class, USER_ID, u -> u.setUsername("username_change"));
 
     assertEquals(USER_ID, user.getId());
     assertEquals(user.getUsername(), "username_change");
@@ -72,13 +79,82 @@ public class HasProtoDAOTest {
 
   @Test
   public void testDelete() {
-    modelDAO.delete(BasicUser.class, USER_ID);
+    modelDAO.delete(HasProtoUser.class, USER_ID);
   }
 
   @Test
   public void testBatchDelete() {
-    int deleted = modelDAO.delete(BasicUser.class, new Query());
+    int deleted = modelDAO.delete(HasProtoUser.class, ImmutableList.of(123L, 456L, 789L, 101112L, 131415L));
 
-    assertEquals(62, deleted);
+    assertEquals(5, deleted);
+  }
+
+  public static class HasProtoUser implements User, HasProto<DD4Protos.User> {
+
+    private DD4Protos.User proto;
+    public HasProtoUser() {
+      proto = DD4Protos.User.getDefaultInstance();
+    }
+
+    @Override
+    public long getId() {
+      return proto.getId();
+    }
+
+    @Override
+    public String getUsername() {
+      return proto.getUsername();
+    }
+
+    @Override
+    public HasProtoUser setUsername(String username) {
+      proto = proto.toBuilder().setUsername(username).build();
+      return this;
+    }
+
+    @Override
+    public int getTypeId() {
+      return proto.getTypeId();
+    }
+
+    @Override
+    public long getLastLogin() {
+      return proto.getLastLogin();
+    }
+
+    @Override
+    public HasProtoUser updateLastLogin(Clock clock) {
+      return this;
+    }
+
+    @Override
+    public HasProtoUser updatePasswordInfo(PasswordInfo passwordInfo) {
+      return this;
+    }
+
+    @Override
+    public ActiveSession activeSession() {
+      return null;
+    }
+
+    @Override
+    public HasProtoUser activeSession(ActiveSession activeSession) {
+      return null;
+    }
+
+    @Override
+    public void verifyPassword(String passwordDigest) {
+    }
+
+    @Override
+    public DD4Protos.User toProto() {
+      return proto;
+    }
+
+    @Override
+    public HasProto<DD4Protos.User> fromProto(DD4Protos.User proto) {
+      this.proto = proto;
+      return this;
+    }
   }
 }
