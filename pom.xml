@@ -124,6 +124,11 @@
       <version>1.6.0</version>
     </dependency>
     <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <version>2.3.0</version>
+    </dependency>
+    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <version>2.9.9</version>
@@ -181,28 +186,6 @@
           </execution>
         </executions>
       </plugin>
-      <!-- plugin>
-        <groupId>com.github.searls</groupId>
-        <artifactId>jasmine-maven-plugin</artifactId>
-        <version>1.3.1.0</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <sourceIncludes>
-            <include>**/jquery*</include>
-            <include>**/jasmine*</include>
-            <include>_bootstrap.js</include>
-            <include>sessionwatcher.js</include>
-          </sourceIncludes>
-          <jsSrcDir>src/main/js</jsSrcDir>
-          <jsTestSrcDir>src/test/js</jsTestSrcDir>
-        </configuration>
-      </plugin-->
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>yuicompressor-maven-plugin</artifactId>
