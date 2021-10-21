@@ -1,13 +1,10 @@
 package com.digitald4.common.storage;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.proto.DD4Protos.User;
-import com.digitald4.common.storage.DAOSQLImpl;
-import com.digitald4.common.storage.Query;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,9 +96,7 @@ public class DAOProtoSQLImplTest {
 	@Test
 	public void batchDelete() throws SQLException {
 		when(ps.executeUpdate()).thenReturn(5);
-		int deleted = daoSql.delete(User.class, ImmutableList.of(123L, 456L, 789L));
-
-		assertEquals(5, deleted);
+		daoSql.delete(User.class, ImmutableList.of(123L, 456L, 789L));
 		verify(connection).prepareStatement("DELETE FROM User WHERE id IN (123,456,789);");
 	}
 }

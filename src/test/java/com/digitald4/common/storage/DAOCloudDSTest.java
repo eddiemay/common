@@ -3,11 +3,15 @@ package com.digitald4.common.storage;
 import static junit.framework.TestCase.*;
 
 import com.digitald4.common.model.BasicUser;
+import com.digitald4.common.model.Session;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
+import java.time.Instant;
+
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,10 +37,34 @@ public class DAOCloudDSTest {
 
 	@Test
 	public void create() {
-		BasicUser user = dao.create(new BasicUser().setUsername("anotheruser").updateLastLogin(Clock.systemUTC()));
+		BasicUser user = dao.create(new BasicUser().setUsername("anotheruser"));
 
 		assertTrue(user.getId() > 0);
 		assertEquals("anotheruser", user.getUsername());
+	}
+
+	@Test
+	public void createWithEnum() {
+		Session session = dao.create(new Session()
+				.setUserId(123)
+				.setStartTime(new DateTime(1000))
+				.setExpTime(10000)
+				.setIdToken("4567")
+				.setState(Session.State.ACTIVE));
+
+		assertTrue(session.getId() > 0);
+		assertEquals(123, session.getUserId());
+		assertEquals(1000, session.getStartTime().getMillis());
+		assertEquals(10000, session.getExpTime());
+		assertEquals("4567", session.getIdToken());
+		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
+
+		session = dao.get(Session.class, session.getId());
+		assertEquals(123, session.getUserId());
+		assertEquals(1000, session.getStartTime().getMillis());
+		assertEquals(10000, session.getExpTime());
+		assertEquals("4567", session.getIdToken());
+		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
 	}
 
 	@Test
@@ -175,17 +203,15 @@ public class DAOCloudDSTest {
 
 	@Test
 	public void batchDelete() {
-		int deleted = dao.delete(BasicUser.class, ImmutableList.of(123L, 456L, 789L));
-
-		assertEquals(3, deleted);
+		dao.delete(BasicUser.class, ImmutableList.of(123L, 456L, 789L));
 	}
 
 	public void fillDatabase() {
 		dao.create(new BasicUser().setId(ID).setUsername("user@name").setTypeId(10));
 		dao.create(new BasicUser().setUsername("user2").setTypeId(4));
-		dao.create(new BasicUser().setUsername("user3").setTypeId(18));
+		dao.create(new BasicUser().setId(456L).setUsername("user3").setTypeId(18));
 		dao.create(new BasicUser().setUsername("user4").setTypeId(22));
-		dao.create(new BasicUser().setUsername("user5").setTypeId(2));
+		dao.create(new BasicUser().setId(789L).setUsername("user5").setTypeId(2));
 	}
 
 	public static class ComplexObj {

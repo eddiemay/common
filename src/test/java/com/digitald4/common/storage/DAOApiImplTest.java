@@ -15,8 +15,7 @@ public class DAOApiImplTest {
   private static final int USER_ID = 123;
   private static final String BASE_API_URL = "http://test.server.net/api/%s/v1";
   private static final BasicUser BASIC_USER = new BasicUser().setId(USER_ID).setUsername("user@name").setTypeId(10);
-  private static final String BASIC_USER_JSON =
-      "{\"lastLogin\":0,\"typeId\":10,\"id\":" + USER_ID + ",\"username\":\"user@name\"}";
+  private static final String BASIC_USER_JSON = "{\"typeId\":10,\"id\":" + USER_ID + ",\"username\":\"user@name\"}";
   @Mock final APIConnector connector = mock(APIConnector.class);
 
   private DAOApiImpl dao;
@@ -43,7 +42,7 @@ public class DAOApiImplTest {
 
     verify(connector).sendPost(
         "http://test.server.net/api/basicUsers/v1/_",
-        "{\"lastLogin\":0,\"typeId\":10,\"id\":0,\"username\":\"user@name\"}");
+        "{\"typeId\":10,\"id\":0,\"username\":\"user@name\"}");
   }
 
   @Test
@@ -59,10 +58,11 @@ public class DAOApiImplTest {
 
   @Test
   public void list() {
+    Query query = Query.forValues("lastLogin>1000,typeId=10", "username", 1, 20);
     when(connector.sendGet(anyString()))
-        .thenReturn(new JSONObject(new QueryResult<>(ImmutableList.of(BASIC_USER), 5)).toString());
-    QueryResult<BasicUser> queryResult =
-        dao.list(BasicUser.class, Query.forValues("lastLogin>1000,typeId=10", "username", 1, 20));
+        .thenReturn(new JSONObject(QueryResult.of(ImmutableList.of(BASIC_USER), 5, query)).toString());
+
+    QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, query);
 
     assertEquals(5, queryResult.getTotalSize());
     assertEquals(1, queryResult.getResults().size());
@@ -89,7 +89,7 @@ public class DAOApiImplTest {
     verify(connector).send(
         "PUT",
         "http://test.server.net/api/basicUsers/v1/123?updateMask=typeId",
-        "{\"lastLogin\":0,\"typeId\":14,\"id\":123,\"username\":\"user@name\"}");
+        "{\"typeId\":14,\"id\":123,\"username\":\"user@name\"}");
   }
 
   @Test
@@ -104,11 +104,8 @@ public class DAOApiImplTest {
   @Test
   public void batchDelete() {
     when(connector.send(anyString(), anyString(), anyString())).thenReturn("{deleted: 3}");
-
-    int deleted = dao.delete(BasicUser.class, ImmutableList.of(123L, 456L, 789L));
-
-    assertEquals(3, deleted);
+    dao.delete(BasicUser.class, ImmutableList.of(123L, 456L, 789L));
     verify(connector).send(
-        "POST", "http://test.server.net/api/basicUsers/v1:batchDelete", "[123,456,789]");
+        "POST", "http://test.server.net/api/basicUsers/v1/batchDelete", "[123,456,789]");
   }
 }

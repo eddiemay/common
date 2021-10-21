@@ -2,6 +2,7 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.appengine.api.datastore.KeyFactory.createKey;
 import static com.google.appengine.api.datastore.Query.SortDirection.ASCENDING;
 import static com.google.appengine.api.datastore.Query.SortDirection.DESCENDING;
 import static com.google.common.collect.Streams.stream;
@@ -9,6 +10,7 @@ import static java.util.Arrays.stream;
 import static java.util.function.Function.identity;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.JSONUtil;
@@ -19,15 +21,18 @@ import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
+
+import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -54,45 +59,72 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
+	public <T> ImmutableList<T> create(Iterable<T> ts) {
+		return stream(ts).map(this::create).collect(toImmutableList());
+	}
+
+	@Override
 	public <T> T get(Class<T> c, long id) {
-		return Calculate.executeWithRetries(2, () -> get(c, KeyFactory.createKey(c.getSimpleName(), id)));
+		return Calculate.executeWithRetries(2, () -> get(c, createKey(c.getSimpleName(), id)));
+	}
+
+	@Override
+	public <T> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+		return Calculate.executeWithRetries(2, () ->
+				getEntities(c, stream(ids).map(id -> createKey(c.getSimpleName(), id)).collect(toImmutableList()))
+						.values()
+						.stream()
+						.map(v -> convert(c, v))
+						.collect(toImmutableList()));
 	}
 
 	@Override
 	public <T> QueryResult<T> list(Class<T> c, Query query) {
 		return Calculate.executeWithRetries(2, () -> {
 			QueryResult<Entity> queryResult = listEntities(c, query);
-			return new QueryResult<>(
-					queryResult.getResults().stream().map(entity -> convert(c, entity)).collect(toImmutableList()),
-					queryResult.getTotalSize());
+			return QueryResult.transform(queryResult, entity -> convert(c, entity));
 		});
 	}
 
 	@Override
 	public <T> T update(Class<T> c, long id, UnaryOperator<T> updater) {
-		return Calculate.executeWithRetries(2, () -> {
-			T t = updater.apply(get(c, KeyFactory.createKey(c.getSimpleName(), id)));
-			Entity entity = new Entity(c.getSimpleName(), id);
-			JSONObject json = new JSONObject(t);
-			json.keySet().forEach(field -> setObject(entity, json, field));
-			datastoreService.put(entity);
-			return t;
-		});
+		return update(c, ImmutableList.of(id), updater).get(0);
+	}
+
+	@Override
+	public <T> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+		return Calculate.executeWithRetries(2,
+				() -> getEntities(c, stream(ids).map(id -> createKey(c.getSimpleName(), id)).collect(toImmutableList()))
+						.entrySet()
+						.stream()
+						.map(entry -> {
+							long id = entry.getKey().getId();
+							T t = updater.apply(convert(c, entry.getValue()));
+							Entity entity = new Entity(c.getSimpleName(), id);
+							JSONObject json = new JSONObject(t);
+							json.keySet().forEach(field -> setObject(entity, json, field));
+							datastoreService.put(entity);
+
+							return t;
+						})
+						.collect(toImmutableList()));
 	}
 
 	@Override
 	public <T> void delete(Class<T> c, long id) {
 		Calculate.executeWithRetries(2, () -> {
-			datastoreService.delete(KeyFactory.createKey(c.getSimpleName(), id));
+			Key key = createKey(c.getSimpleName(), id);
+			get(c, key); // Fetch the entry to make sure it exists.
+			datastoreService.delete(key);
 			return true;
 		});
 	}
 
 	@Override
-	public <T> int delete(Class<T> c, Iterable<Long> ids) {
-		return Calculate.executeWithRetries(2, () -> {
-			ImmutableList<Key> keys =
-					stream(ids).map(id -> KeyFactory.createKey(c.getSimpleName(), id)).collect(toImmutableList());
+	public <T> void delete(Class<T> c, Iterable<Long> ids) {
+		Calculate.executeWithRetries(2, () -> {
+			ImmutableList<Key> keys = stream(ids).map(id -> createKey(c.getSimpleName(), id)).collect(toImmutableList());
+			getEntities(c, keys); // Get all entries to make sure they all exist.
 			datastoreService.delete(keys);
 
 			return keys.size();
@@ -103,8 +135,18 @@ public class DAOCloudDS implements DAO {
 		try {
 			return convert(c, datastoreService.get(key));
 		} catch (EntityNotFoundException e) {
-			throw new DD4StorageException("Error fetching item: " + c.getSimpleName() + ":" + key.getId(), e);
+			throw new DD4StorageException(
+					"Error fetching item: " + c.getSimpleName() + ":" + key.getId(), e, ErrorCode.NOT_FOUND);
 		}
+	}
+
+	private <T> ImmutableMap<Key, Entity> getEntities(Class<T> c, Iterable<Key> keys) {
+		ImmutableMap<Key, Entity> results = ImmutableMap.copyOf(datastoreService.get(keys));
+		if (results.size() != Iterables.size(keys)) {
+			throw new DD4StorageException("One of more items not found", ErrorCode.NOT_FOUND);
+		}
+
+		return results;
 	}
 
 	private QueryResult<Entity> listEntities(Class<?> c, Query query) {
@@ -135,7 +177,7 @@ public class DAOCloudDS implements DAO {
 			}
 		});
 
-		return new QueryResult<>(results.build(), count.get());
+		return QueryResult.of(results.build(), count.get(), query);
 	}
 
 	private void setObject(Entity entity, JSONObject json, String fieldName) {
@@ -147,6 +189,12 @@ public class DAOCloudDS implements DAO {
 
 		Object value = json.get(fieldName);
 		if (value instanceof JSONObject || value instanceof JSONArray) {
+			entity.setProperty(colName, value.toString());
+		} else if (value instanceof Enum) {
+			entity.setProperty(colName, value.toString());
+		} else if (value instanceof DateTime) {
+			entity.setProperty(colName, value.toString());
+		} else if (value instanceof Instant) {
 			entity.setProperty(colName, value.toString());
 		} else {
 			entity.setProperty(colName, value);
@@ -178,6 +226,12 @@ public class DAOCloudDS implements DAO {
 
 			if (field.isCollection()) {
 				jsonObject.put(javaName, new JSONArray((String) value));
+			} else if (field.getType().isEnum()) {
+				jsonObject.put(javaName, Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
+			} else if (field.getType() == DateTime.class) {
+				jsonObject.put(javaName, (value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
+			} else if (field.getType() == Instant.class) {
+				jsonObject.put(javaName, (value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
 			} else if (field.isObject()) {
 				jsonObject.put(javaName, new JSONObject((String) value));
 			} else {
@@ -265,9 +319,7 @@ public class DAOCloudDS implements DAO {
 			stream(c.getMethods()).forEach(method -> methods.put(method.getName(), method));
 
 			return methods.values().stream()
-					.filter(
-							method -> method.getParameters().length == 0
-									&& (method.getName().startsWith("get") || method.getName().startsWith("is")))
+					.filter(m -> m.getParameters().length == 0 && (m.getName().startsWith("get") || m.getName().startsWith("is")))
 					.map(method -> {
 						String name = method.getName().substring(method.getName().startsWith("is") ? 2 : 3);
 						Field field = new Field(name, method, methods.get("set" + name));
@@ -326,7 +378,7 @@ public class DAOCloudDS implements DAO {
 		}
 
 		public boolean isObject() {
-			return !getType().isPrimitive() && getType() != String.class;
+			return !getType().isPrimitive() && getType() != String.class && !getType().isEnum();
 		}
 
 		public boolean isCollection() {

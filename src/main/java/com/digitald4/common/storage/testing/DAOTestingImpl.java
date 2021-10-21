@@ -33,6 +33,11 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
+	public <T> ImmutableList<T> create(Iterable<T> entities) {
+		return stream(entities).map(this::create).collect(toImmutableList());
+	}
+
+	@Override
 	public <T> T get(Class<T> c, long id) {
 		Map<Long, JSONObject> table = tables.get(c);
 		if (table == null) {
@@ -40,6 +45,11 @@ public class DAOTestingImpl implements DAO {
 		}
 
 		return JSONUtil.toObject(c, table.get(id));
+	}
+
+	@Override
+	public <T> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+		return stream(ids).map(id -> get(c, id)).collect(toImmutableList());
 	}
 
 	@Override
@@ -70,11 +80,11 @@ public class DAOTestingImpl implements DAO {
 				results = results.subList(0, query.getLimit());
 			}
 
-			return new QueryResult<>(
-					results.stream().map(json -> JSONUtil.toObject(c, json)).collect(toImmutableList()), totalSize);
+			return QueryResult.of(
+					results.stream().map(json -> JSONUtil.toObject(c, json)).collect(toImmutableList()), totalSize, query);
 		}
 
-		return new QueryResult<>(ImmutableList.of(), 0);
+		return QueryResult.of(ImmutableList.of(), 0, query);
 	}
 
 	@Override
@@ -90,6 +100,11 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
+	public <T> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+		return stream(ids).map(id -> update(c, id, updater)).collect(toImmutableList());
+	}
+
+	@Override
 	public <T> void delete(Class<T> c, long id) {
 		Map<Long, JSONObject> table = tables.get(c);
 		if (table != null) {
@@ -98,12 +113,10 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T> int delete(Class<T> c, Iterable<Long> ids) {
+	public <T> void delete(Class<T> c, Iterable<Long> ids) {
 		Map<Long, JSONObject> table = tables.get(c);
 		if (table != null) {
-			return (int) stream(ids).filter(id -> table.remove(id) != null).count();
+			stream(ids).forEach(table::remove);
 		}
-
-		return 0;
 	}
 }

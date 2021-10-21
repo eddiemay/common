@@ -80,7 +80,7 @@ public class APIConnector {
 			HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 			con.setRequestMethod(method);
 			con.setRequestProperty("Accept", "*/*");
-			con.setRequestProperty("Accept-Encoding", "zip, deflate, br");
+			// con.setRequestProperty("Accept-Encoding", "zip, deflate, br");
 			con.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
 			con.setRequestProperty("Access-Control-Request-Headers", "x-nba-stats-origin,x-nba-stats-token");
 			con.setRequestProperty("Access-Control-Request-Method", "GET");

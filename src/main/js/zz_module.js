@@ -8,15 +8,19 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .service('userService', ['apiConnector', 'globalData', function(apiConnector, globalData) {
       var userService = new com.digitald4.common.JSONService('user', apiConnector);
       userService.login = function(username, password, success, error) {
-        this.performRequest(['login', 'POST'], undefined, {username: username, password: password}, success, error);
+        this.performRequest(['login', 'POST'], undefined, undefined,
+            {username: username, password: CryptoJS.MD5(password).toString()}, success, error);
       };
       userService.logout = function() {
-        this.performRequest(['logout'], undefined, undefined, function() {
-          globalData.user = undefined;
+        this.performRequest(['logout'], undefined, undefined, undefined, function() {
+          globalData.user = globalData.activeSession = undefined;
         }, notify);
       };
       userService.getActive = function(success, error) {
-        this.performRequest(['active'], undefined, undefined, success, error);
+        this.performRequest(['active'], undefined, undefined, undefined, success, error);
+      };
+      userService.getActiveSession = function(success, error) {
+        this.performRequest(['activeSession'], undefined, undefined, undefined, success, error);
       };
       return userService;
     }])

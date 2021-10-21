@@ -1,21 +1,28 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.stream;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.ProtoUtil;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
+import com.google.protobuf.util.JsonFormat.TypeRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.inject.Inject;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,15 +38,34 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> T create(T t) {
-		String url = apiConnector.formatUrl(getResourceName(t.getClass())) + "/_";
-		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(t.getDescriptorForType()).build();
+	public <T extends Message> T create(T entity) {
+		String url = apiConnector.formatUrl(getResourceName(entity.getClass())) + "/_";
+		JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder().add(entity.getDescriptorForType()).build();
 		Printer jsonPrinter = JsonFormat.printer().usingTypeRegistry(registry);
 		Parser jsonParser = JsonFormat.parser().usingTypeRegistry(registry);
 		try {
-			Message.Builder builder = t.newBuilderForType();
-			jsonParser.merge(apiConnector.sendPost(url, jsonPrinter.print(t)), builder);
+			Message.Builder builder = entity.newBuilderForType();
+			jsonParser.merge(apiConnector.sendPost(url, jsonPrinter.print(entity)), builder);
 			return (T) builder.build();
+		} catch (Exception ioe) {
+			throw new DD4StorageException(ioe);
+		}
+	}
+
+	@Override
+	public <T extends Message> ImmutableList<T> create(Iterable<T> entities) {
+		T entity = entities.iterator().next();
+		String url = apiConnector.formatUrl(getResourceName(entity.getClass())) + "/batchCreate";
+		Printer jsonPrinter =
+				JsonFormat.printer().usingTypeRegistry(TypeRegistry.newBuilder().add(entity.getDescriptorForType()).build());
+		try {
+			JSONObject postData = new JSONObject();
+			postData.put("entities", stream(entities).map(e -> toJSON(e, jsonPrinter)).collect(toImmutableList()));
+      JSONArray response = new JSONArray(apiConnector.sendPost(url.toString(), postData.toString()));
+
+      return IntStream.of(response.length())
+          .mapToObj(i -> ProtoUtil.merge(response.getJSONObject(i), entity))
+          .collect(toImmutableList());
 		} catch (Exception ioe) {
 			throw new DD4StorageException(ioe);
 		}
@@ -52,6 +78,23 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 		Message.Builder builder = ProtoUtil.getDefaultInstance(c).toBuilder();
 		ProtoUtil.merge(json, builder);
 		return (T) builder.build();
+	}
+
+	@Override
+	public <T extends Message> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+		String url = apiConnector.formatUrl(getResourceName(c)) + "/batchGet";
+		try {
+			JSONObject postData = new JSONObject();
+			postData.put("ids", ids);
+			JSONArray response = new JSONArray(apiConnector.sendPost(url.toString(), postData.toString()));
+			T entity = ProtoUtil.getDefaultInstance(c);
+
+			return IntStream.of(response.length())
+					.mapToObj(i -> ProtoUtil.merge(response.getJSONObject(i), entity))
+					.collect(toImmutableList());
+		} catch (Exception ioe) {
+			throw new DD4StorageException(ioe);
+		}
 	}
 
 	@Override
@@ -76,14 +119,15 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 
 		T type = ProtoUtil.getDefaultInstance(c);
 		int totalSize = response.getInt("totalSize");
-		List<T> results = new ArrayList<>(totalSize);
+		ImmutableList.Builder<T> results = ImmutableList.builder();
 		if (totalSize > 0) {
 			JSONArray resultArray = response.getJSONArray("results");
 			for (int x = 0; x < resultArray.length(); x++) {
 				results.add(ProtoUtil.merge(resultArray.getJSONObject(x), type));
 			}
 		}
-		return new QueryResult<>(results, response.getInt("totalSize"));
+
+		return QueryResult.of(results.build(), totalSize, query);
 	}
 
 	@Override
@@ -127,16 +171,34 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
+	public <T extends Message> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+		throw new DD4StorageException("Unimplemented");
+	}
+
+	@Override
 	public <T extends Message> void delete(Class<T> c, long id) {
 		String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
 		apiConnector.send("DELETE", url, null);
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, Iterable<Long> ids) {
+	public <T extends Message> void delete(Class<T> c, Iterable<Long> ids) {
 		String url = apiConnector.formatUrl(getResourceName(c)) + ":batchDelete";
+		apiConnector.send("DELETE", url, new JSONArray(ids).toString());
+	}
 
-		return new JSONObject(apiConnector.send("DELETE", url, new JSONArray(ids).toString())).getInt("deleted");
+	private static <T extends Message> String toJSON(T entity) {
+		return toJSON(
+				entity,
+				JsonFormat.printer().usingTypeRegistry(TypeRegistry.newBuilder().add(entity.getDescriptorForType()).build()));
+	}
+
+	private static <T extends Message> String toJSON(T entity, Printer jsonPrinter) {
+		try {
+			return jsonPrinter.print(entity);
+		} catch (InvalidProtocolBufferException e) {
+			throw new DD4StorageException(e);
+		}
 	}
 
 	private static String getResourceName(Class<?> cls) {

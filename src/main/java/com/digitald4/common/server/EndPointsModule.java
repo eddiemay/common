@@ -1,9 +1,6 @@
 package com.digitald4.common.server;
 
-import com.digitald4.common.model.ActiveSession;
-import com.digitald4.common.model.DataFile;
-import com.digitald4.common.model.HasProto;
-import com.digitald4.common.model.User;
+import com.digitald4.common.model.*;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import com.google.api.control.ServiceManagementConfigFilter;
@@ -21,26 +18,44 @@ import java.util.Map;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-public abstract class EndPointsModule extends EndpointsModule {
-	protected static final String API_URL_PATTERN = "/_ah/api/*";
+public class EndPointsModule extends EndpointsModule {
+	private static final String DEFAULT_API_URL_PATTERN = "/_api/*";
 
 	private final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
+	private final String projectId;
+	private final String apiUrlPattern;
+
+	protected EndPointsModule(String projectId, String apiUrlPattern) {
+		this.projectId = projectId;
+		this.apiUrlPattern = apiUrlPattern;
+	}
+
+	protected EndPointsModule(String projectId) {
+		this(projectId, DEFAULT_API_URL_PATTERN);
+	}
+
+	protected String getEndPointsProjectId() {
+		return projectId;
+	}
+
+	public String getApiUrlPattern() {
+	  return apiUrlPattern;
+  }
 
 	@Override
 	public void configureServlets() {
 		super.configureServlets();
 
 		bind(ServiceManagementConfigFilter.class).in(Singleton.class);
-		filter(API_URL_PATTERN).through(ServiceManagementConfigFilter.class);
+		filter(getApiUrlPattern()).through(ServiceManagementConfigFilter.class);
 
 		Map<String, String> apiController = new HashMap<>();
 		apiController.put("endpoints.projectId", getEndPointsProjectId());
 		apiController.put("endpoints.serviceName", getEndPointsProjectId() + ".appspot.com");
 		bind(GoogleAppEngineControlFilter.class).in(Singleton.class);
-		filter(API_URL_PATTERN).through(GoogleAppEngineControlFilter.class, apiController);
+		filter(getApiUrlPattern()).through(GoogleAppEngineControlFilter.class, apiController);
 
 		bind(Clock.class).toInstance(Clock.systemUTC());
-		// bind(IdTokenResolver.class).to(IdTokenResolverDD4Impl.class);
 		bind(User.class).toProvider(userProvider);
 
 		bind(Datastore.class).toInstance(DatastoreOptions.getDefaultInstance().getService());
@@ -49,15 +64,11 @@ public abstract class EndPointsModule extends EndpointsModule {
 		bind(new TypeLiteral<TypedDAO<HasProto>>(){}).to(HasProtoDAO.class);
 		bind(DAO.class).annotatedWith(Annotations.DefaultDAO.class).to(DAOCloudDS.class);
 		bind(DAO.class).to(DAORouterImpl.class);
-		// bind(DAO.class).toProvider(daoProvider);
 
-		Provider<DAO> daoProvider = getProvider(DAO.class);
-		bind(new TypeLiteral<Store<ActiveSession>>(){}).toInstance(new GenericStore<>(ActiveSession.class, daoProvider));
-		bind(new TypeLiteral<Store<DataFile>>(){}).toInstance(new GenericStore<>(DataFile.class, daoProvider));
+		bind(new TypeLiteral<Store<PasswordInfo>>(){}).to(new TypeLiteral<GenericStore<PasswordInfo>>(){});
+		bind(new TypeLiteral<Store<DataFile>>(){}).to(new TypeLiteral<GenericStore<DataFile>>(){});
 
-		//configureEndpoints(API_URL_PATTERN,
+		//configureEndpoints(getApiUrlPattern(),
 			//	ImmutableList.of(FileService.class, GeneralDataService.class, UserService.class));
 	}
-
-	protected abstract String getEndPointsProjectId();
 }

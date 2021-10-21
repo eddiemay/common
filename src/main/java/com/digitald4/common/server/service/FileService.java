@@ -1,7 +1,10 @@
 package com.digitald4.common.server.service;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.DataFile;
+import com.digitald4.common.model.User;
+import com.digitald4.common.storage.SessionStore;
 import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
@@ -44,7 +47,7 @@ import org.json.JSONObject;
 		}
 		// [END_EXCLUDE]
 )
-public class FileService extends EntityServiceImpl<DataFile> implements JSONService {
+public class FileService<U extends User> extends EntityServiceImpl<DataFile, U> implements JSONService {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
 	private final Store<DataFile> dataFileStore;
@@ -52,15 +55,16 @@ public class FileService extends EntityServiceImpl<DataFile> implements JSONServ
 	private final Provider<HttpServletResponse> responseProvider;
 
 	@Inject
-	public FileService(Store<DataFile> dataFileStore, Provider<HttpServletRequest> requestProvider,
-					   Provider<HttpServletResponse> responseProvider) {
-		super(dataFileStore);
+	public FileService(
+			Store<DataFile> dataFileStore, SessionStore<U> sessionStore,
+			Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider) {
+		super(dataFileStore, sessionStore, true);
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;
 		this.responseProvider = responseProvider;
 	}
 
-	protected JSONObject create() {
+	public JSONObject create() {
 		try {
 			return toJSON.apply(dataFileStore.create(converter.apply(requestProvider.get().getPart("file"))));
 		} catch (ServletException | IOException e) {
@@ -78,7 +82,7 @@ public class FileService extends EntityServiceImpl<DataFile> implements JSONServ
 		try {
 			response.getOutputStream().write(bytes);
 		} catch (IOException ioe) {
-			throw new DD4StorageException("Error fetching file", ioe, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new DD4StorageException("Error fetching file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
 		}
 
 		return null;

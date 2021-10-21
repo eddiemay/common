@@ -61,6 +61,9 @@ message User {
 	int64 id = 1;
 	int32 type_id = 2;
 	string username = 3;
+	string email = 9;
+	string first_name = 10;
+	string last_name = 11;
 	bool disabled = 4;
 	bool read_only = 5;
 	int64 last_login = 6;
@@ -80,4 +83,6 @@ message User {
     int64 password_reset_sent_at = 3;
   }
   PasswordInfo password_info = 7;
+
+  string notes = 12;
 }

@@ -7,7 +7,8 @@ public class Email {
 		return email;
 	}
 
-	public void setEmail(String email) {
+	public Email setEmail(String email) {
 		this.email = email;
+		return this;
 	}
 }

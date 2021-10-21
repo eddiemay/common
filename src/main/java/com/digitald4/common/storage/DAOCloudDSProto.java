@@ -20,6 +20,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
@@ -37,7 +38,7 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 
 	@Override
 	public <T extends Message> T create(T t) {
-		return convert((Class<T>) t.getClass(), Calculate.executeWithRetries(2, () -> {
+		return Calculate.executeWithRetries(2, () -> {
 			Object id = t.getField(t.getDescriptorForType().findFieldByName("id"));
 			Entity.Builder entity;
 			if (id instanceof Long && (Long) id != 0L) {
@@ -49,13 +50,25 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 			}
 			t.getAllFields().forEach((field, value) -> setObject(entity, t, field, value));
 
-			return datastore.put(entity.build());
-		}));
+			return (T) convert(t.getClass(), datastore.put(entity.build()));
+		});
+	}
+
+	@Override
+	public <T extends Message> ImmutableList<T> create(Iterable<T> entities) {
+		return stream(entities).map(this::create).collect(toImmutableList());
 	}
 
 	@Override
 	public <T extends Message> T get(Class<T> c, long id) {
 		return Calculate.executeWithRetries(2, () -> convert(c, datastore.get(getKeyFactory(c).newKey(id))));
+	}
+
+	@Override
+	public <T extends Message> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+		KeyFactory keyFactory = getKeyFactory(c);
+		return Calculate.executeWithRetries(
+				2, () -> convert(c, datastore.get(stream(ids).map(keyFactory::newKey).collect(toImmutableList()))));
 	}
 
 	@Override
@@ -91,7 +104,7 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 				}
 			});
 
-			return new QueryResult<>(results.build(), query.getOffset() + count.get());
+			return QueryResult.of(results.build(), query.getOffset() + count.get(), query);
 		});
 	}
 
@@ -106,6 +119,21 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 	}
 
 	@Override
+	public <T extends Message> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+		KeyFactory keyFactory = getKeyFactory(c);
+		return Calculate.executeWithRetries(2,
+				() -> get(c, ids).stream()
+						.map(updater)
+						.map(t -> {
+							long id = (Long) t.getField(t.getDescriptorForType().findFieldByName("id"));
+							Entity.Builder entity = Entity.newBuilder(keyFactory.newKey(id));
+							t.getAllFields().forEach((field, value) -> setObject(entity, t, field, value));
+							return convert(c, datastore.put(entity.build()));
+						})
+						.collect(toImmutableList()));
+	}
+
+	@Override
 	public <T extends Message> void delete(Class<T> c, long id) {
 		Calculate.executeWithRetries(2, () -> {
 			datastore.delete(getKeyFactory(c).newKey(id));
@@ -114,15 +142,11 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, Iterable<Long> ids) {
-		return Calculate.executeWithRetries(2, () -> {
+	public <T extends Message> void delete(Class<T> c, Iterable<Long> ids) {
+		Calculate.executeWithRetries(2, () -> {
 			KeyFactory keyFactory = getKeyFactory(c);
-			ImmutableList<Key> keys = stream(ids)
-					.map(keyFactory::newKey)
-					.peek(datastore::delete)
-					.collect(toImmutableList());
-
-			return keys.size();
+			stream(ids).map(keyFactory::newKey).forEach(datastore::delete);
+			return true;
 		});
 	}
 
@@ -157,6 +181,10 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 				default: entity.set(name, value.toString());
 			}
 		}
+	}
+
+	private <T extends Message> ImmutableList<T> convert(Class<T> c, Iterator<Entity> entities) {
+		return stream(entities).map(entity -> convert(c, entity)).collect(toImmutableList());
 	}
 
 	private <T extends Message> T convert(Class<T> c, Entity entity) {

@@ -1,17 +1,20 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.stream;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.util.Calculate;
-import com.digitald4.common.util.FormatText;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -30,9 +33,23 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
+  public <T> ImmutableList<T> create(Iterable<T> entities) {
+    Class<T> c = (Class<T>) entities.iterator().next().getClass();
+    String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
+    JSONObject postData = new JSONObject().put("entities", entities);
+    return convertList(c, apiConnector.sendPost(url, postData.toString()));
+  }
+
+  @Override
   public <T> T get(Class<T> c, long id) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
     return convert(c, apiConnector.sendGet(url));
+  }
+
+  @Override
+  public <T> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+    String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
+    return convertList(c, apiConnector.sendPost(url, new JSONObject().put("entities", ids).toString()));
   }
 
   @Override
@@ -59,7 +76,7 @@ public class DAOApiImpl implements DAO {
     JSONObject response = new JSONObject(json);
 
     int totalSize = response.getInt("totalSize");
-    List<T> results = new ArrayList<>(totalSize);
+    ImmutableList.Builder<T> results = ImmutableList.builder();
     if (totalSize > 0) {
       JSONArray resultArray = response.getJSONArray("results");
       for (int x = 0; x < resultArray.length(); x++) {
@@ -67,7 +84,7 @@ public class DAOApiImpl implements DAO {
       }
     }
 
-    return new QueryResult<>(results, response.getInt("totalSize"));
+    return QueryResult.of(results.build(), totalSize, query);
   }
 
   @Override
@@ -98,24 +115,35 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
+  public <T> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+    throw new DD4StorageException("Unimplemented");
+  }
+
+  @Override
   public <T> void delete(Class<T> c, long id) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
     apiConnector.send("DELETE", url, null);
   }
 
   @Override
-  public <T> int delete(Class<T> c, Iterable<Long> ids) {
-    String url = apiConnector.formatUrl(getResourceName(c)) + ":batchDelete";
-
-    return new JSONObject(apiConnector.send("POST", url, new JSONArray(ids).toString())).getInt("deleted");
+  public <T> void delete(Class<T> c, Iterable<Long> ids) {
+    String url = apiConnector.formatUrl(getResourceName(c)) + "/batchDelete";
+    apiConnector.send("POST", url, new JSONArray(ids).toString());
   }
 
   private <T> T convert(Class<T> c, String content) {
     try {
       return mapper.readValue(content, c);
     } catch (IOException e) {
-      throw new DD4StorageException("Error converting object", e);
+      throw new DD4StorageException("Error converting object of type: " + c, e);
     }
+  }
+
+  private <T> ImmutableList<T> convertList(Class<T> c, String content) {
+    JSONArray array = new JSONArray(content);
+    return IntStream.of(array.length())
+        .mapToObj(i -> convert(c, array.getString(i)))
+        .collect(toImmutableList());
   }
 
   private static String getResourceName(Class<?> cls) {

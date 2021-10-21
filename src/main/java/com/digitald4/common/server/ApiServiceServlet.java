@@ -3,6 +3,7 @@ package com.digitald4.common.server;
 import static java.util.stream.Collectors.joining;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.model.*;
 import com.digitald4.common.server.service.*;
@@ -13,12 +14,12 @@ import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.cloud.datastore.DatastoreOptions;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Message;
 
 import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,23 +31,24 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ApiServiceServlet extends HttpServlet {
 	public enum ServerType {TOMCAT, APPENGINE};
 	protected ServerType serverType;
-	private static final List<String> SPECIAL_PARAMETERS = Arrays.asList("json", "idToken", "orderBy", "pageSize", "pageToken");
+	private static final ImmutableList<String> SPECIAL_PARAMETERS =
+			ImmutableList.of("json", "idToken", "orderBy", "pageSize", "pageToken");
 
 	private final Map<String, JSONService> services = new HashMap<>();
-	private final IdTokenResolver<BasicUser> idTokenResolver;
 	private DAO dao;
 	private Emailer emailer;
 	private Encryptor encryptor;
 	protected final Provider<DAO> daoProvider = () -> dao;
 	protected final GeneralDataStore generalDataStore;
-	protected final BasicUserStore userStore;
+	protected final GenericUserStore userStore;
 	protected final UserService userService;
+	protected final SessionStore sessionStore;
+	protected final Store<PasswordInfo> passwordStore;
 	protected final Store<DataFile> dataFileStore;
 	protected final ProviderThreadLocalImpl<BasicUser> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
@@ -56,17 +58,20 @@ public class ApiServiceServlet extends HttpServlet {
 	public ApiServiceServlet() {
 		Clock clock = Clock.systemUTC();
 
-		userStore = new BasicUserStore(daoProvider);
+		userStore = new GenericUserStore<>(BasicUser.class, daoProvider);
+		passwordStore = new GenericStore<>(PasswordInfo.class, daoProvider);
 
-		idTokenResolver = new IdTokenResolverDD4Impl<>(
-				new GenericStore<>(ActiveSession.class, daoProvider), userStore, clock);
+		sessionStore = new SessionStore<>(daoProvider, userStore, passwordStore, userProvider, null, clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
-		addService("generalData", new GeneralDataService(generalDataStore));
-		addService("user", userService = new UserService<BasicUser>(userStore, userProvider, idTokenResolver, clock));
+		addService("generalData", new JSONServiceHelper<>(new GeneralDataService(generalDataStore, sessionStore)));
+		addService(
+				"user",
+				new UserService.UserJSONService<>(
+						userService = new UserService<BasicUser>(userStore, sessionStore, passwordStore, clock)));
 
 		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
-		addService("file", new FileService(dataFileStore, requestProvider, responseProvider));
+		addService("file", new FileService(dataFileStore, sessionStore, requestProvider, responseProvider));
 	}
 
 	public void init() {
@@ -100,7 +105,7 @@ public class ApiServiceServlet extends HttpServlet {
 	private JSONService getService(String entity) {
 		JSONService service = services.get(entity.toLowerCase());
 		if (service == null) {
-			throw new DD4StorageException("Unknown service: " + entity, HttpServletResponse.SC_BAD_REQUEST);
+			throw new DD4StorageException("Unknown service: " + entity, ErrorCode.BAD_REQUEST);
 		}
 		return service;
 	}
@@ -109,18 +114,15 @@ public class ApiServiceServlet extends HttpServlet {
 		return services.containsKey(entity.toLowerCase());
 	}
 
-	protected void processRequest(String entity, String action, JSONObject jsonRequest,
-																HttpServletRequest request, HttpServletResponse response) throws ServletException {
-		userProvider.set(idTokenResolver.resolve(request.getParameter("idToken")));
+	protected void processRequest(
+			String entity, String action, JSONObject jsonRequest, HttpServletRequest request, HttpServletResponse response)
+			throws ServletException {
 		requestProvider.set(request);
 		responseProvider.set(response);
 		try {
 			JSONObject json = null;
 			try {
 				JSONService service = getService(entity);
-				if (service.requiresLogin(action)) {
-					checkLogin(request, response);
-				}
 				json = service.performAction(action, jsonRequest);
 			} catch (DD4StorageException e) {
 				response.setStatus(e.getErrorCode());
@@ -262,7 +264,7 @@ public class ApiServiceServlet extends HttpServlet {
 			}
 			return Pair.of(entity, json);
 		} catch (IOException e) {
-			throw new DD4StorageException("Malformed request", e, HttpServletResponse.SC_BAD_REQUEST);
+			throw new DD4StorageException("Malformed request", e, ErrorCode.BAD_REQUEST);
 		}
 	}
 	
@@ -284,10 +286,10 @@ public class ApiServiceServlet extends HttpServlet {
 	public void checkLogin(HttpServletRequest request, HttpServletResponse response, int level) {
 		User user = userProvider.get();
 		if (user == null || user.getId() == 0) {
-			throw new DD4StorageException("Unauthorized", HttpServletResponse.SC_UNAUTHORIZED);
+			throw new DD4StorageException("Unauthorized", ErrorCode.NOT_AUTHENTICATED);
 		}
 		if (user.getTypeId() > level) {
-			throw new DD4StorageException("Access Denied", HttpServletResponse.SC_FORBIDDEN);
+			throw new DD4StorageException("Access Denied", ErrorCode.FORBIDDEN);
 		}
 	}
 

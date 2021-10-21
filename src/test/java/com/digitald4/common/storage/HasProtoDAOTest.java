@@ -2,22 +2,16 @@ package com.digitald4.common.storage;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.digitald4.common.model.ActiveSession;
 import com.digitald4.common.model.HasProto;
-import com.digitald4.common.model.PasswordInfo;
 import com.digitald4.common.model.User;
 import com.digitald4.common.proto.DD4Protos;
 import com.google.common.collect.ImmutableList;
-
-import java.time.Clock;
-import java.util.function.UnaryOperator;
-
 import com.google.protobuf.Message;
+import java.util.function.UnaryOperator;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,11 +31,9 @@ public class HasProtoDAOTest {
     when(messageDAO.create(any(DD4Protos.User.class))).thenAnswer(i -> i.getArguments()[0]);
     when(messageDAO.get(DD4Protos.User.class, USER_ID)).thenReturn(USER_PROTO);
     when(messageDAO.list(eq(DD4Protos.User.class), any(Query.class)))
-        .thenReturn(new QueryResult<>(ImmutableList.of(USER_PROTO)));
-   when(messageDAO.update(eq(DD4Protos.User.class), eq(USER_ID), any()))
-       .thenAnswer(i -> i.getArgumentAt(2, UnaryOperator.class).apply(USER_PROTO));
-    when(messageDAO.delete(eq(DD4Protos.User.class), anyList()))
-        .thenAnswer(i -> ((ImmutableList<Long>) i.getArguments()[1]).size());
+        .thenReturn(QueryResult.of(ImmutableList.of(USER_PROTO), 1, new Query()));
+    when(messageDAO.update(eq(DD4Protos.User.class), eq(USER_ID), any()))
+        .thenAnswer(i -> i.getArgumentAt(2, UnaryOperator.class).apply(USER_PROTO));
   }
 
   @Test
@@ -84,9 +76,7 @@ public class HasProtoDAOTest {
 
   @Test
   public void testBatchDelete() {
-    int deleted = modelDAO.delete(HasProtoUser.class, ImmutableList.of(123L, 456L, 789L, 101112L, 131415L));
-
-    assertEquals(5, deleted);
+    modelDAO.delete(HasProtoUser.class, ImmutableList.of(123L, 456L, 789L, 101112L, 131415L));
   }
 
   public static class HasProtoUser implements User, HasProto<DD4Protos.User> {
@@ -102,6 +92,12 @@ public class HasProtoDAOTest {
     }
 
     @Override
+    public HasProtoUser setId(long id) {
+      proto = proto.toBuilder().setId(id).build();
+      return this;
+    }
+
+    @Override
     public String getUsername() {
       return proto.getUsername();
     }
@@ -113,37 +109,51 @@ public class HasProtoDAOTest {
     }
 
     @Override
+    public String getEmail() {
+      return proto.getEmail();
+    }
+
+    @Override
+    public HasProtoUser setEmail(String email) {
+      proto = proto.toBuilder().setEmail(email).build();
+      return this;
+    }
+
+    @Override
+    public String getFirstName() {
+      return proto.getFirstName();
+    }
+
+    @Override
+    public HasProtoUser setFirstName(String firstName) {
+      proto = proto.toBuilder().setFirstName(firstName).build();
+      return this;
+    }
+
+    @Override
+    public String getLastName() {
+      return proto.getLastName();
+    }
+
+    @Override
+    public HasProtoUser setLastName(String lastName) {
+      proto = proto.toBuilder().setLastName(lastName).build();
+      return this;
+    }
+
+    public String fullName() {
+      return String.format("%s %s", getFirstName(), getLastName());
+    }
+
+    @Override
     public int getTypeId() {
       return proto.getTypeId();
     }
 
     @Override
-    public long getLastLogin() {
-      return proto.getLastLogin();
-    }
-
-    @Override
-    public HasProtoUser updateLastLogin(Clock clock) {
+    public HasProtoUser setTypeId(int typeId) {
+      proto = proto.toBuilder().setTypeId(typeId).build();
       return this;
-    }
-
-    @Override
-    public HasProtoUser updatePasswordInfo(PasswordInfo passwordInfo) {
-      return this;
-    }
-
-    @Override
-    public ActiveSession activeSession() {
-      return null;
-    }
-
-    @Override
-    public HasProtoUser activeSession(ActiveSession activeSession) {
-      return null;
-    }
-
-    @Override
-    public void verifyPassword(String passwordDigest) {
     }
 
     @Override

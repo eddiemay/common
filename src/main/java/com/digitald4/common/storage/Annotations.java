@@ -11,4 +11,8 @@ public final class Annotations {
   @BindingAnnotation
   @Retention(RetentionPolicy.RUNTIME)
   public @interface DefaultDAO {}
+
+  @BindingAnnotation
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface SessionDuration {}
 }

@@ -37,7 +37,7 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
   }
   var customAction = undefined;
   if (typeof(method) == 'object') {
-    customAction = ':' + method[0];
+    customAction = method[0];
     url.push(customAction);
     method = method[1] || 'GET';
   }

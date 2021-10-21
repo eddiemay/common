@@ -2,6 +2,7 @@ com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(glo
   var interval;
 
   this.enable = function() {
+    console.log("Enabling session watcher");
     interval = setInterval(function() {
       if (Date.now() > globalData.expiration) {
         userService.logout();

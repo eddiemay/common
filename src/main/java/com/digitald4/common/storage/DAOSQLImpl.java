@@ -1,5 +1,6 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static java.util.stream.Collectors.joining;
 
@@ -7,6 +8,8 @@ import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.ProtoUtil;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
@@ -28,6 +31,7 @@ import org.json.JSONObject;
 public class DAOSQLImpl implements TypedDAO<Message> {
 	private static final String INSERT_SQL = "INSERT INTO %s(%s) VALUES(%s);";
 	private static final String SELECT_SQL = "SELECT * FROM %s WHERE id=?;";
+	private static final String BATCH_SELECT_SQL = "SELECT * FROM %s WHERE id IN (%s);";
 	private static final String SEARCH_SQL = "SELECT * FROM %s%s%s%s;";
 	private static final String UPDATE_SQL = "UPDATE %s SET %s WHERE id=?;";
 	private static final String DELETE_SQL = "DELETE FROM %s%s;";
@@ -81,6 +85,11 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
+	public <T extends Message> ImmutableList<T> create(Iterable<T> entities) {
+		return stream(entities).map(this::create).collect(toImmutableList());
+	}
+
+	@Override
 	public <T extends Message> T get(Class<T> c, long id) {
 		return Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(SELECT_SQL, getView(c));
@@ -94,6 +103,25 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 				}
 				rs.close();
 				return result;
+			} catch (SQLException e) {
+				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
+			}
+		});
+	}
+
+	@Override
+	public <T extends Message> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+		return Calculate.executeWithRetries(2, () -> {
+			String sql = String.format(BATCH_SELECT_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
+			try (Connection con = connector.getConnection();
+					 PreparedStatement ps = con.prepareStatement(sql)) {
+				ImmutableList.Builder<T> results = ImmutableList.builder();
+				ResultSet rs = ps.executeQuery();
+				while (rs.next()) {
+					results.add(parseFromResultSet(c, rs));
+				}
+				rs.close();
+				return results.build();
 			} catch (SQLException e) {
 				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 			}
@@ -143,7 +171,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 					rs.close();
 					ps2.close();
 				}
-				return new QueryResult<>(results, totalSize);
+				return QueryResult.of(results, totalSize, query);
 			} catch (SQLException e) {
 				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 			}
@@ -203,6 +231,11 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
+	public <T extends Message> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+		return stream(ids).map(id -> update(c, id, updater)).collect(toImmutableList());
+	}
+
+	@Override
 	public <T extends Message> void delete(Class<T> c, long id) {
 		if (!Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(DELETE_SQL, getTable(c),  " WHERE id=?");
@@ -220,8 +253,8 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> int delete(Class<T> c, Iterable<Long> ids) {
-		return Calculate.executeWithRetries(2, () -> {
+	public <T extends Message> void delete(Class<T> c, Iterable<Long> ids) {
+		Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(BATCH_DELETE_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql)) {

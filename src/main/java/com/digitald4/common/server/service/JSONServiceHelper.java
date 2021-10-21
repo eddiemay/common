@@ -3,48 +3,36 @@ package com.digitald4.common.server.service;
 import static com.digitald4.common.util.JSONUtil.toJSON;
 import static com.digitald4.common.util.JSONUtil.toObject;
 
-import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.storage.Store;
 import com.digitald4.common.util.JSONUtil;
-import javax.servlet.http.HttpServletResponse;
+import com.google.api.server.spi.ServiceException;
+import com.google.api.server.spi.response.BadRequestException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class JSONServiceHelper<T> implements JSONService {
-	private static final DD4StorageException BAD_REQUEST =
-			new DD4StorageException("Invalid action", HttpServletResponse.SC_BAD_REQUEST);
+	private static final BadRequestException BAD_REQUEST = new BadRequestException("Invalid action");
 	private final Class<T> cls;
 	private final EntityService<T> entityService;
-	private final boolean requiresLoginDefault;
 
-	public JSONServiceHelper(EntityService<T> entityService, boolean requiresLoginDefault) {
-		Store<T> store = entityService.getStore();
-		if (entityService instanceof DualProtoService) {
-			this.cls = (Class<T>) ((DualProtoService<?, ?>) entityService).getType().getClass();
-		} else {
-			this.cls = (Class<T>) store.getType().getClass();
-		}
+	public JSONServiceHelper(EntityService<T> entityService) {
+		this.cls = (Class<T>) entityService.getType().getClass();
 		this.entityService = entityService;
-		this.requiresLoginDefault = requiresLoginDefault;
 	}
 
 	@Override
-	public boolean requiresLogin(String action) {
-		return requiresLoginDefault;
-	}
-
-	@Override
-	public JSONObject performAction(String action, JSONObject jsonRequest) {
+	public JSONObject performAction(String action, JSONObject jsonRequest) throws ServiceException {
 		switch (action) {
 			case "create": {
 				if (entityService instanceof Createable) {
-					return toJSON(((Createable<T>) entityService).create(toObject(cls, jsonRequest.getJSONObject("entity"))));
+					return toJSON(((Createable<T>) entityService).create(
+							toObject(cls, jsonRequest.getJSONObject("entity")), jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}
 			case "get": {
 				if (entityService instanceof Getable) {
-					return toJSON(((Getable<?>) entityService).get(jsonRequest.getInt("id")));
+					return toJSON(((Getable<?>) entityService).get(
+							jsonRequest.getInt("id"), jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}
@@ -53,7 +41,8 @@ public class JSONServiceHelper<T> implements JSONService {
 					return toJSON(
 							((Listable<?>) entityService).list(
 									jsonRequest.optString("filter"), jsonRequest.optString("orderBy"),
-									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken")));
+									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken"),
+									jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}
@@ -63,20 +52,22 @@ public class JSONServiceHelper<T> implements JSONService {
 							((Updateable<T>) entityService).update(
 									jsonRequest.getLong("id"),
 									toObject(cls, jsonRequest.getJSONObject("entity")),
-									jsonRequest.getString("updateMask")));
+									jsonRequest.getString("updateMask"), jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}
 			case "delete": {
 				if (entityService instanceof Deleteable) {
-					return toJSON(((Deleteable) entityService).delete(jsonRequest.getInt("id")));
+					return toJSON(((Deleteable) entityService).delete(
+							jsonRequest.getInt("id"), jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}
 			case "batchDelete": {
 				if (entityService instanceof BulkDeleteable) {
 					JSONArray ids = jsonRequest.getJSONArray("ids");
-					return toJSON(((BulkDeleteable) entityService).batchDelete(JSONUtil.transform(ids, ids::getLong)));
+					return toJSON(((BulkDeleteable) entityService).batchDelete(
+							JSONUtil.transform(ids, ids::getLong), jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}

@@ -1,23 +1,32 @@
 package com.digitald4.common.model;
 
-import com.digitald4.common.exception.DD4StorageException;
-import java.time.Clock;
+import com.google.api.server.spi.config.ApiResourceProperty;
 
 public class BasicUser implements User {
 	private long id;
-	private String username;
 	private int typeId;
-	private long lastLogin;
-	private PasswordInfo passwordInfo;
-	private ActiveSession activeSession;
+	private String username;
+	private String email;
+	private String firstName;
+	private String lastName;
 
 	@Override
 	public long getId() {
 		return id;
 	}
 
+	@Override
 	public BasicUser setId(long id) {
 		this.id = id;
+		return this;
+	}
+
+	public int getTypeId() {
+		return typeId;
+	}
+
+	public BasicUser setTypeId(int typeId) {
+		this.typeId = typeId;
 		return this;
 	}
 
@@ -32,51 +41,42 @@ public class BasicUser implements User {
 		return this;
 	}
 
-	public int getTypeId() {
-		return typeId;
+	@Override
+	public String getEmail() {
+		return email;
 	}
 
-	public BasicUser setTypeId(int typeId) {
-		this.typeId = typeId;
+	@Override
+	public BasicUser setEmail(String email) {
+		this.email = email;
 		return this;
 	}
 
 	@Override
-	public long getLastLogin() {
-		return lastLogin;
+	public String getFirstName() {
+		return firstName;
 	}
 
-	public BasicUser setLastLogin(long lastLogin) {
-		this.lastLogin = lastLogin;
+	@Override
+	public BasicUser setFirstName(String firstName) {
+		this.firstName = firstName;
 		return this;
 	}
 
 	@Override
-	public BasicUser updateLastLogin(Clock clock) {
-		return setLastLogin(clock.millis());
+	public String getLastName() {
+		return lastName;
 	}
 
 	@Override
-	public BasicUser updatePasswordInfo(PasswordInfo passwordInfo) {
-		this.passwordInfo = passwordInfo;
+	public BasicUser setLastName(String lastName) {
+		this.lastName = lastName;
 		return this;
 	}
 
 	@Override
-	public ActiveSession activeSession() {
-		return activeSession;
-	}
-
-	@Override
-	public BasicUser activeSession(ActiveSession activeSession) {
-		this.activeSession = activeSession;
-		return this;
-	}
-
-	@Override
-	public void verifyPassword(String passwordDigest) {
-		if (!passwordInfo.getDigest().equals(passwordDigest)) {
-			throw new DD4StorageException("Wrong username or password", 401);
-		}
+	@ApiResourceProperty
+	public String fullName() {
+		return String.format("%s %s", getFirstName(), getLastName());
 	}
 }

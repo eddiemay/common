@@ -8,8 +8,8 @@ com.digitald4.common.GeneralDataService = ['apiConnector', com.digitald4.common.
 com.digitald4.common.GeneralDataServ.prototype.generalDataHash = {};
 
 com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
-  this.jsonService.list({}, function(listResponse) {
-    var generalDatas = listResponse.result;
+  this.jsonService.list({}, function(response) {
+    var generalDatas = response.results;
     var hash = {};
     for (var x = 0; x < generalDatas.length; x++) {
       var generalData = generalDatas[x];

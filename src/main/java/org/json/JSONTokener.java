@@ -430,7 +430,13 @@ public class JSONTokener {
      * @return  A JSONException object, suitable for throwing
      */
     public JSONException syntaxError(String message) {
-        return new JSONException(message + this.toString());
+        char[] chars = new char[19];
+        try {
+            reader.read(chars);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new JSONException(message + this.toString() + " for value: " + new String(chars));
     }
 
 

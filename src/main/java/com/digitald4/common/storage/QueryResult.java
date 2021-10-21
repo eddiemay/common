@@ -1,23 +1,48 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.util.stream.Collectors.joining;
+
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
+import java.util.function.Function;
 
 public class QueryResult<T> {
 	private final ImmutableList<T> results;
 	private final int totalSize;
-	private String filter;
-	private String orderBy;
-	private int pageSize;
-	private int pageToken;
+	private final String filter;
+	private final String orderBy;
+	private final int pageSize;
+	private final int pageToken;
 
-	public QueryResult(Iterable<T> results, int totalSize) {
+	private QueryResult(
+			Iterable<T> results, int totalSize, String filter, String orderBy, int pageSize, int pageToken) {
 		this.results = ImmutableList.copyOf(results);
 		this.totalSize = totalSize;
+		this.filter = filter;
+		this.orderBy = orderBy;
+		this.pageSize = pageSize;
+		this.pageToken = pageToken;
 	}
 
-	public QueryResult(Iterable<T> results) {
-		this(results, Iterables.size(results));
+	public static <T> QueryResult<T> of(Iterable<T> results, int totalSize, Query query) {
+		return new QueryResult<>(
+				results,
+				totalSize,
+				query.getFilters().stream()
+						.map(f -> String.format("%s%s%s", f.getColumn(), f.getOperator(), f.getValue())).collect(joining(",")),
+				query.getOrderBys().stream().map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : "")).collect(joining(",")),
+				query.getLimit(),
+				query.getOffset());
+	}
+
+	public static <I, T> QueryResult<T> transform(QueryResult<I> queryResult, Function<I, T> function) {
+		return new QueryResult<>(
+				queryResult.getResults().stream().map(function).collect(toImmutableList()),
+				queryResult.getTotalSize(),
+				queryResult.getFilter(),
+				queryResult.getOrderBy(),
+				queryResult.getPageSize(),
+				queryResult.getPageToken());
 	}
 
 	public ImmutableList<T> getResults() {
@@ -32,35 +57,15 @@ public class QueryResult<T> {
 		return filter;
 	}
 
-	public QueryResult<T> setFilter(String filter) {
-		this.filter = filter;
-		return this;
-	}
-
 	public String getOrderBy() {
 		return orderBy;
-	}
-
-	public QueryResult<T> setOrderBy(String orderBy) {
-		this.orderBy = orderBy;
-		return this;
 	}
 
 	public int getPageSize() {
 		return pageSize;
 	}
 
-	public QueryResult<T> setPageSize(int pageSize) {
-		this.pageSize = pageSize;
-		return this;
-	}
-
 	public int getPageToken() {
 		return pageToken;
-	}
-
-	public QueryResult<T> setPageToken(int pageToken) {
-		this.pageToken = pageToken;
-		return this;
 	}
 }

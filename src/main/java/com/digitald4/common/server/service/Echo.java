@@ -13,13 +13,12 @@ import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.api.server.spi.response.UnauthorizedException;
+import javax.inject.Inject;
 
 /** The Echo API which Endpoints will be exposing. */
 @Api(
 		name = "echo",
-		version = "v1",
-		namespace =
-		@ApiNamespace(
+		namespace = @ApiNamespace(
 				ownerDomain = "common.digitald4.com",
 				ownerName = "common.digitald4.com",
 				packagePath = ""
@@ -33,6 +32,11 @@ import com.google.api.server.spi.response.UnauthorizedException;
 )
 
 public class Echo {
+
+	@Inject
+	public Echo() {
+	}
+
 	/**
 	 * Echoes the received message back. If n is a non-negative integer, the message is copied that
 	 * many times in the returned message.
@@ -43,7 +47,7 @@ public class Echo {
 	 * Note that httpMethod is not specified. This will default to a reasonable HTTP method
 	 * depending on the API method name. In this case, the HTTP method will default to POST.
 	 */
-	@ApiMethod(path = "/echo/v1")
+	@ApiMethod
 	public EchoMessage echo(EchoMessage message, @Named("n") @Nullable Integer n) {
 		return doEcho(message, n);
 	}
@@ -109,6 +113,7 @@ public class Echo {
 	 * to the API method name. httpMethod is added here for example purposes.
 	 */
 	@ApiMethod(
+			path = "email",
 			httpMethod = ApiMethod.HttpMethod.GET,
 			authenticators = {EspAuthenticator.class},
 			audiences = {"YOUR_OAUTH_CLIENT_ID"},
@@ -119,9 +124,7 @@ public class Echo {
 			throw new UnauthorizedException("Invalid credentials");
 		}
 
-		Email response = new Email();
-		response.setEmail(user.getEmail());
-		return response;
+		return new Email().setEmail(user.getEmail());
 	}
 
 	/**
@@ -145,8 +148,6 @@ public class Echo {
 			throw new UnauthorizedException("Invalid credentials");
 		}
 
-		Email response = new Email();
-		response.setEmail(user.getEmail());
-		return response;
+		return new Email().setEmail(user.getEmail());
 	}
 }

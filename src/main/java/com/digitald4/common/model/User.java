@@ -1,31 +1,35 @@
 package com.digitald4.common.model;
 
+import com.google.api.server.spi.config.ApiResourceProperty;
+
 import java.time.Clock;
 
 public interface User {
 
 	long getId();
 
+	User setId(long id);
+
 	String getUsername();
 
 	User setUsername(String username);
 
+	String getEmail();
+
+	User setEmail(String email);
+
 	int getTypeId();
 
-	long getLastLogin();
+	User setTypeId(int typeId);
 
-	User updateLastLogin(Clock clock);
+	String getFirstName();
 
-	User updatePasswordInfo(PasswordInfo passwordInfo);
+	User setFirstName(String firstName);
 
-	ActiveSession activeSession();
+	String getLastName();
 
-	User activeSession(ActiveSession activeSession);
+	User setLastName(String lastName);
 
-	/**
-	 * Attemps to verfiy the password provided by the user.
-	 * @throws com.digitald4.common.exception.DD4StorageException if password does not match
-	 * @param passwordDigest
-	 */
-	void verifyPassword(String passwordDigest);
+	@ApiResourceProperty
+	String fullName();
 }
