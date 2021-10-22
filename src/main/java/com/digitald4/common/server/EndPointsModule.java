@@ -65,7 +65,6 @@ public class EndPointsModule extends EndpointsModule {
 		bind(DAO.class).annotatedWith(Annotations.DefaultDAO.class).to(DAOCloudDS.class);
 		bind(DAO.class).to(DAORouterImpl.class);
 
-		bind(new TypeLiteral<Store<PasswordInfo>>(){}).to(new TypeLiteral<GenericStore<PasswordInfo>>(){});
 		bind(new TypeLiteral<Store<DataFile>>(){}).to(new TypeLiteral<GenericStore<DataFile>>(){});
 
 		//configureEndpoints(getApiUrlPattern(),

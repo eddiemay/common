@@ -2,13 +2,11 @@ package com.digitald4.common.server.service;
 
 import static com.digitald4.common.util.ProtoUtil.toJSON;
 
+import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Session;
 import com.digitald4.common.model.PasswordInfo;
 import com.digitald4.common.model.User;
-import com.digitald4.common.storage.Query;
-import com.digitald4.common.storage.SessionStore;
-import com.digitald4.common.storage.Store;
-import com.digitald4.common.storage.UserStore;
+import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.ServiceException;
 import com.google.api.server.spi.config.Api;
@@ -33,12 +31,11 @@ public class UserService<U extends User> extends EntityServiceImpl<U, U> {
 
 	private final UserStore<U> userStore;
 	private final SessionStore<U> sessionStore;
-	private final Store<PasswordInfo> passwordStore;
+	private final PasswordStore passwordStore;
 	private final Clock clock;
 
 	@Inject
-	public UserService(
-			UserStore<U> userStore, SessionStore<U> sessionStore, Store<PasswordInfo> passwordStore, Clock clock) {
+	public UserService(UserStore<U> userStore, SessionStore<U> sessionStore, PasswordStore passwordStore, Clock clock) {
 		super(userStore, sessionStore, true);
 		this.userStore = userStore;
 		this.sessionStore = sessionStore;
@@ -48,15 +45,27 @@ public class UserService<U extends User> extends EntityServiceImpl<U, U> {
 
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "activeSession")
 	public Session getActiveSession(@Named("idToken") String idToken) throws ServiceException {
-		return sessionStore.get(idToken);
+		try {
+			return sessionStore.get(idToken);
+		} catch (DD4StorageException e) {
+			throw new ServiceException(e.getErrorCode(), e);
+		}
 	}
 
 	public Session login(LoginRequest loginRequest) throws ServiceException {
-		return sessionStore.create(loginRequest.getUsername(), loginRequest.getPassword().toUpperCase());
+		try {
+			return sessionStore.create(loginRequest.getUsername(), loginRequest.getPassword());
+		} catch (DD4StorageException e) {
+			throw new ServiceException(e.getErrorCode(), e);
+		}
 	}
 
-	public Session logout(@Named("idToken") String idToken) {
-		return sessionStore.close(idToken);
+	public Session logout(@Named("idToken") String idToken) throws ServiceException {
+		try {
+			return sessionStore.close(idToken);
+		} catch (DD4StorageException e) {
+			throw new ServiceException(e.getErrorCode(), e);
+		}
 	}
 
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "updatePassword")
@@ -64,7 +73,7 @@ public class UserService<U extends User> extends EntityServiceImpl<U, U> {
 			PasswordUpdateRequest updatePaswordRequest, @Named("idToken") String idToken) throws ServiceException {
 		sessionStore.resolve(idToken, true);
 		long userId = updatePaswordRequest.getUserId();
-		String password = updatePaswordRequest.getPassword().toUpperCase();
+		String password = PasswordStore.validate(updatePaswordRequest.getPassword());
 
 		PasswordInfo passwordInfo = passwordStore
 				.list(new Query().setFilters(new Query.Filter().setColumn("userId").setOperator("=").setValue(userId)))

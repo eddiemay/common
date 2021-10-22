@@ -24,14 +24,14 @@ public class SessionStore<U extends User> extends GenericStore<Session> {
       new DD4StorageException("Not authenicated", ErrorCode.NOT_AUTHENTICATED);
 
   private final UserStore<U> userStore;
-  private final Store<PasswordInfo> passwordStore;
+  private final PasswordStore passwordStore;
   private final ProviderThreadLocalImpl<U> userProvider;
   private final Duration sessionDuration;
   private final Clock clock;
   private final Map<String, Session> activeSessions = new HashMap<>();
 
   @Inject
-  public SessionStore(Provider<DAO> daoProvider, UserStore<U> userStore, Store<PasswordInfo> passwordStore,
+  public SessionStore(Provider<DAO> daoProvider, UserStore<U> userStore, PasswordStore passwordStore,
                       ProviderThreadLocalImpl<U> userProvider, @SessionDuration Duration sessionDuration, Clock clock) {
     super(Session.class, daoProvider);
     this.userStore = userStore;
@@ -46,12 +46,7 @@ public class SessionStore<U extends User> extends GenericStore<Session> {
       throw new DD4StorageException("Username and password required", ErrorCode.BAD_REQUEST);
     }
 
-    password.chars().forEach(c -> {
-      if (c > 'F') {
-        throw new DD4StorageException(
-            "None encrypted password detected. Passwords must be encrypted", ErrorCode.BAD_REQUEST);
-      }
-    });
+    PasswordStore.validate(password);
 
     User user = userStore.getBy(username);
     if (user == null) {

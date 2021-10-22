@@ -48,7 +48,7 @@ public class ApiServiceServlet extends HttpServlet {
 	protected final GenericUserStore userStore;
 	protected final UserService userService;
 	protected final SessionStore sessionStore;
-	protected final Store<PasswordInfo> passwordStore;
+	protected final PasswordStore passwordStore;
 	protected final Store<DataFile> dataFileStore;
 	protected final ProviderThreadLocalImpl<BasicUser> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
@@ -59,7 +59,7 @@ public class ApiServiceServlet extends HttpServlet {
 		Clock clock = Clock.systemUTC();
 
 		userStore = new GenericUserStore<>(BasicUser.class, daoProvider);
-		passwordStore = new GenericStore<>(PasswordInfo.class, daoProvider);
+		passwordStore = new PasswordStore(daoProvider);
 
 		sessionStore = new SessionStore<>(daoProvider, userStore, passwordStore, userProvider, null, clock);
 

@@ -55,12 +55,8 @@ public class Session {
   }
 
   @ApiResourceProperty
-  public String startTime() {
-    if (startTime == null) {
-      return null;
-    }
-
-    return startTime.toString();
+  public long startTime() {
+    return startTime == null ? 0 : startTime.getMillis();
   }
 
   public long getExpTime() {
