@@ -27,7 +27,7 @@ import org.json.JSONObject;
 				ownerName = "common.digitald4.com"
 		)
 )
-public class UserService<U extends User> extends EntityServiceImpl<U, U> {
+public class UserService<U extends User> extends EntityServiceImpl<U> {
 
 	private final UserStore<U> userStore;
 	private final SessionStore<U> sessionStore;

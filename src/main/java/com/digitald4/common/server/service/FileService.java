@@ -47,7 +47,7 @@ import org.json.JSONObject;
 		}
 		// [END_EXCLUDE]
 )
-public class FileService<U extends User> extends EntityServiceImpl<DataFile, U> implements JSONService {
+public class FileService<U extends User> extends EntityServiceImpl<DataFile> implements JSONService {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
 	private final Store<DataFile> dataFileStore;

@@ -7,17 +7,15 @@ import com.digitald4.common.model.Session;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.Annotations.SessionDuration;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
-import org.joda.time.DateTime;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import org.joda.time.DateTime;
 
-public class SessionStore<U extends User> extends GenericStore<Session> {
+public class SessionStore<U extends User> extends GenericStore<Session> implements LoginResolver {
   private static final DD4StorageException BAD_LOGIN =
       new DD4StorageException("Wrong username or password", ErrorCode.NOT_AUTHENTICATED);
   private static final DD4StorageException NOT_AUTHENICATED =

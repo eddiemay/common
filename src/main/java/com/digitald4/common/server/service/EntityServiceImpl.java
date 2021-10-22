@@ -1,11 +1,7 @@
 package com.digitald4.common.server.service;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.model.User;
-import com.digitald4.common.storage.Query;
-import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.storage.SessionStore;
-import com.digitald4.common.storage.Store;
+import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.ServiceException;
 import com.google.api.server.spi.config.ApiMethod;
@@ -13,16 +9,22 @@ import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 
-public class EntityServiceImpl<T, U extends User>
+public class EntityServiceImpl<T>
 		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T> {
 
 	private final Store<T> store;
-	private final SessionStore<U> sessionStore;
+	private final LoginResolver loginResolver;
 	private final boolean requiresLoginDefault;
 
-	public EntityServiceImpl(Store<T> store, SessionStore<U> sessionStore, boolean requiresLoginDefault) {
+	public EntityServiceImpl(Store<T> store) {
 		this.store = store;
-		this.sessionStore = sessionStore;
+		this.loginResolver = new FakeLoginResolver();
+		this.requiresLoginDefault = false;
+	}
+
+	public EntityServiceImpl(Store<T> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
+		this.store = store;
+		this.loginResolver = loginResolver;
 		this.requiresLoginDefault = requiresLoginDefault;
 	}
 
@@ -39,7 +41,7 @@ public class EntityServiceImpl<T, U extends User>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "_")
 	public T create(T entity, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			sessionStore.resolve(idToken, requiresLogin("create"));
+			loginResolver.resolve(idToken, requiresLogin("create"));
 			return store.create(entity);
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
@@ -50,7 +52,7 @@ public class EntityServiceImpl<T, U extends User>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}")
 	public T get(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			sessionStore.resolve(idToken, requiresLogin("get"));
+			loginResolver.resolve(idToken, requiresLogin("get"));
 			return store.get(id);
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
@@ -64,7 +66,7 @@ public class EntityServiceImpl<T, U extends User>
 			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			sessionStore.resolve(idToken, requiresLogin("list"));
+			loginResolver.resolve(idToken, requiresLogin("list"));
 			return store.list(Query.forValues(filter, orderBy, pageSize, pageToken));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
@@ -77,7 +79,7 @@ public class EntityServiceImpl<T, U extends User>
 			@Named("id") long id, T entity, @Named("updateMask") String updateMask,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			sessionStore.resolve(idToken, requiresLogin("update"));
+			loginResolver.resolve(idToken, requiresLogin("update"));
 			return store.update(id, current -> JSONUtil.merge(updateMask, entity, current));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
@@ -88,7 +90,7 @@ public class EntityServiceImpl<T, U extends User>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "{id}")
 	public Empty delete(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			sessionStore.resolve(idToken, requiresLogin("delete"));
+			loginResolver.resolve(idToken, requiresLogin("delete"));
 			store.delete(id);
 			return Empty.getInstance();
 		} catch (DD4StorageException e) {
