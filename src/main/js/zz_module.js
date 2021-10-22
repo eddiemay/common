@@ -9,7 +9,7 @@ com.digitald4.common.module = angular.module('DD4Common', [])
       var userService = new com.digitald4.common.JSONService('user', apiConnector);
       userService.login = function(username, password, success, error) {
         this.performRequest(['login', 'POST'], undefined, undefined,
-            {username: username, password: CryptoJS.MD5(password).toString()}, success, error);
+            {username: username, password: CryptoJS.MD5(password).toString().toUpperCase()}, success, error);
       };
       userService.logout = function() {
         this.performRequest(['logout'], undefined, undefined, undefined, function() {
@@ -244,8 +244,6 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
     }
   }
 }]);
-
-
 
 com.digitald4.common.module.directive('dd4Timepicker', function($compile) {
   return {
