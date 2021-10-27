@@ -4,7 +4,7 @@ import static com.digitald4.common.util.ProtoUtil.toJSON;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Session;
-import com.digitald4.common.model.PasswordInfo;
+import com.digitald4.common.model.Password;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
@@ -17,6 +17,8 @@ import com.google.api.server.spi.response.NotFoundException;
 
 import java.time.Clock;
 import javax.inject.Inject;
+
+import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 @Api(
@@ -60,6 +62,7 @@ public class UserService<U extends User> extends EntityServiceImpl<U> {
 		}
 	}
 
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "logout")
 	public Session logout(@Named("idToken") String idToken) throws ServiceException {
 		try {
 			return sessionStore.close(idToken);
@@ -73,23 +76,16 @@ public class UserService<U extends User> extends EntityServiceImpl<U> {
 			PasswordUpdateRequest updatePaswordRequest, @Named("idToken") String idToken) throws ServiceException {
 		sessionStore.resolve(idToken, true);
 		long userId = updatePaswordRequest.getUserId();
-		String password = PasswordStore.validate(updatePaswordRequest.getPassword());
+		String password = updatePaswordRequest.getPassword();
 
-		PasswordInfo passwordInfo = passwordStore
-				.list(new Query().setFilters(new Query.Filter().setColumn("userId").setOperator("=").setValue(userId)))
-				.getResults()
-				.stream()
-				.findFirst().orElse(null);
-		if (passwordInfo != null) {
-			passwordStore.update(passwordInfo.getId(), pi -> pi.setDigest(password).setLastUpdated(clock.millis()));
-		} else {
-			U user = userStore.get(userId);
-			if (user == null) {
-				throw new NotFoundException("User not found");
-			}
+		PasswordStore.validateEncoding(password);
 
-			passwordStore.create(new PasswordInfo().setUserId(userId).setDigest(password).setLastUpdated(clock.millis()));
+		U user = userStore.get(userId);
+		if (user == null) {
+			throw new NotFoundException("User not found");
 		}
+
+		passwordStore.updatePassword(userId, password);
 
 		return Empty.getInstance();
 	}

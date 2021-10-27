@@ -16,12 +16,6 @@ public class EntityServiceImpl<T>
 	private final LoginResolver loginResolver;
 	private final boolean requiresLoginDefault;
 
-	public EntityServiceImpl(Store<T> store) {
-		this.store = store;
-		this.loginResolver = new FakeLoginResolver();
-		this.requiresLoginDefault = false;
-	}
-
 	public EntityServiceImpl(Store<T> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
 		this.store = store;
 		this.loginResolver = loginResolver;

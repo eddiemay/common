@@ -1,18 +1,20 @@
 package com.digitald4.common.model;
 
-public class PasswordInfo {
+import org.joda.time.DateTime;
+
+public class Password {
   private long id;
   private long userId;
   private String digest;
-  private long lastUpdated;
+  private DateTime createdAt;
   private String resetToken;
-  private long resetSentAt;
+  private DateTime resetSentAt;
 
   public long getId() {
     return id;
   }
 
-  public PasswordInfo setId(long id) {
+  public Password setId(long id) {
     this.id = id;
     return this;
   }
@@ -21,7 +23,7 @@ public class PasswordInfo {
     return userId;
   }
 
-  public PasswordInfo setUserId(long userId) {
+  public Password setUserId(long userId) {
     this.userId = userId;
     return this;
   }
@@ -30,17 +32,17 @@ public class PasswordInfo {
     return digest;
   }
 
-  public PasswordInfo setDigest(String digest) {
+  public Password setDigest(String digest) {
     this.digest = digest;
     return this;
   }
 
-  public long getLastUpdated() {
-    return lastUpdated;
+  public DateTime getCreatedAt() {
+    return createdAt;
   }
 
-  public PasswordInfo setLastUpdated(long lastUpdated) {
-    this.lastUpdated = lastUpdated;
+  public Password setCreatedAt(DateTime createdAt) {
+    this.createdAt = createdAt;
     return this;
   }
 
@@ -48,16 +50,16 @@ public class PasswordInfo {
     return resetToken;
   }
 
-  public PasswordInfo setResetToken(String resetToken) {
+  public Password setResetToken(String resetToken) {
     this.resetToken = resetToken;
     return this;
   }
 
-  public long getResetSentAt() {
+  public DateTime getResetSentAt() {
     return resetSentAt;
   }
 
-  public PasswordInfo setResetSentAt(long resetSentAt) {
+  public Password setResetSentAt(DateTime resetSentAt) {
     this.resetSentAt = resetSentAt;
     return this;
   }

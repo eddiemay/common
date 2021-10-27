@@ -16,9 +16,6 @@ com.digitald4.common.module = angular.module('DD4Common', [])
           globalData.user = globalData.activeSession = undefined;
         }, notify);
       };
-      userService.getActive = function(success, error) {
-        this.performRequest(['active'], undefined, undefined, undefined, success, error);
-      };
       userService.getActiveSession = function(success, error) {
         this.performRequest(['activeSession'], undefined, undefined, undefined, success, error);
       };
@@ -130,7 +127,7 @@ com.digitald4.common.module.directive('mapauto', function() {
   }
 });
 
-com.digitald4.common.module.directive('dd4Address', function($compile) {
+com.digitald4.common.module.directive('dd4Address', ['$compile', function($compile) {
   return {
     restrict: 'AE',
     scope: {
@@ -159,7 +156,7 @@ com.digitald4.common.module.directive('dd4Address', function($compile) {
       }
     }
   }
-});
+}]);
 
 com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($compile) {
   return {
@@ -173,9 +170,7 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
     replace: true,
     require: 'ngModel',
     link: function(scope, element, attrs) {
-      var textField = $('input', element);//.
-          //attr('data-ng-model', 'date').
-          //val(scope.$parent.$eval(attrs.ngModel));
+      var textField = $('input', element);
 
       var update = function(date) {
         var currentValue = scope.$parent.$eval(attrs.ngModel);
@@ -184,19 +179,18 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
         newDate.setMonth(date.getMonth());
         newDate.setDate(date.getDate());
         var newValue = newDate.getTime();
-        /* if (!newValue && !currentValue) {
-           return;
-        } */
+
+        if (isNaN(newValue)) {
+            newValue = undefined;
+        }
         if (currentValue != newValue) {
-          console.log('Time changed from ' + currentValue + ' to ' + newValue);
+          console.log('DateTime changed from ' + currentValue + ' to ' + newValue);
           scope.$parent.$eval(attrs.ngModel + ' = ' + newValue);
           scope.$parent.$apply(attrs.dd4Datepicker);
         }
       };
 
-      textField.bind('blur', function() {
-        update(new Date(textField.val()));
-      });
+      textField.bind('blur', function() { update(new Date(textField.val())); });
       $compile(textField)(scope.$parent);
 
       /*
@@ -245,7 +239,7 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
   }
 }]);
 
-com.digitald4.common.module.directive('dd4Timepicker', function($compile) {
+com.digitald4.common.module.directive('dd4Timepicker', ['$compile', function($compile) {
   return {
     restrict: 'AE',
     scope: {
@@ -276,7 +270,7 @@ com.digitald4.common.module.directive('dd4Timepicker', function($compile) {
       $compile(textField)(scope.$parent);
     }
   }
-});
+}]);
 
 com.digitald4.common.module.controller('TableCtrl', com.digitald4.common.TableCtrl);
 com.digitald4.common.module.directive('dd4Table', function() {

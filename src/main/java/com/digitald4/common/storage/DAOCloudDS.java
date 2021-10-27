@@ -26,6 +26,7 @@ import com.google.protobuf.ByteString;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,9 +53,10 @@ public class DAOCloudDS implements DAO {
 			Object id = json.has("id") ? json.get("id") : null;
 			Entity entity = (id instanceof Long && (Long) id != 0L) ?
 					new Entity(t.getClass().getSimpleName(), (Long) id) : new Entity(t.getClass().getSimpleName());
-			json.keySet().forEach(field -> setObject(entity, json, field));
+			ImmutableMap<String, Field> fields = getFields(t.getClass());
+			json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
 
-			return getFields(t.getClass()).get("id").invokeSet(t, datastoreService.put(entity).getId());
+			return fields.get("id").invokeSet(t, datastoreService.put(entity).getId());
 		});
 	}
 
@@ -102,7 +104,8 @@ public class DAOCloudDS implements DAO {
 							T t = updater.apply(convert(c, entry.getValue()));
 							Entity entity = new Entity(c.getSimpleName(), id);
 							JSONObject json = new JSONObject(t);
-							json.keySet().forEach(field -> setObject(entity, json, field));
+							ImmutableMap<String, Field> fields = getFields(t.getClass());
+							json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
 							datastoreService.put(entity);
 
 							return t;
@@ -180,7 +183,7 @@ public class DAOCloudDS implements DAO {
 		return QueryResult.of(results.build(), count.get(), query);
 	}
 
-	private void setObject(Entity entity, JSONObject json, String fieldName) {
+	private void setObject(Entity entity, JSONObject json, String fieldName, ImmutableMap<String, Field> fields) {
 		if (fieldName.equals("id")) {
 			return;
 		}
@@ -193,9 +196,11 @@ public class DAOCloudDS implements DAO {
 		} else if (value instanceof Enum) {
 			entity.setProperty(colName, value.toString());
 		} else if (value instanceof DateTime) {
-			entity.setProperty(colName, value.toString());
+			entity.setProperty(colName, new Date(((DateTime) value).getMillis()));
 		} else if (value instanceof Instant) {
-			entity.setProperty(colName, value.toString());
+			entity.setProperty(colName, new Date(((Instant) value).toEpochMilli()));
+		} else if (value instanceof Long && fields.get(colName).getType() == DateTime.class) {
+			entity.setProperty(colName, new Date((Long) value));
 		} else {
 			entity.setProperty(colName, value);
 		}
@@ -229,9 +234,19 @@ public class DAOCloudDS implements DAO {
 			} else if (field.getType().isEnum()) {
 				jsonObject.put(javaName, Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
 			} else if (field.getType() == DateTime.class) {
-				jsonObject.put(javaName, (value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
+				if (value instanceof Date) {
+					jsonObject.put(javaName, ((Date) value).getTime());
+				} else {
+					jsonObject.put(javaName, (value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
+				}
 			} else if (field.getType() == Instant.class) {
-				jsonObject.put(javaName, (value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
+				if (value instanceof Date) {
+					jsonObject.put(javaName, ((Date) value).getTime());
+				} else {
+					jsonObject.put(javaName, (value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
+				}
+			} else if (field.getType() == Long.class) {
+				jsonObject.put(javaName, value);
 			} else if (field.isObject()) {
 				jsonObject.put(javaName, new JSONObject((String) value));
 			} else {
@@ -334,22 +349,22 @@ public class DAOCloudDS implements DAO {
 	}
 
 	private static class Field {
-		private final String javaName;
+		private final String name;
 		private final String colName;
 		private final Class<?> type;
 		private final Method getMethod;
 		private final Method setMethod;
 
 		public Field(String name, Method getMethod, Method setMethod) {
-			this.javaName = name.substring(0, 1).toLowerCase() + name.substring(1);
+			this.name = name.substring(0, 1).toLowerCase() + name.substring(1);
 			this.colName = FormatText.toUnderScoreCase(name);
 			this.type = getMethod.getReturnType();
 			this.getMethod = getMethod;
 			this.setMethod = setMethod;
 		}
 
-		public String getJavaName() {
-			return javaName;
+		public String getName() {
+			return name;
 		}
 
 		public String getColName() {

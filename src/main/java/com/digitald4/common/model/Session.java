@@ -9,8 +9,8 @@ public class Session {
   private String idToken;
   private long userId;
   private DateTime startTime;
-  private long expTime;
-  private long endTime;
+  private DateTime expTime;
+  private DateTime endTime;
 
   public enum State {ACTIVE, CLOSED}
   private State state;
@@ -59,22 +59,34 @@ public class Session {
     return startTime == null ? 0 : startTime.getMillis();
   }
 
-  public long getExpTime() {
+  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+  public DateTime getExpTime() {
     return expTime;
   }
 
-  public Session setExpTime(long expTime) {
+  public Session setExpTime(DateTime expTime) {
     this.expTime = expTime;
     return this;
   }
 
-  public long getEndTime() {
+  @ApiResourceProperty
+  public long expTime() {
+    return expTime == null ? 0 : expTime.getMillis();
+  }
+
+  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+  public DateTime getEndTime() {
     return endTime;
   }
 
-  public Session setEndTime(long endTime) {
+  public Session setEndTime(DateTime endTime) {
     this.endTime = endTime;
     return this;
+  }
+
+  @ApiResourceProperty
+  public Long endTime() {
+    return endTime == null ? null : endTime.getMillis();
   }
 
   public State getState() {

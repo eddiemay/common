@@ -14,5 +14,9 @@ public final class Annotations {
 
   @BindingAnnotation
   @Retention(RetentionPolicy.RUNTIME)
+  public @interface SessionCacheEnabled {}
+
+  @BindingAnnotation
+  @Retention(RetentionPolicy.RUNTIME)
   public @interface SessionDuration {}
 }

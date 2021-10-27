@@ -19,6 +19,7 @@ import com.google.protobuf.Message;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,9 +60,10 @@ public class ApiServiceServlet extends HttpServlet {
 		Clock clock = Clock.systemUTC();
 
 		userStore = new GenericUserStore<>(BasicUser.class, daoProvider);
-		passwordStore = new PasswordStore(daoProvider);
+		passwordStore = new PasswordStore(daoProvider, clock);
 
-		sessionStore = new SessionStore<>(daoProvider, userStore, passwordStore, userProvider, null, clock);
+		sessionStore = new SessionStore<>(
+				daoProvider, userStore, passwordStore, userProvider, Duration.ofMinutes(30), true, clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
 		addService("generalData", new JSONServiceHelper<>(new GeneralDataService(generalDataStore, sessionStore)));

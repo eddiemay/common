@@ -40,8 +40,6 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import java.util.stream.Collectors;
-
 import org.joda.time.DateTime;
 
 import com.digitald4.common.util.FormatText;
@@ -1162,10 +1160,8 @@ public class JSONObject {
       } else {
         key = pooled;
       }
-      if (value instanceof Date) {
-        map.put(key, FormatText.formatDate((Date) value));
-      } else if (value instanceof DateTime) {
-        map.put(key, FormatText.formatDate(((DateTime) value).toDate(), FormatText.USER_DATETIME));
+     if (value instanceof DateTime) {
+        map.put(key, ((DateTime) value).getMillis());
       } else {
         map.put(key, value);
       }
@@ -1518,13 +1514,16 @@ public class JSONObject {
       if (object == null) {
         return NULL;
       }
+      if (object instanceof DateTime) {
+        return ((DateTime) object).getMillis();
+      }
       if (object instanceof JSONObject || object instanceof JSONArray ||
           NULL.equals(object) || object instanceof JSONString ||
           object instanceof Byte || object instanceof Character ||
           object instanceof Short || object instanceof Integer ||
           object instanceof Long || object instanceof Boolean ||
           object instanceof Float || object instanceof Double ||
-          object instanceof String || object instanceof Enum || object instanceof DateTime) {
+          object instanceof String || object instanceof Enum) {
         return object;
       }
 

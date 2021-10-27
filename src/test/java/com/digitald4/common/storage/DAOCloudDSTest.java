@@ -45,24 +45,25 @@ public class DAOCloudDSTest {
 
 	@Test
 	public void createWithEnum() {
-		Session session = dao.create(new Session()
-				.setUserId(123)
-				.setStartTime(new DateTime(1000))
-				.setExpTime(10000)
-				.setIdToken("4567")
-				.setState(Session.State.ACTIVE));
+		Session session = dao.create(
+				new Session()
+						.setUserId(123)
+						.setStartTime(new DateTime(1000))
+						.setExpTime(new DateTime(10000))
+						.setIdToken("4567")
+						.setState(Session.State.ACTIVE));
 
 		assertTrue(session.getId() > 0);
 		assertEquals(123, session.getUserId());
 		assertEquals(1000, session.getStartTime().getMillis());
-		assertEquals(10000, session.getExpTime());
+		assertEquals(10000, session.getExpTime().getMillis());
 		assertEquals("4567", session.getIdToken());
 		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
 
 		session = dao.get(Session.class, session.getId());
 		assertEquals(123, session.getUserId());
 		assertEquals(1000, session.getStartTime().getMillis());
-		assertEquals(10000, session.getExpTime());
+		assertEquals(10000, session.getExpTime().getMillis());
 		assertEquals("4567", session.getIdToken());
 		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
 	}
