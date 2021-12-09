@@ -3,7 +3,6 @@ com.digitald4.common.JSONService = function(resource, apiConnector) {
 	this.service = resource + 's/v1';
 };
 
-
 /**
  * Performs the specified request.
  *
@@ -48,7 +47,6 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
   this.apiConnector.performRequest(method, url.join('/'), reqParams, data, onSuccess, onError);
 };
 
-
 /**
 * Creates a new object.
 *
@@ -61,7 +59,6 @@ com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, 
   this.performRequest('POST', undefined, undefined, entity, onSuccess, onError);
 };
 
-
 /**
 * Gets an object from the data store by id.
 *
@@ -73,6 +70,16 @@ com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError
 	this.performRequest('GET', id, undefined, undefined, onSuccess, onError);
 };
 
+/**
+* Gets a list of objects from the data store.
+*
+* @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.list = function(listOptions, onSuccess, onError) {
+  this.list_(undefined, listOptions, onSuccess, onError);
+};
 
 /**
 * Gets a list of objects from the data store.
@@ -90,19 +97,6 @@ com.digitald4.common.JSONService.prototype.list_ = function(urlParams, listOptio
   }, onError);
 };
 
-
-/**
-* Gets a list of objects from the data store.
-*
-* @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
-* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
-* @param {!function(!Object)} onError The call back function to call after a submission onError.
-*/
-com.digitald4.common.JSONService.prototype.list = function(listOptions, onSuccess, onError) {
-  this.list_(undefined, listOptions, onSuccess, onError);
-};
-
-
 /**
 * Updates an object in the data store.
 *
@@ -117,7 +111,6 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 	}
 	this.performRequest('PUT', entity.id, {updateMask: props.join()}, updated, onSuccess, onError);
 };
-
 
 /**
 * Deletes an object from the data store.

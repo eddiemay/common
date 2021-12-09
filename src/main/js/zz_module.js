@@ -47,9 +47,11 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .component('dd4Login', {
       templateUrl: 'js/html/login.html',
       controller: com.digitald4.common.LoginCtrl,
+      restrict: 'AE',
       bindings: {
         label: '@',
         allowSignup: '@',
+        onCancel: '&',
       }
     })
     .directive('dd4Time', function() {

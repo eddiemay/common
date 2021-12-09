@@ -35,8 +35,8 @@ public class EntityServiceImpl<T>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "_")
 	public T create(T entity, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			loginResolver.resolve(idToken, requiresLogin("create"));
-			return store.create(entity);
+			resolveLogin(idToken, "create");
+			return getStore().create(entity);
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
@@ -46,8 +46,8 @@ public class EntityServiceImpl<T>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}")
 	public T get(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			loginResolver.resolve(idToken, requiresLogin("get"));
-			return store.get(id);
+			resolveLogin(idToken,"get");
+			return getStore().get(id);
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
@@ -60,8 +60,8 @@ public class EntityServiceImpl<T>
 			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			loginResolver.resolve(idToken, requiresLogin("list"));
-			return store.list(Query.forValues(filter, orderBy, pageSize, pageToken));
+			resolveLogin(idToken,"list");
+			return getStore().list(Query.forValues(filter, orderBy, pageSize, pageToken));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
@@ -73,8 +73,8 @@ public class EntityServiceImpl<T>
 			@Named("id") long id, T entity, @Named("updateMask") String updateMask,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			loginResolver.resolve(idToken, requiresLogin("update"));
-			return store.update(id, current -> JSONUtil.merge(updateMask, entity, current));
+			resolveLogin(idToken,"update");
+			return getStore().update(id, current -> JSONUtil.merge(updateMask, entity, current));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
@@ -84,8 +84,8 @@ public class EntityServiceImpl<T>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "{id}")
 	public Empty delete(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
-			loginResolver.resolve(idToken, requiresLogin("delete"));
-			store.delete(id);
+			resolveLogin(idToken,"delete");
+			getStore().delete(id);
 			return Empty.getInstance();
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
@@ -94,5 +94,13 @@ public class EntityServiceImpl<T>
 
 	protected boolean requiresLogin(String method) {
 		return requiresLoginDefault;
+	}
+
+	protected void resolveLogin(String idToken, boolean requiresLogin) {
+		loginResolver.resolve(idToken, requiresLogin);
+	}
+
+	protected void resolveLogin(String idToken, String method) {
+		resolveLogin(idToken, requiresLogin(method));
 	}
 }

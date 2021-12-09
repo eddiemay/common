@@ -11,7 +11,7 @@ com.digitald4.common.LoginController.prototype.login = function() {
   this.userService.login(this.email, this.password, function(activeSession) {
     this.globalData.activeSession = activeSession;
     this.globalData.user = activeSession.user;
-	this.sessionWatcher.enable();
+	  this.sessionWatcher.enable();
   }.bind(this), notify);
 };
 
@@ -45,6 +45,6 @@ com.digitald4.common.LoginController.prototype.toggleRecoveryShown = function() 
 };
 
 com.digitald4.common.LoginController.prototype.recoverPassword = function() {
-};
+}
 
 

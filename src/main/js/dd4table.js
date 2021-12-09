@@ -11,17 +11,17 @@ com.digitald4.common.TableCtrl = ['$scope', 'apiConnector', com.digitald4.common
 
 com.digitald4.common.TableController.prototype.refresh = function() {
   this.loading = this.scope.loading = true;
-	this.jsonService.list(this.metadata.filter, function(response) {
-	  this.entities = response.results;
-	  this.loading = this.scope.loading = false;
-	}.bind(this), notify);
+  this.jsonService.list({filter: this.metadata.filter}, function(response) {
+    this.entities = response.results;
+    this.loading = this.scope.loading = false;
+  }.bind(this), notify);
 };
 
 com.digitald4.common.TableController.prototype.update = function(entity, prop) {
   this.loading = this.scope.loading = true;
   var index = this.entities.indexOf(entity);
   this.jsonService.update(entity, [prop], function(entity) {
-      this.entities.splice(index, 1, entity);
-      this.loading = this.scope.loading = false;
-    }.bind(this), notify);
+    this.entities.splice(index, 1, entity);
+    this.loading = this.scope.loading = false;
+  }.bind(this), notify);
 };

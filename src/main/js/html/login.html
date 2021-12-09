@@ -1,11 +1,5 @@
-<div class="special-page login-bg dark" style="
-    width: 34em;
-    margin-left: -17em;
-    margin-top: -15em;
-    position: absolute;
-    z-index: 89;
-    left: 50%;
-    top: 50%;">
+<div class="special-page login-bg dark"
+     style="width: 34em;margin-left: -17em;margin-top: -15em;position: absolute;z-index: 89;left: 50%;top: 50%;">
   <section id="message" data-ng-show="$ctrl.message">
     <div class="block-border">
       <div class="block-content no-title dark-bg">
@@ -30,9 +24,11 @@
             <label for="password"><span class="big">Password</span></label>
             <input type="password" id="password" class="full-width" data-ng-model="$ctrl.password"/>
           </p>
-          <button class="float-right" data-ng-click="$ctrl.login()">Login</button>
+          <div class="columns">
+            <button data-ng-if="$ctrl.onCancel" class="float-left" data-ng-click="$ctrl.onCancel()">Cancel</button>
+            <button class="float-right" data-ng-click="$ctrl.login()">Login</button>
+          </div>
         </div>
-
         <div class="form">
           <legend><a href="#" data-ng-click="$ctrl.toggleRecoveryShown()">Lost password?</a></legend>
           <fieldset class="grey-bg no-margin collapse" data-ng-show="$ctrl.recoveryShown">
