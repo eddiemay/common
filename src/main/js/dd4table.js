@@ -5,7 +5,7 @@ com.digitald4.common.TableController = function($scope, apiConnector) {
 	this.jsonService = new com.digitald4.common.JSONService(this.base.entity, apiConnector);
 	this.metadata.refresh = this.refresh.bind(this);
 	this.refresh();
-};
+}
 
 com.digitald4.common.TableCtrl = ['$scope', 'apiConnector', com.digitald4.common.TableController];
 
@@ -15,7 +15,7 @@ com.digitald4.common.TableController.prototype.refresh = function() {
     this.entities = response.results;
     this.loading = this.scope.loading = false;
   }.bind(this), notify);
-};
+}
 
 com.digitald4.common.TableController.prototype.update = function(entity, prop) {
   this.loading = this.scope.loading = true;
@@ -24,4 +24,4 @@ com.digitald4.common.TableController.prototype.update = function(entity, prop) {
     this.entities.splice(index, 1, entity);
     this.loading = this.scope.loading = false;
   }.bind(this), notify);
-};
+}

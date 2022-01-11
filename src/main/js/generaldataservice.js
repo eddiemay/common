@@ -1,7 +1,7 @@
 com.digitald4.common.GeneralDataServ = function(apiConnector) {
   this.jsonService = new com.digitald4.common.JSONService('generalData', apiConnector);
   this.refresh();
-};
+}
 
 com.digitald4.common.GeneralDataService = ['apiConnector', com.digitald4.common.GeneralDataServ];
 
@@ -32,12 +32,12 @@ com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
     }
     this.generalDataMap = map;
   }.bind(this), notify);
-};
+}
 
 com.digitald4.common.GeneralDataServ.prototype.get = function(id) {
   return this.generalDataMap[id] || {};
-};
+}
 
 com.digitald4.common.GeneralDataServ.prototype.list = function(groupId) {
   return this.get(groupId).generalDatas;
-};
+}

@@ -1,7 +1,7 @@
 com.digitald4.common.JSONService = function(resource, apiConnector) {
 	this.apiConnector = apiConnector;
 	this.service = resource + 's/v1';
-};
+}
 
 /**
  * Performs the specified request.
@@ -44,7 +44,7 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
   }
 
   this.apiConnector.performRequest(method, url.join('/'), reqParams, data, onSuccess, onError);
-};
+}
 
 /**
 * Creates a new object.
@@ -56,7 +56,7 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
 com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, onError) {
   entity.$$hashKey = undefined;
   this.performRequest('POST', undefined, undefined, entity, onSuccess, onError);
-};
+}
 
 /**
 * Gets an object from the data store by id.
@@ -67,7 +67,7 @@ com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, 
 */
 com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError) {
 	this.performRequest('GET', id, undefined, undefined, onSuccess, onError);
-};
+}
 
 /**
 * Gets a list of objects from the data store.
@@ -78,7 +78,7 @@ com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError
 */
 com.digitald4.common.JSONService.prototype.list = function(listOptions, onSuccess, onError) {
   this.list_(undefined, listOptions, onSuccess, onError);
-};
+}
 
 /**
 * Gets a list of objects from the data store.
@@ -94,8 +94,7 @@ com.digitald4.common.JSONService.prototype.list_ = function(urlParams, listOptio
     response.results = response.results || [];
     onSuccess(response);
   }, onError);
-};
-// 177 + 96.24 + 220 + 5.95 = 499.19
+}
 
 /**
 * Updates an object in the data store.
@@ -110,7 +109,7 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 	  updated[props[p]] = entity[props[p]];
 	}
 	this.performRequest('PUT', entity.id, {updateMask: props.join()}, updated, onSuccess, onError);
-};
+}
 
 /**
 * Deletes an object from the data store.
@@ -121,4 +120,4 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 */
 com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onError) {
     this.performRequest('DELETE', id, undefined, undefined, onSuccess, onError);
-};
+}

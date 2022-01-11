@@ -7,7 +7,7 @@ com.digitald4.common.UserController = function($routeParams, userService, genera
       {id: 1, name: 'Standard'},
       {id: 2, name: 'Admin'}];
 	this.refresh();
-};
+}
 
 com.digitald4.common.UserCtrl =
     ['$routeParams', 'userService', 'generalDataService', com.digitald4.common.UserController];
@@ -16,10 +16,10 @@ com.digitald4.common.UserController.prototype.refresh = function() {
 	this.userService.get(this.userId, function(user) {
 		this.user = user;
 	}.bind(this), notify);
-};
+}
 
 com.digitald4.common.UserController.prototype.update = function(prop) {
   this.userService.update(this.user, [prop], function(user) {
     this.user = user;
   }.bind(this), notify);
-};
+}
