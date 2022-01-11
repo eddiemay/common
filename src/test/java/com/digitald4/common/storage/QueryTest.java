@@ -8,7 +8,7 @@ import org.junit.Test;
 public class QueryTest {
   @Test
   public void forValues_nullsOkay() {
-    Query query = Query.forValues(null, null, 0, 0);
+    Query.List query = Query.forList(null, null, 0, 0);
     assertTrue(query.getFilters().isEmpty());
     assertTrue(query.getOrderBys().isEmpty());
     assertEquals(0, query.getLimit());
@@ -17,7 +17,7 @@ public class QueryTest {
 
   @Test
   public void forValues_parsesCorreclty() {
-    Query query = Query.forValues("city=LA,championships>3", "championships DESC", 5, 1);
+    Query.List query = Query.forList("city=LA,championships>3", "championships DESC", 5, 2);
 
     assertEquals(2, query.getFilters().size());
     Query.Filter filter = query.getFilters().get(0);
@@ -36,12 +36,12 @@ public class QueryTest {
     assertTrue(orderBy.getDesc());
 
     assertEquals(5, query.getLimit());
-    assertEquals(1, query.getOffset());
+    assertEquals(5, query.getOffset());
   }
 
   @Test
   public void forValues_canparseADate() {
-    Query query = Query.forValues("date=2021-01-18", "", 92, 12);
+    Query.List query = Query.forList("date=2021-01-18", "", 92, 12);
 
     assertEquals(1, query.getFilters().size());
     Query.Filter filter = query.getFilters().get(0);
@@ -51,7 +51,9 @@ public class QueryTest {
 
     assertTrue(query.getOrderBys().isEmpty());
 
+    assertEquals(92, query.getPageSize());
     assertEquals(92, query.getLimit());
-    assertEquals(12, query.getOffset());
+    assertEquals(12, query.getPageToken());
+    assertEquals(11 * 92, query.getOffset());
   }
 }

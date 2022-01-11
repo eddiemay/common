@@ -53,7 +53,7 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T> QueryResult<T> list(Class<T> c, Query query) {
+	public <T> QueryResult<T> list(Class<T> c, Query.List query) {
 		Map<Long, JSONObject> table = tables.get(c);
 		if (table != null) {
 			ImmutableList<JSONObject> results = ImmutableList.copyOf(table.values());

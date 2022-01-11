@@ -81,7 +81,7 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T> QueryResult<T> list(Class<T> c, Query query) {
+	public <T> QueryResult<T> list(Class<T> c, Query.List query) {
 		return Calculate.executeWithRetries(2, () -> {
 			QueryResult<Entity> queryResult = listEntities(c, query);
 			return QueryResult.transform(queryResult, entity -> convert(c, entity));
@@ -152,7 +152,7 @@ public class DAOCloudDS implements DAO {
 		return results;
 	}
 
-	private QueryResult<Entity> listEntities(Class<?> c, Query query) {
+	private QueryResult<Entity> listEntities(Class<?> c, Query.List query) {
 		com.google.appengine.api.datastore.Query eQuery = new com.google.appengine.api.datastore.Query(c.getSimpleName());
 		if (!query.getFilters().isEmpty()) {
 			if (query.getFilters().size() == 1) {
@@ -201,6 +201,8 @@ public class DAOCloudDS implements DAO {
 			entity.setProperty(colName, new Date(((Instant) value).toEpochMilli()));
 		} else if (value instanceof Long && fields.get(colName).getType() == DateTime.class) {
 			entity.setProperty(colName, new Date((Long) value));
+		} else if (value instanceof StringBuilder) {
+			entity.setProperty(colName, new Text(value.toString()));
 		} else {
 			entity.setProperty(colName, value);
 		}
@@ -229,49 +231,50 @@ public class DAOCloudDS implements DAO {
 				return;
 			}
 
-			if (field.isCollection()) {
-				jsonObject.put(javaName, new JSONArray((String) value));
-			} else if (field.getType().isEnum()) {
-				jsonObject.put(javaName, Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
-			} else if (field.getType() == DateTime.class) {
-				if (value instanceof Date) {
-					jsonObject.put(javaName, ((Date) value).getTime());
-				} else {
-					jsonObject.put(javaName, (value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
-				}
-			} else if (field.getType() == Instant.class) {
-				if (value instanceof Date) {
-					jsonObject.put(javaName, ((Date) value).getTime());
-				} else {
-					jsonObject.put(javaName, (value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
-				}
-			} else if (field.getType() == Long.class) {
-				jsonObject.put(javaName, value);
-			} else if (field.isObject()) {
-				jsonObject.put(javaName, new JSONObject((String) value));
-			} else {
-				switch (field.getType().getSimpleName()) {
-					case "ByteArray":
-						jsonObject.put(javaName, ByteString.copyFrom(value.toString().getBytes()));
-						break;
-					case "Integer":
-					case "int":
-						jsonObject.put(javaName, ((Long) value).intValue());
-						break;
-					case "Long":
-					case "long":
-						if (colName.endsWith("id")) {
-							jsonObject.put(javaName, value);
-						} else {
-							jsonObject.put(javaName, value);
-							// field.invokeSet(t, new java.sql.Timestamp((Long.parseLong(value.toString()))));
-						}
-						break;
-					case "String":
-					default:
+			switch (field.getType().getSimpleName()) {
+				case "ByteArray":
+					jsonObject.put(javaName, ByteString.copyFrom(value.toString().getBytes()));
+					break;
+				case "DateTime":
+					if (value instanceof Date) {
+						jsonObject.put(javaName, ((Date) value).getTime());
+					} else {
+						jsonObject.put(javaName, (value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
+					}
+					break;
+				case "Instant":
+					if (value instanceof Date) {
+						jsonObject.put(javaName, ((Date) value).getTime());
+					} else {
+						jsonObject.put(javaName, (value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
+					}
+					break;
+				case "Integer":
+				case "int":
+					jsonObject.put(javaName, ((Long) value).intValue());
+					break;
+				case "Long":
+				case "long":
+					if (colName.endsWith("id")) {
 						jsonObject.put(javaName, value);
-						break;
-				}
+					} else {
+						jsonObject.put(javaName, value);
+						// field.invokeSet(t, new java.sql.Timestamp((Long.parseLong(value.toString()))));
+					}
+					break;
+				case "StringBuilder":
+					jsonObject.put(javaName, (value instanceof Text) ? ((Text) value).getValue() : value);
+					break;
+				case "String":
+				default:
+					if (field.isCollection()) {
+						jsonObject.put(javaName, new JSONArray((String) value));
+					} else if (field.getType().isEnum()) {
+						jsonObject.put(javaName, Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
+					} else {
+						jsonObject.put(javaName, field.isObject() ? new JSONObject((String) value) : value);
+					}
+					break;
 			}
 		});
 

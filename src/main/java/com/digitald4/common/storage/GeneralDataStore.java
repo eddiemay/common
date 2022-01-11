@@ -11,7 +11,6 @@ public class GeneralDataStore extends GenericStore<GeneralData> {
 	}
 
 	public QueryResult<GeneralData> listByGroupId(long groupId) {
-		return super.list(new Query()
-				.setFilters(new Query.Filter().setColumn("GROUP_ID").setOperator("=").setValue(String.valueOf(groupId))));
+		return super.list(Query.forList().setFilters(Query.Filter.of("GROUP_ID", "=", String.valueOf(groupId))));
 	}
 }

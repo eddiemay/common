@@ -2,7 +2,6 @@ package com.digitald4.common.tools;
 
 import com.digitald4.common.model.GeneralData;
 import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.Query;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -31,7 +30,7 @@ public class GenDataCompiler {
 	}
 
 	public void compile() {
-		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, new Query())
+		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, null)
 				.getResults().stream()
 				.collect(Collectors.groupingBy(GeneralData::getGroupId));
 

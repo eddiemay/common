@@ -23,7 +23,7 @@ public class DAOTestingImplTest {
 
 		assertEquals(user, userStore.get(user.getId()));
 
-		QueryResult<User> users = userStore.list(new Query());
+		QueryResult<User> users = userStore.list(Query.forList());
 		assertEquals(1, users.getTotalSize());
 		assertEquals(1, users.getResults().size());
 		assertEquals(user, users.getResults().get(0));
@@ -41,13 +41,13 @@ public class DAOTestingImplTest {
 		assertEquals("benfrank@gmail.com", user2.getUsername());
 		assertEquals(34, user2.getTypeId());
 
-		users = userStore.list(new Query());
+		users = userStore.list(Query.forList());
 		assertEquals(2, users.getTotalSize());
 		assertEquals(2, users.getResults().size());
 		assertEquals(user, users.getResults().get(0));
 		assertEquals(user2, users.getResults().get(1));
 
-		users = userStore.list(new Query().setFilters(new Query.Filter().setColumn("typeId").setValue(34)));
+		users = userStore.list(Query.forList().setFilters(Query.Filter.of("typeId", 34)));
 		assertEquals(1, users.getTotalSize());
 		assertEquals(1, users.getResults().size());
 		assertEquals(user2, users.getResults().get(0));

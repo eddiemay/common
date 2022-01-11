@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Arrays.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.GeneratedMessageV3;
@@ -20,7 +21,8 @@ import org.json.JSONObject;
 
 public class JSONUtil {
   private static final Map<Class<?>, Object> defaultInstances = new HashMap<>();
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER =
+      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private JSONUtil() {}
 
   public static <T> ImmutableList<T> transform(JSONArray jsonArray, Function<Integer, T> converter) {

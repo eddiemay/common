@@ -79,7 +79,7 @@ public class SessionStore<U extends User> extends GenericStore<Session> implemen
     Session activeSession = cacheGet(token);
     if (activeSession == null) {
         activeSession =
-            list(new Query().setFilters(new Query.Filter().setColumn("idToken").setOperator("=").setValue(token)))
+            list(Query.forList().setFilters(Query.Filter.of("idToken", "=", token)))
                 .getResults()
                 .stream()
                 .peek(session -> {

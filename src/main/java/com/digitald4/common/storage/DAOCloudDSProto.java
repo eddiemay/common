@@ -72,7 +72,7 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
+	public <T extends Message> QueryResult<T> list(Class<T> c, Query.List query) {
 		return Calculate.executeWithRetries(2, () -> {
 			EntityQuery.Builder eQuery = com.google.cloud.datastore.Query.newEntityQueryBuilder().setKind(c.getSimpleName());
 			if (!query.getFilters().isEmpty()) {

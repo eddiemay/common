@@ -8,8 +8,6 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.collect.ImmutableList;
-import java.time.Clock;
-import java.time.Instant;
 
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -72,6 +70,7 @@ public class DAOCloudDSTest {
 	public void createComplex() {
 		ComplexObj complex = new ComplexObj()
 				.setName("test")
+				.setTextData(new StringBuilder("Start of string"))
 				.setSubComplexes(
 						ImmutableList.of(
 								new ComplexObj.SubComplex().setBrand("A").setHistory(ImmutableList.of("A1", "A2", "A3")),
@@ -81,7 +80,14 @@ public class DAOCloudDSTest {
 
 		assertTrue(result.getId() > 0);
 		assertEquals(complex.getName(), result.getName());
+		assertEquals(complex.getTextData(), result.getTextData());
 		assertEquals(complex.getSubComplexes().size(), result.getSubComplexes().size());
+
+		ComplexObj read = dao.get(ComplexObj.class, result.getId());
+		assertEquals(complex.getName(), read.getName());
+		assertEquals(complex.getTextData().toString(), read.getTextData().toString());
+		assertEquals(complex.getSubComplexes().size(), read.getSubComplexes().size());
+
 	}
 
 	@Test
@@ -129,7 +135,7 @@ public class DAOCloudDSTest {
 
 	@Test
 	public void list() {
-		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, new Query());
+		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList());
 
 		assertEquals(5, queryResult.getTotalSize());
 		assertEquals(5, queryResult.getResults().size());
@@ -138,7 +144,7 @@ public class DAOCloudDSTest {
 	@Test
 	public void list_withFilter() {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forValues("type_id>10", null, 0, 0));
+				dao.list(BasicUser.class, Query.forList("type_id>10", null, 0, 1));
 
 		assertEquals(2, queryResult.getTotalSize());
 		assertEquals(2, queryResult.getResults().size());
@@ -149,7 +155,7 @@ public class DAOCloudDSTest {
 	@Test
 	public void list_withOrderBy() {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forValues(null, "type_id",0, 0));
+				dao.list(BasicUser.class, Query.forList(null, "type_id",0, 0));
 
 		assertEquals(5, queryResult.getTotalSize());
 		assertEquals(5, queryResult.getResults().size());
@@ -164,7 +170,7 @@ public class DAOCloudDSTest {
 	@Test
 	public void list_withLimit() {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forValues(null, null, 3, 0));
+				dao.list(BasicUser.class, Query.forList(null, null, 3, 1));
 
 		assertEquals(5, queryResult.getTotalSize());
 		assertEquals(3, queryResult.getResults().size());
@@ -173,19 +179,19 @@ public class DAOCloudDSTest {
 	@Test
 	public void list_withOffset() {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forValues(null, null, 0, 2));
+				dao.list(BasicUser.class, Query.forList(null, null, 2, 2));
 
 		assertEquals(5, queryResult.getTotalSize());
-		assertEquals(3, queryResult.getResults().size());
+		assertEquals(2, queryResult.getResults().size());
 	}
 
 	@Test
 	public void list_advanced()  {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forValues("type_id>=2", "type_id", 3, 2));
+				dao.list(BasicUser.class, Query.forList("type_id>=2", "type_id", 2, 2));
 
 		assertEquals(5, queryResult.getTotalSize());
-		assertEquals(3, queryResult.getResults().size());
+		assertEquals(2, queryResult.getResults().size());
 		assertEquals(10, queryResult.getResults().get(0).getTypeId());
 	}
 
@@ -218,6 +224,7 @@ public class DAOCloudDSTest {
 	public static class ComplexObj {
 		private long id;
 		private String name;
+		private StringBuilder textData;
 		private ImmutableList<SubComplex> subComplexes = ImmutableList.of();
 
 		public long getId() {
@@ -235,6 +242,15 @@ public class DAOCloudDSTest {
 
 		public ComplexObj setName(String name) {
 			this.name = name;
+			return this;
+		}
+
+		public StringBuilder getTextData() {
+			return textData;
+		}
+
+		public ComplexObj setTextData(StringBuilder textData) {
+			this.textData = textData;
 			return this;
 		}
 

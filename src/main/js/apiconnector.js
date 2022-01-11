@@ -24,7 +24,7 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
     }, function(response) {
       console.log('Status code: ' + response.status);
       if (response.status == 401) {
-        globalData.user = globalData.activeSession = undefined;
+        globalData.activeSession = undefined;
       } else {
         console.log('error: ' + response.data.error);
         console.log('StackTrace: ' + response.data.stackTrace);

@@ -47,8 +47,8 @@ public class HasProtoDAO implements TypedDAO<HasProto> {
   }
 
   @Override
-  public <T extends HasProto> QueryResult<T> list(Class<T> c, Query query) {
-    QueryResult<? extends Message> result = messageDAO.list(getProtoType(c), query);
+  public <T extends HasProto> QueryResult<T> list(Class<T> c, Query.List listQuery) {
+    QueryResult<? extends Message> result = messageDAO.list(getProtoType(c), listQuery);
     return QueryResult.transform(result, p -> (T) fromProto(c, p));
   }
 

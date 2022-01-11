@@ -17,11 +17,11 @@ public class DataImporter {
 	}
 
 	public <T> void runFor(Class<T> c) throws IOException {
-		runFor(c, new Query());
+		runFor(c, Query.forList());
 	}
 
-	public <T> void runFor(Class<T> c, Query query) throws IOException {
-		ImmutableList<T> results = dao.list(c, query).getResults();
+	public <T> void runFor(Class<T> c, Query.List listQuery) throws IOException {
+		ImmutableList<T> results = dao.list(c, listQuery).getResults();
 		results.stream().parallel().forEach(t -> {
 			try {
 				apiDAO.create(t);
@@ -32,7 +32,7 @@ public class DataImporter {
 	}
 
 	public <T> QueryResult<T> export(Class<T> c) {
-		return apiDAO.list(c, new Query());
+		return apiDAO.list(c, Query.forList());
 	}
 
 	public static void main(String[] args) throws IOException {

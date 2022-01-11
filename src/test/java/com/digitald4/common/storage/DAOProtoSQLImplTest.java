@@ -54,7 +54,7 @@ public class DAOProtoSQLImplTest {
 
 	@Test
 	public void list() throws SQLException {
-		daoSql.list(User.class, Query.forValues("read_only=true,type_id>10", null, 0, 0));
+		daoSql.list(User.class, Query.forList("read_only=true,type_id>10", null, 0, 0));
 
 		verify(connection).prepareStatement("SELECT * FROM User WHERE read_only=? AND type_id>?;");
 		verify(ps).setObject(1, "true");
@@ -63,7 +63,7 @@ public class DAOProtoSQLImplTest {
 
 	@Test
 	public void list_advanced() throws SQLException {
-		daoSql.list(User.class, Query.forValues("read_only=true,type_id>10", "username", 10, 20));
+		daoSql.list(User.class, Query.forList("read_only=true,type_id>10", "username", 10, 3));
 
 		verify(connection)
 				.prepareStatement("SELECT * FROM User WHERE read_only=? AND type_id>? ORDER BY username LIMIT 20,10;");

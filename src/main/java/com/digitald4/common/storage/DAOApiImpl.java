@@ -1,15 +1,13 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.util.Calculate;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -19,7 +17,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class DAOApiImpl implements DAO {
-  private final ObjectMapper mapper = new ObjectMapper();
   private final APIConnector apiConnector;
 
   public DAOApiImpl(APIConnector apiConnector) {
@@ -53,7 +50,7 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T> QueryResult<T> list(Class<T> c, Query query) {
+  public <T> QueryResult<T> list(Class<T> c, Query.List query) {
     StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/_?");
 
     url.append("filter=").append(query.getFilters().stream()
@@ -64,27 +61,27 @@ public class DAOApiImpl implements DAO {
           .map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
           .collect(Collectors.joining(",")));
     }
-    if (query.getLimit() > 0) {
-      url.append("&pageSize").append("=").append(query.getLimit());
+    if (query.getPageSize() > 0) {
+      url.append("&pageSize").append("=").append(query.getPageSize());
     }
-    if (query.getOffset() > 0) {
-      url.append("&pageToken").append("=").append(query.getOffset());
+    if (query.getPageToken() > 0) {
+      url.append("&pageToken").append("=").append(query.getPageToken());
     }
 
     String json = apiConnector.sendGet(url.toString());
-    System.out.println("json result: " + json);
     JSONObject response = new JSONObject(json);
 
     int totalSize = response.getInt("totalSize");
-    ImmutableList.Builder<T> results = ImmutableList.builder();
-    if (totalSize > 0) {
-      JSONArray resultArray = response.getJSONArray("results");
-      for (int x = 0; x < resultArray.length(); x++) {
-        results.add(convert(c, resultArray.getJSONObject(x).toString()));
-      }
+    if (totalSize == 0) {
+      return QueryResult.of(ImmutableList.of(), totalSize, query);
     }
 
-    return QueryResult.of(results.build(), totalSize, query);
+    JSONArray resultArray = response.getJSONArray("results");
+    ImmutableList<T> results = IntStream.range(0, resultArray.length())
+        .mapToObj(x -> convert(c, resultArray.getJSONObject(x).toString()))
+        .collect(toImmutableList());
+
+    return QueryResult.of(results, totalSize, query);
   }
 
   @Override
@@ -131,12 +128,8 @@ public class DAOApiImpl implements DAO {
     apiConnector.send("POST", url, new JSONArray(ids).toString());
   }
 
-  private <T> T convert(Class<T> c, String content) {
-    try {
-      return mapper.readValue(content, c);
-    } catch (IOException e) {
-      throw new DD4StorageException("Error converting object of type: " + c, e);
-    }
+  private <T> T convert(Class<T> cls, String content) {
+    return JSONUtil.toObject(cls, content);
   }
 
   private <T> ImmutableList<T> convertList(Class<T> c, String content) {

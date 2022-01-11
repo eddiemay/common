@@ -1,7 +1,7 @@
 package com.digitald4.common.server.service;
 
-import com.digitald4.common.model.Email;
-import com.digitald4.common.model.EchoMessage;
+import static java.util.stream.Collectors.joining;
+
 import com.google.api.server.spi.auth.EspAuthenticator;
 import com.google.api.server.spi.auth.common.User;
 import com.google.api.server.spi.config.AnnotationBoolean;
@@ -14,6 +14,7 @@ import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.api.server.spi.response.UnauthorizedException;
 import javax.inject.Inject;
+import java.util.stream.IntStream;
 
 /** The Echo API which Endpoints will be exposing. */
 @Api(
@@ -54,7 +55,7 @@ public class Echo {
 	// [END echo_method
 
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "hello")
-	public EchoMessage echoHello(@Named("n") @Nullable Integer n) throws UnauthorizedException {
+	public EchoMessage echoHello(@Named("n") @Nullable Integer n) {
 		return doEcho(new EchoMessage().setMessage("hello"), n);
 	}
 
@@ -89,15 +90,11 @@ public class Echo {
 	}
 
 	private EchoMessage doEcho(EchoMessage message, Integer n) {
-		if (n != null && n >= 0) {
-			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < n; i++) {
-				if (i > 0) {
-					sb.append(" ");
-				}
-				sb.append(message.getMessage());
-			}
-			message.setMessage(sb.toString());
+		if (n != null && n > 0) {
+			return message.setMessage(
+					IntStream.of(n)
+							.mapToObj(num -> message.getMessage())
+							.collect(joining(" ")));
 		}
 		return message;
 	}
@@ -149,5 +146,31 @@ public class Echo {
 		}
 
 		return new Email().setEmail(user.getEmail());
+	}
+
+	public static class EchoMessage {
+		private String message;
+
+		public String getMessage() {
+			return message;
+		}
+
+		public EchoMessage setMessage(String message) {
+			this.message = message;
+			return this;
+		}
+	}
+
+	public static class Email {
+		private String email;
+
+		public String getEmail() {
+			return email;
+		}
+
+		public Email setEmail(String email) {
+			this.email = email;
+			return this;
+		}
 	}
 }

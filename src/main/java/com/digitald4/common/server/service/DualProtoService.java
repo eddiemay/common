@@ -1,7 +1,5 @@
 package com.digitald4.common.server.service;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.SessionStore;
@@ -132,7 +130,7 @@ public class DualProtoService<T extends Message, I extends Message, U extends Us
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			sessionStore.resolve(idToken, requiresLogin("create"));
-			return toListResponse(store.list(Query.forValues(filter, orderBy, pageSize, pageToken)));
+			return toListResponse(store.list(Query.forList(filter, orderBy, pageSize, pageToken)));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}

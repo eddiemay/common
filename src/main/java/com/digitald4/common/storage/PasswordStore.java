@@ -23,7 +23,7 @@ public class PasswordStore extends GenericStore<Password> {
     validateEncoding(passwordHash);
 
     Password password =
-        list(Query.forValues("userId=" + userId, null, 0, 0))
+        list(Query.forList("userId=" + userId, null, 0, 0))
             .getResults().stream().findFirst().orElse(null);
     if (password == null || !password.getDigest().equals(passwordHash)) {
       if (password == null) {

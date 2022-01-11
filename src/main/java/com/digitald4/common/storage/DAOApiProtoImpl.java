@@ -98,7 +98,7 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
+	public <T extends Message> QueryResult<T> list(Class<T> c, Query.List query) {
 		StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/_?");
 
 		url.append("filter=").append(query.getFilters().stream()

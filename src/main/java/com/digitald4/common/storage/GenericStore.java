@@ -52,7 +52,7 @@ public class GenericStore<T> implements Store<T> {
 	}
 
 	@Override
-	public QueryResult<T> list(Query query) {
+	public QueryResult<T> list(Query.List query) {
 		return daoProvider.get().list(c, query);
 	}
 

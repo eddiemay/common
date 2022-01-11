@@ -129,7 +129,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> QueryResult<T> list(Class<T> c, Query query) {
+	public <T extends Message> QueryResult<T> list(Class<T> c, Query.List query) {
 		return Calculate.executeWithRetries(2, () -> {
 			String where = query.getFilters().isEmpty() ? "" :
 					query.getFilters().stream()

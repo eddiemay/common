@@ -57,11 +57,11 @@ public class EntityServiceImpl<T>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "_")
 	public QueryResult<T> list(
 			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken,
+			@Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"list");
-			return getStore().list(Query.forValues(filter, orderBy, pageSize, pageToken));
+			return getStore().list(Query.forList(filter, orderBy, pageSize, pageToken));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}

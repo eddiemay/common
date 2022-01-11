@@ -1007,9 +1007,7 @@ public class JSONObject {
 
     boolean includeSuperClass = klass.getClassLoader() != null;
 
-    Method[] methods = includeSuperClass
-        ? klass.getMethods()
-        : klass.getDeclaredMethods();
+    Method[] methods = includeSuperClass ? klass.getMethods() : klass.getDeclaredMethods();
     for (int i = 0; i < methods.length; i += 1) {
       try {
         Method method = methods[i];
@@ -1160,7 +1158,7 @@ public class JSONObject {
       } else {
         key = pooled;
       }
-     if (value instanceof DateTime) {
+      if (value instanceof DateTime) {
         map.put(key, ((DateTime) value).getMillis());
       } else {
         map.put(key, value);
@@ -1523,7 +1521,8 @@ public class JSONObject {
           object instanceof Short || object instanceof Integer ||
           object instanceof Long || object instanceof Boolean ||
           object instanceof Float || object instanceof Double ||
-          object instanceof String || object instanceof Enum) {
+          object instanceof String || object instanceof Enum ||
+          object instanceof StringBuilder) {
         return object;
       }
 

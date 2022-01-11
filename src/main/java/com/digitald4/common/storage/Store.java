@@ -15,7 +15,7 @@ public interface Store<T> {
 
 	ImmutableList<T> get(Iterable<Long> ids);
 
-	QueryResult<T> list(Query query);
+	QueryResult<T> list(Query.List listQuery);
 
 	T update(long id, UnaryOperator<T> updater);
 

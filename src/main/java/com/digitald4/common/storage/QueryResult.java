@@ -9,40 +9,23 @@ import java.util.function.Function;
 public class QueryResult<T> {
 	private final ImmutableList<T> results;
 	private final int totalSize;
-	private final String filter;
-	private final String orderBy;
-	private final int pageSize;
-	private final int pageToken;
+	private final Query query;
 
-	private QueryResult(
-			Iterable<T> results, int totalSize, String filter, String orderBy, int pageSize, int pageToken) {
+	private QueryResult(Iterable<T> results, int totalSize, Query query) {
 		this.results = ImmutableList.copyOf(results);
 		this.totalSize = totalSize;
-		this.filter = filter;
-		this.orderBy = orderBy;
-		this.pageSize = pageSize;
-		this.pageToken = pageToken;
+		this.query = query;
 	}
 
 	public static <T> QueryResult<T> of(Iterable<T> results, int totalSize, Query query) {
-		return new QueryResult<>(
-				results,
-				totalSize,
-				query.getFilters().stream()
-						.map(f -> String.format("%s%s%s", f.getColumn(), f.getOperator(), f.getValue())).collect(joining(",")),
-				query.getOrderBys().stream().map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : "")).collect(joining(",")),
-				query.getLimit(),
-				query.getOffset());
+		return new QueryResult<>(results, totalSize, query);
 	}
 
 	public static <I, T> QueryResult<T> transform(QueryResult<I> queryResult, Function<I, T> function) {
 		return new QueryResult<>(
 				queryResult.getResults().stream().map(function).collect(toImmutableList()),
 				queryResult.getTotalSize(),
-				queryResult.getFilter(),
-				queryResult.getOrderBy(),
-				queryResult.getPageSize(),
-				queryResult.getPageToken());
+				queryResult.query());
 	}
 
 	public ImmutableList<T> getResults() {
@@ -53,19 +36,29 @@ public class QueryResult<T> {
 		return totalSize;
 	}
 
+	public Query query() {
+		return query;
+	}
+
 	public String getFilter() {
-		return filter;
+		if (query == null || !(query instanceof Query.List)) {
+			return null;
+		}
+
+		return ((Query.List) query).getFilters().stream()
+				.map(f -> String.format("%s%s%s", f.getColumn(), f.getOperator(), f.getValue())).collect(joining(","));
 	}
 
 	public String getOrderBy() {
-		return orderBy;
+		return query == null ? null
+				: query.getOrderBys().stream().map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : "")).collect(joining(","));
 	}
 
 	public int getPageSize() {
-		return pageSize;
+		return query == null ? 0 : query.getPageSize();
 	}
 
 	public int getPageToken() {
-		return pageToken;
+		return query == null ? 0 : query.getPageToken();
 	}
 }

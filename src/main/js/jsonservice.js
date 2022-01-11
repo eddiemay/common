@@ -17,11 +17,13 @@ com.digitald4.common.JSONService = function(resource, apiConnector) {
  */
 com.digitald4.common.JSONService.prototype.performRequest = function(method, urlParams, reqParams, data, onSuccess, onError) {
   var url = [];
+  url.push(this.service);
   var id;
   if (typeof(urlParams) == 'object') {
     for (var prop in urlParams) {
       if (prop == 'id') {
         id = urlParams[prop];
+        url.push(id);
       } else if (urlParams[prop]) {
         url.push(prop.indexOf('_id') == -1 ? prop : prop.substring(0, prop.length - 3) + 's');
         url.push(urlParams[prop]);
@@ -29,9 +31,6 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
     }
   } else if (typeof(urlParams) != 'undefined') {
     id = urlParams;
-  }
-  url.push(this.service);
-  if (id) {
     url.push(id);
   }
   var customAction = undefined;
@@ -40,7 +39,7 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
     url.push(customAction);
     method = method[1] || 'GET';
   }
-  if (!id && !customAction) {
+  if (!id && !urlParams && !customAction) {
     url.push("_");
   }
 
@@ -96,6 +95,7 @@ com.digitald4.common.JSONService.prototype.list_ = function(urlParams, listOptio
     onSuccess(response);
   }, onError);
 };
+// 177 + 96.24 + 220 + 5.95 = 499.19
 
 /**
 * Updates an object in the data store.

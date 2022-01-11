@@ -37,11 +37,11 @@ public class APIConnector {
 	}
 
 	public APIConnector login() {
-		idToken = new JSONObject(
-				sendPost(apiUrl + "/users:login",
-						"json=%7B%22username%22:%22eddiemay@gmail.com%22,%22password%22:%22vxae11%22%7D"))
-				.getString("idToken");
-		System.out.println("IdToken: " + idToken);
+		idToken =
+				new JSONObject(
+						sendPost(apiUrl + "/users/v1/login",
+								"%7Busername:%22eddiemay%22,password:%226B7DE1B846CC2A047CE71E1214C3B6F7%22%7D"))
+						.getString("idToken");
 		return this;
 	}
 
@@ -63,7 +63,6 @@ public class APIConnector {
 					e.printStackTrace();
 				}
 			}
-			long startTime = System.currentTimeMillis();
 			if (idToken != null) {
 				if (payload != null) {
 					payload = "idToken=" + idToken + "&" + payload;
@@ -76,7 +75,6 @@ public class APIConnector {
 				payload = null;
 			}
 			url = url.replaceAll(" ", "%20");
-			System.out.println("\nSending '" + method + "' request to URL: " + url + " with payload: " + payload);
 			HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 			con.setRequestMethod(method);
 			con.setRequestProperty("Accept", "*/*");
@@ -110,25 +108,19 @@ public class APIConnector {
 			if (payload != null) {
 				con.setDoOutput(true);
 				DataOutputStream dos = new DataOutputStream(con.getOutputStream());
-				// System.out.println("Payload: " + payload);
 				dos.writeBytes(payload);
 				dos.flush();
 				dos.close();
 			}
 
-			int responseCode = con.getResponseCode();
-			System.out.println("Response Code: " + responseCode + " " + con.getResponseMessage());
-
 			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 			String line;
 			StringBuilder response = new StringBuilder();
 			while ((line = in.readLine()) != null) {
-				response.append(line);
+				response.append(line).append("\n");
 			}
 			in.close();
-			// System.out.println("Response: " + response);
 			lastCall = System.currentTimeMillis();
-			System.out.println("Time: " + (lastCall - startTime) + "ms");
 			return response.toString();
 		} catch (IOException e) {
 			throw new DD4StorageException("Error sending request", e);

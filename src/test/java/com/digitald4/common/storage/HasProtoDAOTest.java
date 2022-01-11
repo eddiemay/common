@@ -30,8 +30,8 @@ public class HasProtoDAOTest {
     modelDAO = new HasProtoDAO(messageDAO);
     when(messageDAO.create(any(DD4Protos.User.class))).thenAnswer(i -> i.getArguments()[0]);
     when(messageDAO.get(DD4Protos.User.class, USER_ID)).thenReturn(USER_PROTO);
-    when(messageDAO.list(eq(DD4Protos.User.class), any(Query.class)))
-        .thenReturn(QueryResult.of(ImmutableList.of(USER_PROTO), 1, new Query()));
+    when(messageDAO.list(eq(DD4Protos.User.class), any(Query.List.class)))
+        .thenReturn(QueryResult.of(ImmutableList.of(USER_PROTO), 1, null));
     when(messageDAO.update(eq(DD4Protos.User.class), eq(USER_ID), any()))
         .thenAnswer(i -> i.getArgumentAt(2, UnaryOperator.class).apply(USER_PROTO));
   }
@@ -53,7 +53,7 @@ public class HasProtoDAOTest {
 
   @Test
   public void testList() {
-    QueryResult<HasProtoUser> result = modelDAO.list(HasProtoUser.class, new Query());
+    QueryResult<HasProtoUser> result = modelDAO.list(HasProtoUser.class, Query.forList());
 
     assertEquals(1, result.getTotalSize());
     HasProtoUser user = result.getResults().get(0);

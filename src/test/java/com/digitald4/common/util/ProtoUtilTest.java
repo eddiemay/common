@@ -17,6 +17,6 @@ public class ProtoUtilTest {
 										GeneralData.newBuilder().setId(1).setName("Test 1").build(),
 										GeneralData.newBuilder().setId(5).setName("Test 5").build()),
 								10,
-								new Query())));
+								null)));
 	}
 }

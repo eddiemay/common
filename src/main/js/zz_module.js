@@ -12,9 +12,10 @@ com.digitald4.common.module = angular.module('DD4Common', [])
             {username: username, password: CryptoJS.MD5(password).toString().toUpperCase()}, success, error);
       };
       userService.logout = function() {
-        this.performRequest(['logout'], undefined, undefined, undefined, function() {
-          globalData.user = globalData.activeSession = undefined;
-        }, notify);
+        if (globalData.activeSession) {
+          this.performRequest(['logout'], undefined, undefined, undefined, function() {}, notify);
+          globalData.activeSession = undefined;
+        }
       };
       userService.getActiveSession = function(success, error) {
         this.performRequest(['activeSession'], undefined, undefined, undefined, success, error);
@@ -49,9 +50,10 @@ com.digitald4.common.module = angular.module('DD4Common', [])
       controller: com.digitald4.common.LoginCtrl,
       restrict: 'AE',
       bindings: {
-        label: '@',
         allowSignup: '@',
+        label: '@',
         onCancel: '&',
+        onLoginSuccess: '&',
       }
     })
     .directive('dd4Time', function() {
@@ -104,19 +106,31 @@ com.digitald4.common.module = angular.module('DD4Common', [])
           };
         }
       }
+    })
+    .directive('onChange', function() {
+      return function(scope, element, attrs) {
+        var startingValue = element.val();
+        element.bind('blur', function() {
+          if (startingValue != element.val()) {
+            scope.$apply(attrs.onChange);
+            startingValue = element.val();
+           }
+        });
+       }
+    })
+    .directive('onEnter', function () {
+      return function(scope, element, attrs) {
+        element.bind("keydown keypress", function (event) {
+          if (event.which === 13) {
+            scope.$apply(function () {
+              scope.$eval(attrs.onEnter);
+            });
+            event.preventDefault();
+          }
+        });
+      };
     });
 
-com.digitald4.common.module.directive('onChange', function() {
-  return function(scope, element, attrs) {
-  	var startingValue = element.val();
-  	element.bind('blur', function() {
-  		if (startingValue != element.val()) {
-  			scope.$apply(attrs.onChange);
-  			startingValue = element.val();
-  		}
-  	});
-  }
-});
 
 com.digitald4.common.module.directive('mapauto', function() {
   return function(scope, element, attrs) {

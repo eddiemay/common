@@ -58,7 +58,7 @@ public class DAOApiImplTest {
 
   @Test
   public void list() {
-    Query query = Query.forValues("lastLogin>1000,typeId=10", "username", 1, 20);
+    Query.List query = Query.forList("lastLogin>1000,typeId=10", "username", 1, 20);
     when(connector.sendGet(anyString()))
         .thenReturn(new JSONObject(QueryResult.of(ImmutableList.of(BASIC_USER), 5, query)).toString());
 

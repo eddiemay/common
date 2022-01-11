@@ -5,6 +5,7 @@ import static com.digitald4.common.util.JSONUtil.getDefaultInstance;
 import com.digitald4.common.model.HasProto;
 import com.digitald4.common.storage.Annotations.DefaultDAO;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.protobuf.Message;;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
@@ -40,6 +41,10 @@ public class DAORouterImpl implements DAO {
 
   @Override
   public <T> ImmutableList<T> create(Iterable<T> entities) {
+    if (Iterables.isEmpty(entities)) {
+      return ImmutableList.of();
+    }
+
     T t = entities.iterator().next();
     if (t instanceof Message) {
       return (ImmutableList<T>) messageDao.create((Iterable<? extends Message>) entities);
@@ -83,7 +88,7 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> QueryResult<T> list(Class<T> c, Query query) {
+  public <T> QueryResult<T> list(Class<T> c, Query.List query) {
     T t = getDefaultInstance(c);
 
     if (t instanceof Message) {
