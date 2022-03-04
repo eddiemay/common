@@ -7,12 +7,12 @@ import com.google.common.collect.ImmutableList;
 import java.util.function.Function;
 
 public class QueryResult<T> {
-	private final ImmutableList<T> results;
+	private final ImmutableList<T> items;
 	private final int totalSize;
 	private final Query query;
 
-	private QueryResult(Iterable<T> results, int totalSize, Query query) {
-		this.results = ImmutableList.copyOf(results);
+	private QueryResult(Iterable<T> items, int totalSize, Query query) {
+		this.items = ImmutableList.copyOf(items);
 		this.totalSize = totalSize;
 		this.query = query;
 	}
@@ -23,13 +23,13 @@ public class QueryResult<T> {
 
 	public static <I, T> QueryResult<T> transform(QueryResult<I> queryResult, Function<I, T> function) {
 		return new QueryResult<>(
-				queryResult.getResults().stream().map(function).collect(toImmutableList()),
+				queryResult.getItems().stream().map(function).collect(toImmutableList()),
 				queryResult.getTotalSize(),
 				queryResult.query());
 	}
 
-	public ImmutableList<T> getResults() {
-		return results;
+	public ImmutableList<T> getItems() {
+		return items;
 	}
 
 	public int getTotalSize() {

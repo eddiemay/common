@@ -76,8 +76,31 @@ com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError
 * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
-com.digitald4.common.JSONService.prototype.list = function(listOptions, onSuccess, onError) {
-  this.list_(undefined, listOptions, onSuccess, onError);
+com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, onError) {
+  this.list_(undefined, request, onSuccess, onError);
+}
+
+/**
+* Search of objects from the data store.
+*
+* @param {Object{searchText, orderBy, pageSize, pageToken}} request The parameters associated with a list request.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
+  this.performRequest(['search', 'GET'], undefined, request, undefined, function(response) {
+    response.items = response.items || [];
+    response.start = (response.pageToken - 1) * response.pageSize;
+    response.end = response.start + response.items.length;
+    if (response.end > 0) {
+      response.start++;
+    }
+    response.pages = [];
+    for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
+      response.pages.push(++p);
+    }
+    onSuccess(response);
+  }, onError);
 }
 
 /**
@@ -91,7 +114,18 @@ com.digitald4.common.JSONService.prototype.list = function(listOptions, onSucces
 */
 com.digitald4.common.JSONService.prototype.list_ = function(urlParams, listOptions, onSuccess, onError) {
   this.performRequest('GET', urlParams, listOptions, undefined, function(response) {
-    response.results = response.results || [];
+    response.items = response.items || [];
+    response.start = (response.pageToken - 1) * response.pageSize;
+    response.end = response.start + response.items.length;
+    if (response.end > 0) {
+      response.start++;
+    }
+    if (response.pageSize > 0) {
+      response.pages = [];
+      for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
+        response.pages.push(++p);
+      }
+    }
     onSuccess(response);
   }, onError);
 }
@@ -119,5 +153,5 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onError) {
-    this.performRequest('DELETE', id, undefined, undefined, onSuccess, onError);
+  this.performRequest('DELETE', id, undefined, undefined, onSuccess, onError);
 }

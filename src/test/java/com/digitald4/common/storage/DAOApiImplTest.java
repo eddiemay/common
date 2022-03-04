@@ -65,9 +65,9 @@ public class DAOApiImplTest {
     QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, query);
 
     assertEquals(5, queryResult.getTotalSize());
-    assertEquals(1, queryResult.getResults().size());
+    assertEquals(1, queryResult.getItems().size());
 
-    BasicUser user = queryResult.getResults().get(0);
+    BasicUser user = queryResult.getItems().get(0);
     assertEquals(USER_ID, user.getId());
     assertEquals(BASIC_USER.getUsername(), user.getUsername());
     assertEquals(BASIC_USER.getTypeId(), user.getTypeId());

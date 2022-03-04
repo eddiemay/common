@@ -2,6 +2,7 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
@@ -33,12 +34,12 @@ public class GenericStore<T> implements Store<T> {
 
 	@Override
 	public T create(T t) {
-		return daoProvider.get().create(t);
+		return postprocess(daoProvider.get().create(preprocess(t)));
 	}
 
 	@Override
 	public ImmutableList<T> create(Iterable<T> entities) {
-		return daoProvider.get().create(entities);
+		return postprocess(daoProvider.get().create(preprocess(entities)));
 	}
 
 	@Override
@@ -58,21 +59,42 @@ public class GenericStore<T> implements Store<T> {
 
 	@Override
 	public T update(long id, UnaryOperator<T> updater) {
-		return daoProvider.get().update(c, id, updater);
+		return postprocess(daoProvider.get().update(c, id, current -> preprocess(updater.apply(current))));
 	}
 
 	@Override
 	public ImmutableList<T> update(Iterable<Long> ids, UnaryOperator<T> updater) {
-		return daoProvider.get().update(c, ids, updater);
+		return postprocess(daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current))));
 	}
 
 	@Override
 	public void delete(long id) {
 		daoProvider.get().delete(c, id);
+		postdelete(ImmutableList.of(id));
 	}
 
 	@Override
 	public void delete(Iterable<Long> ids) {
 		daoProvider.get().delete(c, ids);
+		postdelete(ids);
+	}
+
+	protected T preprocess(T t) {
+		return preprocess(ImmutableList.of(t)).iterator().next();
+	}
+
+	protected Iterable<T> preprocess(Iterable<T> entities) {
+		return entities;
+	}
+
+	protected T postprocess(T t) {
+		return postprocess(ImmutableList.of(t)).get(0);
+	}
+
+	protected ImmutableList<T> postprocess(ImmutableList<T> entities) {
+		return entities;
+	}
+
+	protected void postdelete(Iterable<Long> ids) {
 	}
 }

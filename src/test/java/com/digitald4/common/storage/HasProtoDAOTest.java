@@ -56,7 +56,7 @@ public class HasProtoDAOTest {
     QueryResult<HasProtoUser> result = modelDAO.list(HasProtoUser.class, Query.forList());
 
     assertEquals(1, result.getTotalSize());
-    HasProtoUser user = result.getResults().get(0);
+    HasProtoUser user = result.getItems().get(0);
     assertEquals(USER_ID, user.getId());
     assertEquals("eddiemay", user.getUsername());
   }

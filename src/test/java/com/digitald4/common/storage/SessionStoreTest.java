@@ -1,6 +1,9 @@
 package com.digitald4.common.storage;
 
+
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.digitald4.common.exception.DD4StorageException;
@@ -17,9 +20,6 @@ import org.mockito.Mock;
 
 import java.time.Clock;
 import java.time.Duration;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
 
 public class SessionStoreTest {
   private final DAOTestingImpl dao = new DAOTestingImpl();

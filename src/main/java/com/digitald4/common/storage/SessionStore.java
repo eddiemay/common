@@ -80,7 +80,7 @@ public class SessionStore<U extends User> extends GenericStore<Session> implemen
     if (activeSession == null) {
         activeSession =
             list(Query.forList().setFilters(Query.Filter.of("idToken", "=", token)))
-                .getResults()
+                .getItems()
                 .stream()
                 .peek(session -> {
                   // Only set the user on active sessions.

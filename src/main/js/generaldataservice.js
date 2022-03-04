@@ -9,7 +9,7 @@ com.digitald4.common.GeneralDataServ.prototype.generalDataMap = {};
 
 com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
   this.jsonService.list({}, function(response) {
-    var generalDatas = response.results;
+    var generalDatas = response.items;
     var map = {};
     for (var x = 0; x < generalDatas.length; x++) {
       var generalData = generalDatas[x];

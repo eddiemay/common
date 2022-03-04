@@ -24,7 +24,7 @@ public class PasswordStore extends GenericStore<Password> {
 
     Password password =
         list(Query.forList("userId=" + userId, null, 0, 0))
-            .getResults().stream().findFirst().orElse(null);
+            .getItems().stream().findFirst().orElse(null);
     if (password == null || !password.getDigest().equals(passwordHash)) {
       if (password == null) {
         throw new DD4StorageException("Password record not found for userId: " + userId, DD4StorageException.ErrorCode.NOT_AUTHENTICATED);

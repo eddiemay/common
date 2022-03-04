@@ -138,7 +138,7 @@ public class DAOCloudDSTest {
 		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList());
 
 		assertEquals(5, queryResult.getTotalSize());
-		assertEquals(5, queryResult.getResults().size());
+		assertEquals(5, queryResult.getItems().size());
 	}
 
 	@Test
@@ -147,9 +147,9 @@ public class DAOCloudDSTest {
 				dao.list(BasicUser.class, Query.forList("type_id>10", null, 0, 1));
 
 		assertEquals(2, queryResult.getTotalSize());
-		assertEquals(2, queryResult.getResults().size());
-		assertTrue(queryResult.getResults().get(0).getTypeId() > 10);
-		assertTrue(queryResult.getResults().get(1).getTypeId() > 10);
+		assertEquals(2, queryResult.getItems().size());
+		assertTrue(queryResult.getItems().get(0).getTypeId() > 10);
+		assertTrue(queryResult.getItems().get(1).getTypeId() > 10);
 	}
 
 	@Test
@@ -158,10 +158,10 @@ public class DAOCloudDSTest {
 				dao.list(BasicUser.class, Query.forList(null, "type_id",0, 0));
 
 		assertEquals(5, queryResult.getTotalSize());
-		assertEquals(5, queryResult.getResults().size());
+		assertEquals(5, queryResult.getItems().size());
 
 		int prevTypeId = 0;
-		for (BasicUser user : queryResult.getResults()) {
+		for (BasicUser user : queryResult.getItems()) {
 			assertTrue(prevTypeId < user.getTypeId());
 			prevTypeId = user.getTypeId();
 		}
@@ -173,7 +173,7 @@ public class DAOCloudDSTest {
 				dao.list(BasicUser.class, Query.forList(null, null, 3, 1));
 
 		assertEquals(5, queryResult.getTotalSize());
-		assertEquals(3, queryResult.getResults().size());
+		assertEquals(3, queryResult.getItems().size());
 	}
 
 	@Test
@@ -182,7 +182,7 @@ public class DAOCloudDSTest {
 				dao.list(BasicUser.class, Query.forList(null, null, 2, 2));
 
 		assertEquals(5, queryResult.getTotalSize());
-		assertEquals(2, queryResult.getResults().size());
+		assertEquals(2, queryResult.getItems().size());
 	}
 
 	@Test
@@ -191,8 +191,8 @@ public class DAOCloudDSTest {
 				dao.list(BasicUser.class, Query.forList("type_id>=2", "type_id", 2, 2));
 
 		assertEquals(5, queryResult.getTotalSize());
-		assertEquals(2, queryResult.getResults().size());
-		assertEquals(10, queryResult.getResults().get(0).getTypeId());
+		assertEquals(2, queryResult.getItems().size());
+		assertEquals(10, queryResult.getItems().get(0).getTypeId());
 	}
 
 	@Test

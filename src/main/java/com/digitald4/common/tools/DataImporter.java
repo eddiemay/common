@@ -21,7 +21,7 @@ public class DataImporter {
 	}
 
 	public <T> void runFor(Class<T> c, Query.List listQuery) throws IOException {
-		ImmutableList<T> results = dao.list(c, listQuery).getResults();
+		ImmutableList<T> results = dao.list(c, listQuery).getItems();
 		results.stream().parallel().forEach(t -> {
 			try {
 				apiDAO.create(t);
@@ -44,7 +44,7 @@ public class DataImporter {
 
 		// dataImporter.runFor(GeneralData.class);
 		dataImporter.export(GeneralData.class)
-				.getResults()
+				.getItems()
 				.forEach(System.out::println);
 	}
 }

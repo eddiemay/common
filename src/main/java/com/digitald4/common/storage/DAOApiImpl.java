@@ -76,7 +76,7 @@ public class DAOApiImpl implements DAO {
       return QueryResult.of(ImmutableList.of(), totalSize, query);
     }
 
-    JSONArray resultArray = response.getJSONArray("results");
+    JSONArray resultArray = response.getJSONArray("items");
     ImmutableList<T> results = IntStream.range(0, resultArray.length())
         .mapToObj(x -> convert(c, resultArray.getJSONObject(x).toString()))
         .collect(toImmutableList());

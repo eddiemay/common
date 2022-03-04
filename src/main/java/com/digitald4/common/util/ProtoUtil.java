@@ -106,7 +106,7 @@ public class ProtoUtil {
 
 	public static <T extends Message> JSONObject toJSON(QueryResult<T> queryResult) {
 		return new JSONObject().put("totalSize", queryResult.getTotalSize())
-				.put("result", queryResult.getResults().stream().map(ProtoUtil::toJSON).collect(Collectors.toList()));
+				.put("result", queryResult.getItems().stream().map(ProtoUtil::toJSON).collect(Collectors.toList()));
 	}
 
 	public static <T extends Message> T unpack(Class<T> c, Any any) {
