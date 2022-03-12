@@ -96,8 +96,10 @@ com.digitald4.common.JSONService.prototype.search = function(request, onSuccess,
       response.start++;
     }
     response.pages = [];
-    for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
-      response.pages.push(++p);
+    if (response.pageSize > 0) {
+      for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
+        response.pages.push(++p);
+      }
     }
     onSuccess(response);
   }, onError);

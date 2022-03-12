@@ -11,7 +11,7 @@ public class QueryResult<T> {
 	private final int totalSize;
 	private final Query query;
 
-	private QueryResult(Iterable<T> items, int totalSize, Query query) {
+	protected QueryResult(Iterable<T> items, int totalSize, Query query) {
 		this.items = ImmutableList.copyOf(items);
 		this.totalSize = totalSize;
 		this.query = query;
