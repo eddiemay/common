@@ -15,15 +15,30 @@ com.digitald4.common.module = angular.module('DD4Common', [])
         if (globalData.activeSession) {
           this.performRequest(['logout'], undefined, undefined, undefined, function() {}, notify);
           globalData.activeSession = undefined;
+          $location.search('idToken', undefined);
         }
       };
-      userService.getActiveSession = function(success, error) {
-        this.performRequest(['activeSession'], undefined, undefined, undefined, success, error);
+      userService.getActiveSession = function(idToken, success, error) {
+        this.performRequest(['activeSession'], undefined, {idToken: idToken}, undefined, success, error);
       };
       return userService;
     }])
-    .controller('DD4AppCtrl', ['globalData', 'userService', function(globalData, userService) {
+    .controller('DD4AppCtrl', ['$location', 'globalData', 'userService', 'sessionWatcher', function($location, globalData, userService, sessionWatcher) {
       this.globalData = globalData;
+      var idToken = $location.search()['idToken'];
+      if (idToken) {
+        setTimeout(function() {
+          userService.getActiveSession(idToken, function(activeSession) {
+            if (activeSession.idToken) {
+              globalData.activeSession = activeSession;
+              sessionWatcher.enable();
+            }
+          }, notify);
+        }, 2000); // Give some time for everything to be setup before checking the session.
+      }
+      this.getIdTokenParameter = function() {
+        return globalData.activeSession ? "idToken=" + globalData.activeSession.idToken : undefined;
+      };
       this.logout = function() {
         userService.logout();
       };

@@ -73,7 +73,8 @@ public class FormatText {
 	public final static long ONE_HOUR = ONE_MIN * 60;
 	
 
-	/** This method converts an input string into proper format by setting
+	/**
+	 * This method converts an input string into proper format by setting
 	 * the first charater to uppercase and all following characters into
 	 * lowercase.  If the string contains a non letter character, it will convert
 	 * the trailing text into proper format as well.  This wethod will typically
@@ -81,27 +82,23 @@ public class FormatText {
 	 * 
 	 * @return String The string in Proper format.
 	 */ 
-	public static String printProper( String str ) {
-		String letter="";
-		char ch;       // One of the characters in str.
-		char prevCh;   // The character that comes before ch in the string.
-		int i;         // A position in str, from 0 to str.length()-1.
-		prevCh = '.';  // Prime the loop with any non-letter character.
-		for ( i = 0;  i < str.length();  i++ ) {
-			ch = str.charAt(i);
-			if ( Character.isLetter(ch)  &&  ! Character.isLetter(prevCh) )
-				letter+=Character.toUpperCase(ch);
-			else
-				letter+=Character.toLowerCase(ch);
+	public static String printProper(String str) {
+		StringBuilder builder = new StringBuilder();
+		char prevCh = '.';   // The character that comes before ch in the string.
+		for (int i = 0;  i < str.length();  i++) {
+			char ch = str.charAt(i);
+			builder.append(Character.isLetter(ch) && !Character.isLetter(prevCh)
+					? Character.toUpperCase(ch) : Character.toLowerCase(ch));
 			prevCh = ch;
 		}
-		return letter;
+
+		return builder.toString();
 	}
 
 	public static String toSpaced(String camelCase){
 		StringBuilder out = new StringBuilder();
 		char ch;       // One of the characters in str.
-		if(camelCase.length() > 0)
+		if (camelCase.length() > 0)
 			out.append(Character.toUpperCase(camelCase.charAt(0)));
 		for (int i = 1;  i < camelCase.length(); i++){
 			ch = camelCase.charAt(i);
@@ -116,7 +113,7 @@ public class FormatText {
 	public static String toUnderScoreCase(String camelCase) {
 		StringBuilder out = new StringBuilder();
 		char ch;       // One of the characters in str.
-		if(camelCase.length() > 0)
+		if (camelCase.length() > 0)
 			out.append(Character.toLowerCase(camelCase.charAt(0)));
 		for (int i = 1;  i < camelCase.length(); i++){
 			ch = camelCase.charAt(i);
@@ -128,30 +125,27 @@ public class FormatText {
 		return out.toString();
 	}
 
-	/** This method converts an input string into proper format by setting
+	/**
+	 * This method converts an input string into proper format by setting
 	 * the first charater to uppercase, all following characters will be left
 	 * as is.
 	 * 
 	 * @return String The string in Capitalized format.
 	 */ 
 	public static String printCapitalized( String str ) {
-		String letter="";
-		char ch;       // One of the characters in str.
-		char prevCh;   // The character that comes before ch in the string.
-		int i;         // A position in str, from 0 to str.length()-1.
-		prevCh = '.';  // Prime the loop with any non-letter character.
-		for ( i = 0;  i < str.length();  i++ ) {
-			ch = str.charAt(i);
-			if ( Character.isLetter(ch)  &&  ! Character.isLetter(prevCh) )
-				letter+=Character.toUpperCase(ch);
-			else
-				letter+=ch;
+		StringBuilder builder = new StringBuilder();
+		char prevCh = '.';   // The character that comes before ch in the string.
+		for (int i = 0;  i < str.length();  i++) {
+			char ch = str.charAt(i);
+			builder.append(Character.isLetter(ch) && !Character.isLetter(prevCh) ? Character.toUpperCase(ch) : ch);
 			prevCh = ch;
 		}
-		return letter;
+
+		return builder.toString();
 	}
 
-	/** This method converts an input string into all uppercase.
+	/**
+	 * This method converts an input string into all uppercase.
 	 * Non-letter character will be left as-is.
 	 * 
 	 * @return String The string in CAPS format.
@@ -181,11 +175,9 @@ public class FormatText {
 	public static String toLowerCamel(String str) {
 		StringBuilder result = new StringBuilder();
 		char ch;       // One of the characters in str.
-		char prevCh;   // The character that comes before ch in the string.
-		int i;         // A position in str, from 0 to str.length()-1.
-		prevCh = 'a';  // Prime the loop with any letter character.
+		char prevCh = 'a';   // The character that comes before ch in the string.
 		boolean foundNonLetter = false;
-		for ( i = 0;  i < str.length();  i++ ) {
+		for (int i = 0;  i < str.length();  i++) {
 			ch = str.charAt(i);
 			if (Character.isLetter(ch) && !Character.isLetter(prevCh)) {
 				result.append(Character.toUpperCase(ch));
@@ -234,13 +226,6 @@ public class FormatText {
 		return result.toString();
 	}
 
-	/**
-	 * 
-	 * @param day
-	 * @param month
-	 * @param year
-	 * @return
-	 */
 	public static Calendar setCalendarDate( int day, int month, int year ) {
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.DAY_OF_MONTH,day);
@@ -287,17 +272,17 @@ public class FormatText {
 	}
 
 	public static String cleanForHtml(String in){
-
-		if(in==null)
+		if (in == null) {
 			return "";
+		}
 
-		char i = (char)10; //decimal 10 = ASCII \n
+		char i = (char) 10; //decimal 10 = ASCII \n
 
-		if(in.contains(""+i))
-			return in.replace(i,' ');
+		if (in.contains(""+i)) {
+			return in.replace(i, ' ');
+		}
 
 		return in.replaceAll("'", "");
-
 	}
 	
 	public static String formatDate(Calendar date, SimpleDateFormat dateformat) {

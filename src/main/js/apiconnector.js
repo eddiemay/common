@@ -5,9 +5,13 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
   this.$httpParamSerializer = $httpParamSerializer;
 
   this.performRequest = function(method, url, params, data, successCallback, errorCallback) {
-    url = this.baseUrl + url;
-    params = params || {};
-    params.idToken = globalData.activeSession ? globalData.activeSession.idToken : undefined;
+    this.sendRequest({method: method, url: url, params: params, data: data}, successCallback, errorCallback);
+  }
+
+  this.sendRequest = function(request, successCallback, errorCallback) {
+    var url = this.baseUrl + request.url;
+    var params = request.params || {};
+    params.idToken = globalData.activeSession ? globalData.activeSession.idToken : params.idToken;
     var serializedParams = this.$httpParamSerializer(params);
     if (params != undefined && serializedParams.length > 0) {
       url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
@@ -15,10 +19,10 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
 
     // Send
     this.$http({
-      method: method,
+      method: request.method || 'GET',
       url: url,
-      data: data ? JSON.stringify(data) : undefined,
-      headers: {'Content-type': 'application/json'}
+      data: request.data ? JSON.stringify(request.data) : undefined,
+      headers: request.headers || {'Content-type': 'application/json'}
     }).then(function(response) {
       successCallback(response.data);
     }, function(response) {
@@ -26,12 +30,9 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
       if (response.status == 401) {
         globalData.activeSession = undefined;
       } else {
-        console.log('error: ' + response.data.error);
-        console.log('StackTrace: ' + response.data.stackTrace);
-        console.log('Request params: ' + response.data.requestParams);
-        console.log('Query String: ' + response.data.queryString);
+        console.log('message: ' + response.data.error.message);
         errorCallback(response.data.error);
       }
     });
-  };
+  }
 }];

@@ -10,7 +10,7 @@ com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(glo
         this.disable();
       } else if (now > globalData.activeSession.expTime) {
         // When the time is up, we need to check the server session to find out if it as truly expired.
-        userService.getActiveSession(function(session) {
+        userService.getActiveSession(undefined, function(session) {
           globalData.activeSession = session;
           if (session == undefined || session.state == "CLOSED") {
             userService.logout();

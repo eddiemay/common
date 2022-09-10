@@ -1,13 +1,12 @@
 package com.digitald4.common.server;
 
+import com.digitald4.common.exception.DD4StorageException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import com.digitald4.common.exception.DD4StorageException;
 import org.json.JSONObject;
 
 public class APIConnector {
@@ -92,19 +91,19 @@ public class APIConnector {
 			con.setRequestProperty("Sec-Fetch-Dest", "cors");
 			con.setRequestProperty("Sec-Fetch-Dest", "same-site");
 			con.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36");
-		/* Accept:
-		Accept-Encoding: gzip, deflate, br
-		Accept-Language: en-US,en;q=0.9
-		Access-Control-Request-Headers: x-nba-stats-origin,x-nba-stats-token
-		Access-Control-Request-Method: GET
-		Connection: keep-alive
-		Host: stats.nba.com
-		Origin: https://www.nba.com
-		Referer: https://www.nba.com/
-		Sec-Fetch-Dest: empty
-		Sec-Fetch-Mode: cors
-		Sec-Fetch-Site: same-site
-		User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36*/
+			/* Accept:
+			Accept-Encoding: gzip, deflate, br
+			Accept-Language: en-US,en;q=0.9
+			Access-Control-Request-Headers: x-nba-stats-origin,x-nba-stats-token
+			Access-Control-Request-Method: GET
+			Connection: keep-alive
+			Host: stats.nba.com
+			Origin: https://www.nba.com
+			Referer: https://www.nba.com/
+			Sec-Fetch-Dest: empty
+			Sec-Fetch-Mode: cors
+			Sec-Fetch-Site: same-site
+			User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36*/
 			if (payload != null) {
 				con.setDoOutput(true);
 				DataOutputStream dos = new DataOutputStream(con.getOutputStream());

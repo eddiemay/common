@@ -9,13 +9,35 @@ com.digitald4.common.JSONService = function(resource, apiConnector) {
  * @param {string | array} method The HTTP method to use for the request. If this is a custom action then action, method
  *   as an array i.e. ['summary', 'post']. If the method is GET then method can be left off of array.
  * @param {string | number | Object} urlParams The request parameters to use to build the url. If standard url this
- *  can simply be the id of the item being requested. If an object id should be .id of that object.
+ *  can simply be the id of the item being requested. If an object id should be the id of that object.
  * @param {array} reqParams The request parameters that will show after under '?' in the url i.e. ?updateMask=name,email
  * @param {Object} data The body post data information to send to the server.
  * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
  * @param {!function(!Object)} onError The call back function to call after a submission onError.
  */
-com.digitald4.common.JSONService.prototype.performRequest = function(method, urlParams, reqParams, data, onSuccess, onError) {
+com.digitald4.common.JSONService.prototype.performRequest =
+    function(method, urlParams, reqParams, data, onSuccess, onError) {
+  var customAction = undefined;
+  if (typeof(method) == 'object') {
+    customAction = method[0];
+    method = method[1] || 'GET';
+  }
+  this.sendRequest(
+      {method: method, urlParams: urlParams, action: customAction, params: reqParams, data: data}, onSuccess, onError);
+}
+
+
+/**
+ * Performs the specified request.
+ *
+ * @param {Object{method:string, action:string, urlParams:{string | number | Object}, params: Object, data: Object}}
+ *   The request information of http method, the action to be performed, any url parameters to be applied, the request
+ *   parameters and the post data. A url will be built from this information or a url may be specified as well.
+ * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+ * @param {!function(!Object)} onError The call back function to call after a submission onError.
+ */
+com.digitald4.common.JSONService.prototype.sendRequest = function(request, onSuccess, onError) {
+  var urlParams = request.urlParams;
   var url = [];
   url.push(this.service);
   var id;
@@ -33,17 +55,14 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
     id = urlParams;
     url.push(id);
   }
-  var customAction = undefined;
-  if (typeof(method) == 'object') {
-    customAction = method[0];
-    url.push(customAction);
-    method = method[1] || 'GET';
-  }
-  if (!id && !urlParams && !customAction) {
+  if (request.action) {
+    url.push(request.action);
+  } else if (!id && !urlParams) {
     url.push("_");
   }
 
-  this.apiConnector.performRequest(method, url.join('/'), reqParams, data, onSuccess, onError);
+  request.url = request.url || url.join('/');
+  this.apiConnector.sendRequest(request, onSuccess, onError);
 }
 
 /**
@@ -55,7 +74,7 @@ com.digitald4.common.JSONService.prototype.performRequest = function(method, url
 */
 com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, onError) {
   entity.$$hashKey = undefined;
-  this.performRequest('POST', undefined, undefined, entity, onSuccess, onError);
+  this.sendRequest({method: 'POST', data: entity}, onSuccess, onError);
 }
 
 /**
@@ -66,7 +85,7 @@ com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, 
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError) {
-	this.performRequest('GET', id, undefined, undefined, onSuccess, onError);
+	this.sendRequest({method: 'GET', urlParams: id}, onSuccess, onError);
 }
 
 /**
@@ -81,31 +100,6 @@ com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, o
 }
 
 /**
-* Search of objects from the data store.
-*
-* @param {Object{searchText, orderBy, pageSize, pageToken}} request The parameters associated with a list request.
-* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
-* @param {!function(!Object)} onError The call back function to call after a submission onError.
-*/
-com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
-  this.performRequest(['search', 'GET'], undefined, request, undefined, function(response) {
-    response.items = response.items || [];
-    response.start = (response.pageToken - 1) * response.pageSize;
-    response.end = response.start + response.items.length;
-    if (response.end > 0) {
-      response.start++;
-    }
-    response.pages = [];
-    if (response.pageSize > 0) {
-      for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
-        response.pages.push(++p);
-      }
-    }
-    onSuccess(response);
-  }, onError);
-}
-
-/**
 * Gets a list of objects from the data store.
 *
 * @param {string | number | Object} urlParams The request parameters to use to build the url. If standard url this
@@ -115,21 +109,44 @@ com.digitald4.common.JSONService.prototype.search = function(request, onSuccess,
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.list_ = function(urlParams, listOptions, onSuccess, onError) {
-  this.performRequest('GET', urlParams, listOptions, undefined, function(response) {
-    response.items = response.items || [];
-    response.start = (response.pageToken - 1) * response.pageSize;
-    response.end = response.start + response.items.length;
-    if (response.end > 0) {
-      response.start++;
-    }
-    if (response.pageSize > 0) {
-      response.pages = [];
-      for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
-        response.pages.push(++p);
-      }
-    }
-    onSuccess(response);
+  this.sendRequest({method: 'GET', urlParams: urlParams, params: listOptions}, function(response) {
+    onSuccess(processPagination(response));
   }, onError);
+}
+
+/**
+* Search of objects from the data store.
+*
+* @param {Object{searchText, orderBy, pageSize, pageToken}} request The parameters associated with a list request.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
+  this.sendRequest({method: 'GET', action: 'search', params: request}, function(response) {
+    onSuccess(processPagination(response));
+  }, onError);
+}
+
+processPagination = function(response) {
+  response.items = response.items || [];
+  response.pageToken = response.pageToken || 0;
+  response.pageSize = response.pageSize || 0;
+  response.totalSize = response.totalSize || response.items.length;
+
+  response.start = (response.pageToken - 1) * response.pageSize;
+  response.end = response.start + response.items.length;
+  if (response.end > 0) {
+    response.start++;
+  }
+
+  response.pages = [];
+  if (response.pageSize > 0) {
+    for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
+      response.pages.push(++p);
+    }
+  }
+
+  return response;
 }
 
 /**
@@ -144,7 +161,8 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 	for (var p = 0; p < props.length; p++) {
 	  updated[props[p]] = entity[props[p]];
 	}
-	this.performRequest('PUT', entity.id, {updateMask: props.join()}, updated, onSuccess, onError);
+	this.sendRequest(
+	    {method: 'PUT', urlParams: entity.id, params: {updateMask: props.join()}, data: updated}, onSuccess, onError);
 }
 
 /**
@@ -155,5 +173,5 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onError) {
-  this.performRequest('DELETE', id, undefined, undefined, onSuccess, onError);
+  this.sendRequest({method: 'DELETE', urlParams: id}, onSuccess, onError);
 }

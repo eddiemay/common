@@ -58,32 +58,26 @@ public class Calculate {
 	 * return a number without a decimal from math.round
 	 * @param number - the number to be rounded
 	 * @param displayDecimal - true if a decimal is to be displayed
-	 * @return
 	 */
 	public static Number round(double number, boolean displayDecimal) {
-		if(displayDecimal)
-			return round(number,1);
-		return Math.round(number);
+		return displayDecimal ? round(number,1) : Math.round(number);
 	}
 
 	/**
 	 * 
 	 * @param n - Double to be rounded
 	 * @param p - number of significant figures to right of decimal
-	 * @return
 	 */
-	public static double round(double n, int p){
-		n*=Math.pow(10,p);
-		n = Math.round(n);
-		n/=Math.pow(10,p);
-		return n;
+	public static double round(double n, int p) {
+		double scale = Math.pow(10, p);
+		return Math.round(n * scale) / scale;
 	}
 
 	/**
 	 * Get the Time 
-	 * @param hour
-	 * @param min
-	 * @param sec
+	 * @param hour of day.
+	 * @param min of hour.
+	 * @param sec of min.
 	 * @return a <code>Time</code>Object.
 	 */
 	public static Time getTime(int hour, int min, int sec){
@@ -532,6 +526,20 @@ public class Calculate {
     	sb.append(String.format("%02X", b));
     }
 		return sb.toString();
+	}
+
+	/* s must be an even-length string. */
+	public static byte[] hexStringToByteArray(String s) {
+		int len = s.length();
+		if (len % 2 != 0) {
+			throw new IllegalArgumentException("Must be even length string");
+		}
+
+		byte[] data = new byte[len / 2];
+		for (int i = 0; i < len; i += 2) {
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
+		}
+		return data;
 	}
 	
 	public static Pair<DateTime, DateTime> getDateRange(DisplayWindow disWin, DateTime refDate) {

@@ -13,8 +13,7 @@ public class DBConnectorThreadPoolImpl implements DBConnector {
 	
 	private PoolingDataSource dataSource;
 
-	public DBConnectorThreadPoolImpl() {
-	}
+	public DBConnectorThreadPoolImpl() {}
 	
 	public DBConnectorThreadPoolImpl(String dbDriver, String url, String user, String password) {
 		connect(dbDriver, url, user, password);

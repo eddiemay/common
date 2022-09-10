@@ -1,11 +1,26 @@
 package com.digitald4.common.util;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.*;
 
 import org.joda.time.DateTime;
 import org.junit.Test;
 
 public class CalculateTest {
+
+	@Test
+	public void testRound() {
+		assertThat(Calculate.round(3.14159, 2)).isEqualTo(3.14);
+		assertThat(Calculate.round(3.14159, 3)).isEqualTo(3.142);
+		assertThat(Calculate.round(365.2422, 0)).isEqualTo(365);
+	}
+
+	@Test
+	public void testRound_displayDecimal() {
+		assertThat(Calculate.round(3.14159, true)).isEqualTo(3.1);
+		assertThat(Calculate.round(3.14159, false)).isEqualTo(3);
+		assertThat(Calculate.round(365.2422, false)).isEqualTo(365);
+	}
 	
 	@Test
 	public void testGetWeekRange() {
@@ -116,5 +131,15 @@ public class CalculateTest {
 	@Test
 	public void testCombinations() {
 		assertEquals(45, Calculate.combinations(10, 2));
+	}
+
+	@Test
+	public void testHexStringToByteArray() {
+		assertThat(Calculate.hexStringToByteArray("BA05")).isEqualTo(new byte[]{(byte) 0xBA, 0x05});
+		assertThat(Calculate.hexStringToByteArray("ba05")).isEqualTo(new byte[]{(byte) 0xBA, 0x05});
+		assertThat(Calculate.hexStringToByteArray("2C3A6F2CF35EC2A0595BBE86C69CDA76")).isEqualTo(
+				new byte[]{
+						(byte) 0x2C, (byte) 0x3A, (byte) 0x6F, (byte) 0x2C, (byte) 0xF3, (byte) 0x5E, (byte) 0xC2, (byte) 0xA0,
+						(byte) 0x59, (byte) 0x5B, (byte) 0xBE, (byte) 0x86, (byte) 0xC6, (byte) 0x9C, (byte) 0xDA, (byte) 0x76});
 	}
 }
