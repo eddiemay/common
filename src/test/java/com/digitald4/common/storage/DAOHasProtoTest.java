@@ -16,18 +16,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
-public class HasProtoDAOTest {
-  private static final long USER_ID = 123L;
+public class DAOHasProtoTest {
+  private static final Long USER_ID = 123L;
   private static final DD4Protos.User USER_PROTO = DD4Protos.User.newBuilder()
       .setId(USER_ID)
       .setUsername("eddiemay")
       .build();
   @Mock private final TypedDAO<Message> messageDAO = mock(DAOCloudDSProto.class);
-  private HasProtoDAO modelDAO;
+  private DAOHasProto modelDAO;
 
   @Before
   public void setup() {
-    modelDAO = new HasProtoDAO(messageDAO);
+    modelDAO = new DAOHasProto(messageDAO);
     when(messageDAO.create(any(DD4Protos.User.class))).thenAnswer(i -> i.getArguments()[0]);
     when(messageDAO.get(DD4Protos.User.class, USER_ID)).thenReturn(USER_PROTO);
     when(messageDAO.list(eq(DD4Protos.User.class), any(Query.List.class)))
@@ -87,12 +87,12 @@ public class HasProtoDAOTest {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
       return proto.getId();
     }
 
     @Override
-    public HasProtoUser setId(long id) {
+    public HasProtoUser setId(Long id) {
       proto = proto.toBuilder().setId(id).build();
       return this;
     }

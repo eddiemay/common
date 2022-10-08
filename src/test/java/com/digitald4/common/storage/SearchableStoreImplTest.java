@@ -18,8 +18,8 @@ public class SearchableStoreImplTest {
   @Mock private final DAO dao = mock(DAO .class);
   @Mock private final Index index = mock(Index.class);
 
-  private final SearchableStoreImpl<BasicUser> searchableStore =
-      new SearchableStoreImpl<BasicUser>(BasicUser.class, () -> dao, index) {
+  private final SearchableStoreImpl<BasicUser, Long> searchableStore =
+      new SearchableStoreImpl<BasicUser, Long>(BasicUser.class, () -> dao, index) {
         @Override
         public Document toDocument(BasicUser user) {
           return Document.newBuilder()

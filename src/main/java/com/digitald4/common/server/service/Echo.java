@@ -35,8 +35,7 @@ import java.util.stream.IntStream;
 public class Echo {
 
 	@Inject
-	public Echo() {
-	}
+	public Echo() {}
 
 	/**
 	 * Echoes the received message back. If n is a non-negative integer, the message is copied that

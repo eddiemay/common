@@ -12,8 +12,8 @@ import org.json.JSONObject;
 public class APIConnector {
 	private final String apiUrl;
 	private final String apiVersion;
-	private final long callInterval;
 	private String idToken;
+	private final long callInterval;
 	private long lastCall;
 
 	public APIConnector(String apiUrl, String apiVersion, long callInterval) {

@@ -9,17 +9,17 @@ public interface TypedDAO<R> {
 
 	<T extends R> ImmutableList<T> create(Iterable<T> entities);
 
-	<T extends R> T get(Class<T> c, long id);
+	<T extends R, I> T get(Class<T> c, I id);
 
-	<T extends R> ImmutableList<T> get(Class<T> c, Iterable<Long> ids);
+	<T extends R, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids);
 
 	<T extends R> QueryResult<T> list(Class<T> c, Query.List query);
 
-	<T extends R> T update(Class<T> c, long id, UnaryOperator<T> updater);
+	<T extends R, I> T update(Class<T> c, I id, UnaryOperator<T> updater);
 
-	<T extends R> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater);
+	<T extends R, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater);
 
-	<T extends R> void delete(Class<T> c, long id);
+	<T extends R, I> void delete(Class<T> c, I id);
 
-	<T extends R> void delete(Class<T> c, Iterable<Long> ids);
+	<T extends R, I> void delete(Class<T> c, Iterable<I> ids);
 }

@@ -8,7 +8,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import java.time.Clock;
 
-public class PasswordStore extends GenericStore<Password> {
+public class PasswordStore extends GenericStore<Password, Long> {
   public static final DD4StorageException BAD_LOGIN =
     new DD4StorageException("Wrong username or password", DD4StorageException.ErrorCode.NOT_AUTHENTICATED);
   private final Clock clock;

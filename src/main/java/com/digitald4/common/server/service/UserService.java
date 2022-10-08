@@ -4,7 +4,6 @@ import static com.digitald4.common.util.ProtoUtil.toJSON;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Session;
-import com.digitald4.common.model.Password;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
@@ -15,10 +14,8 @@ import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.response.NotFoundException;
 
-import java.time.Clock;
 import javax.inject.Inject;
 
-import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 @Api(
@@ -29,20 +26,18 @@ import org.json.JSONObject;
 				ownerName = "common.digitald4.com"
 		)
 )
-public class UserService<U extends User> extends EntityServiceImpl<U> {
+public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 
 	private final UserStore<U> userStore;
 	private final SessionStore<U> sessionStore;
 	private final PasswordStore passwordStore;
-	private final Clock clock;
 
 	@Inject
-	public UserService(UserStore<U> userStore, SessionStore<U> sessionStore, PasswordStore passwordStore, Clock clock) {
+	public UserService(UserStore<U> userStore, SessionStore<U> sessionStore, PasswordStore passwordStore) {
 		super(userStore, sessionStore, true);
 		this.userStore = userStore;
 		this.sessionStore = sessionStore;
 		this.passwordStore = passwordStore;
-		this.clock = clock;
 	}
 
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "activeSession")

@@ -49,7 +49,7 @@ public class DAOProtoSQLImplTest {
 		daoSql.get(User.class, 123);
 
 		verify(connection).prepareStatement("SELECT * FROM User WHERE id=?;");
-		verify(ps).setLong(1, 123);
+		verify(ps).setObject(1, 123);
 	}
 
 	@Test
@@ -81,7 +81,7 @@ public class DAOProtoSQLImplTest {
 		verify(connection).prepareStatement("UPDATE User SET type_id=?, read_only=? WHERE id=?;");
 		verify(ps).setObject(1, 10);
 		verify(ps).setObject(2, true);
-		verify(ps).setLong(3, 123);
+		verify(ps).setObject(3, 123);
 	}
 
 	@Test
@@ -90,7 +90,7 @@ public class DAOProtoSQLImplTest {
 		daoSql.delete(User.class, 123);
 
 		verify(connection).prepareStatement("DELETE FROM User WHERE id=?;");
-		verify(ps).setLong(1, 123);
+		verify(ps).setObject(1, 123);
 	}
 
 	@Test

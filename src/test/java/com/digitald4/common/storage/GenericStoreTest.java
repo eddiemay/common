@@ -8,12 +8,12 @@ public class GenericStoreTest {
   @Test
   public void testClassConstuctor() {
     DAOTestingImpl dao = new DAOTestingImpl();
-    GenericStore<Password> passwordStore = new GenericStore<>(Password.class, () -> dao);
+    GenericStore<Password, Long> passwordStore = new GenericStore<>(Password.class, () -> dao);
   }
 
   @Test
   public void testInstanceConstuctor() {
     DAOTestingImpl dao = new DAOTestingImpl();
-    GenericStore<Password> passwordStore = new GenericStore<>(new Password(), () -> dao);
+    GenericStore<Password, Long> passwordStore = new GenericStore<>(new Password(), () -> dao);
   }
 }

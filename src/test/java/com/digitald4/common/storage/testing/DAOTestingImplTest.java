@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class DAOTestingImplTest {
 	private final DAOTestingImpl dao = new DAOTestingImpl();
-	private final GenericStore<User> userStore = new GenericStore<>(User.class, () -> dao);
+	private final GenericStore<User, Long> userStore = new GenericStore<>(User.class, () -> dao);
 
 	@Test
 	public void testCreate() {

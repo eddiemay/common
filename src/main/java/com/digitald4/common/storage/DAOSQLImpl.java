@@ -75,7 +75,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 				ps.executeUpdate();
 				ResultSet rs = ps.getGeneratedKeys();
 				if (rs.next()) {
-					return get((Class<T>) t.getClass(), rs.getInt(1));
+					return get((Class<T>) t.getClass(), rs.getObject(1));
 				}
 				return t;
 			} catch (SQLException e) {
@@ -90,12 +90,12 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> T get(Class<T> c, long id) {
+	public <T extends Message, I> T get(Class<T> c, I id) {
 		return Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(SELECT_SQL, getView(c));
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql)) {
-				ps.setLong(1, id);
+				ps.setObject(1, id);
 				T result = null;
 				ResultSet rs = ps.executeQuery();
 				if (rs.next()) {
@@ -110,7 +110,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+	public <T extends Message, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
 		return Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(BATCH_SELECT_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
 			try (Connection con = connector.getConnection();
@@ -179,7 +179,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T extends Message, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
 		return Calculate.executeWithRetries(2, () -> {
 			T orig = get(c, id);
 			T updated = updater.apply(orig);
@@ -220,7 +220,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 					for (Map.Entry<FieldDescriptor, Object> entry : modified) {
 						setObject(ps, index++, updated, entry.getKey(), entry.getValue());
 					}
-					ps.setLong(index, id);
+					ps.setObject(index, id);
 					ps.executeUpdate();
 				} catch (Exception e) {
 					throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
@@ -231,17 +231,17 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+	public <T extends Message, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
 		return stream(ids).map(id -> update(c, id, updater)).collect(toImmutableList());
 	}
 
 	@Override
-	public <T extends Message> void delete(Class<T> c, long id) {
+	public <T extends Message, I> void delete(Class<T> c, I id) {
 		if (!Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(DELETE_SQL, getTable(c),  " WHERE id=?");
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql)) {
-				ps.setLong(1, id);
+				ps.setObject(1, id);
 
 				return ps.executeUpdate() > 0;
 			} catch (SQLException e) {
@@ -253,7 +253,7 @@ public class DAOSQLImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> void delete(Class<T> c, Iterable<Long> ids) {
+	public <T extends Message, I> void delete(Class<T> c, Iterable<I> ids) {
 		Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(BATCH_DELETE_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
 			try (Connection con = connector.getConnection();

@@ -15,7 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class DAOCloudDSTest {
-	private static final long ID = 123;
+	private static final Long ID = 123L;
 	private DAOCloudDS dao;
 
 	private final LocalServiceTestHelper helper =
@@ -24,7 +24,7 @@ public class DAOCloudDSTest {
 	@Before
 	public void setUp() {
 		helper.setUp();
-		dao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService());
+		dao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), null);
 		fillDatabase();
 	}
 
@@ -45,25 +45,67 @@ public class DAOCloudDSTest {
 	public void createWithEnum() {
 		Session session = dao.create(
 				new Session()
+						.setId("4567")
 						.setUserId(123)
 						.setStartTime(new DateTime(1000))
 						.setExpTime(new DateTime(10000))
-						.setIdToken("4567")
 						.setState(Session.State.ACTIVE));
 
-		assertTrue(session.getId() > 0);
+		assertEquals("4567",session.getId());
 		assertEquals(123, session.getUserId());
 		assertEquals(1000, session.getStartTime().getMillis());
 		assertEquals(10000, session.getExpTime().getMillis());
-		assertEquals("4567", session.getIdToken());
 		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
 
 		session = dao.get(Session.class, session.getId());
+		assertEquals("4567", session.getId());
 		assertEquals(123, session.getUserId());
 		assertEquals(1000, session.getStartTime().getMillis());
 		assertEquals(10000, session.getExpTime().getMillis());
-		assertEquals("4567", session.getIdToken());
 		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
+	}
+
+	@Test
+	public void updateWithIdString() {
+		Session session = dao.create(
+				new Session()
+						.setId("4567")
+						.setUserId(123)
+						.setStartTime(new DateTime(1000))
+						.setExpTime(new DateTime(10000))
+						.setState(Session.State.ACTIVE));
+
+		assertEquals("4567",session.getId());
+		assertEquals(123, session.getUserId());
+		assertEquals(1000, session.getStartTime().getMillis());
+		assertEquals(10000, session.getExpTime().getMillis());
+		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
+
+		session = dao.update(Session.class, "4567", s -> s.setExpTime(new DateTime(20000)));
+		assertEquals("4567", session.getId());
+		assertEquals(123, session.getUserId());
+		assertEquals(1000, session.getStartTime().getMillis());
+		assertEquals(20000, session.getExpTime().getMillis());
+		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
+	}
+
+	@Test
+	public void deleteWithIdString() {
+		Session session = dao.create(
+				new Session()
+						.setId("4567")
+						.setUserId(123)
+						.setStartTime(new DateTime(1000))
+						.setExpTime(new DateTime(10000))
+						.setState(Session.State.ACTIVE));
+
+		assertEquals("4567",session.getId());
+		assertEquals(123, session.getUserId());
+		assertEquals(1000, session.getStartTime().getMillis());
+		assertEquals(10000, session.getExpTime().getMillis());
+		assertEquals(Session.State.ACTIVE, Session.State.ACTIVE);
+
+		dao.delete(Session.class, "4567");
 	}
 
 	@Test

@@ -8,6 +8,8 @@ import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import java.time.Clock;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -18,9 +20,16 @@ import org.json.JSONObject;
 
 public class DAOApiImpl implements DAO {
   private final APIConnector apiConnector;
+  private final Clock clock;
 
-  public DAOApiImpl(APIConnector apiConnector) {
+  public DAOApiImpl(APIConnector apiConnector, Clock clock) {
     this.apiConnector = apiConnector;
+    this.clock = clock;
+  }
+
+  @Override
+  public Clock getClock() {
+    return clock;
   }
 
   @Override
@@ -38,13 +47,13 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T> T get(Class<T> c, long id) {
+  public <T, I> T get(Class<T> c, I id) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
     return convert(c, apiConnector.sendGet(url));
   }
 
   @Override
-  public <T> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+  public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
     return convertList(c, apiConnector.sendPost(url, new JSONObject().put("entities", ids).toString()));
   }
@@ -85,7 +94,7 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+  public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
     return Calculate.executeWithRetries(2, () -> {
       T orig = get(c, id);
       JSONObject origJson = new JSONObject(orig);
@@ -112,18 +121,18 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+  public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
     throw new DD4StorageException("Unimplemented");
   }
 
   @Override
-  public <T> void delete(Class<T> c, long id) {
+  public <T, I> void delete(Class<T> c, I id) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
     apiConnector.send("DELETE", url, null);
   }
 
   @Override
-  public <T> void delete(Class<T> c, Iterable<Long> ids) {
+  public <T, I> void delete(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchDelete";
     apiConnector.send("POST", url, new JSONArray(ids).toString());
   }

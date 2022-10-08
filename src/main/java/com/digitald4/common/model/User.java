@@ -4,11 +4,9 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 
 import java.time.Clock;
 
-public interface User {
+public interface User extends ModelObject<Long> {
 
-	long getId();
-
-	User setId(long id);
+	User setId(Long id);
 
 	String getUsername();
 

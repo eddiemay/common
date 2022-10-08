@@ -10,10 +10,10 @@ import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.common.collect.ImmutableList;
 
-public class EntityServiceBulkImpl<T> extends EntityServiceImpl<T>
-    implements BulkCreateable<T>, BulkGetable<T>, BulkUpdateable<T>, BulkDeleteable<T> {
+public class EntityServiceBulkImpl<T,I> extends EntityServiceImpl<T,I>
+    implements BulkCreateable<T>, BulkGetable<T,I>, BulkUpdateable<T,I>, BulkDeleteable<T,I> {
 
-  public EntityServiceBulkImpl(Store<T> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
+  public EntityServiceBulkImpl(Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
     super(store, loginResolver, requiresLoginDefault);
   }
 
@@ -31,7 +31,7 @@ public class EntityServiceBulkImpl<T> extends EntityServiceImpl<T>
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-  public ImmutableList<T> batchGet(Iterable<Long> ids, @Nullable @Named("idToken") String idToken)
+  public ImmutableList<T> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken,"batchGet");
@@ -44,7 +44,7 @@ public class EntityServiceBulkImpl<T> extends EntityServiceImpl<T>
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT)
   public ImmutableList<T> batchUpdate(
-      @Named("ids") Iterable<Long> ids, T entity, @Named("updateMask") String updateMask,
+      @Named("ids") Iterable<I> ids, T entity, @Named("updateMask") String updateMask,
       @Nullable @Named("idToken") String idToken) throws ServiceException {
     try {
       resolveLogin(idToken,"batchUpdate");
@@ -55,7 +55,7 @@ public class EntityServiceBulkImpl<T> extends EntityServiceImpl<T>
   }
 
   @Override
-  public Empty batchDelete(Iterable<Long> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
+  public Empty batchDelete(Iterable<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
     try {
       resolveLogin(idToken,"batchDelete");
       getStore().delete(ids);

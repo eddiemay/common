@@ -10,7 +10,7 @@ import com.google.common.collect.Iterables;
 
 import javax.inject.Provider;
 
-public abstract class SearchableStoreImpl<T> extends GenericStore<T> implements SearchableStore<T> {
+public abstract class SearchableStoreImpl<T, I> extends GenericStore<T, I> implements SearchableStore<T, I> {
 
   private static final int UPDATE_LIMIT = 200;
 
@@ -55,11 +55,6 @@ public abstract class SearchableStoreImpl<T> extends GenericStore<T> implements 
     return reindex(entities);
   }
 
-  @Override
-  protected void postdelete(Iterable<Long> ids) {
-    removeIndex(stream(ids).map(String::valueOf).collect(toImmutableList()));
-  }
-
   public ImmutableList<T> reindex(ImmutableList<T> entities) {
     if (index != null) {
       for (int x = 0; x < entities.size(); x += UPDATE_LIMIT) {
@@ -68,6 +63,11 @@ public abstract class SearchableStoreImpl<T> extends GenericStore<T> implements 
     }
 
     return entities;
+  }
+
+  @Override
+  protected void postdelete(Iterable<I> ids) {
+    removeIndex(stream(ids).map(String::valueOf).collect(toImmutableList()));
   }
 
   public void removeIndex(Iterable<String> documentIds) {

@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 public class DAOApiImplTest {
-  private static final int USER_ID = 123;
+  private static final Long USER_ID = 123L;
   private static final String BASE_API_URL = "http://test.server.net/api/%s/v1";
   private static final BasicUser BASIC_USER = new BasicUser().setId(USER_ID).setUsername("user@name").setTypeId(10);
   private static final String BASIC_USER_JSON = "{\"typeId\":10,\"id\":" + USER_ID + ",\"username\":\"user@name\"}";
@@ -22,7 +22,7 @@ public class DAOApiImplTest {
 
   @Before
   public void setUp() {
-    dao = new DAOApiImpl(connector);
+    dao = new DAOApiImpl(connector, null);
 
     when(connector.formatUrl(anyString()))
         .thenAnswer(i -> String.format(BASE_API_URL, i.getArgumentAt(0, String.class)));

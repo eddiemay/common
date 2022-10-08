@@ -5,8 +5,7 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 import org.joda.time.DateTime;
 
 public class Session {
-  private long id;
-  private String idToken;
+  private String id;
   private long userId;
   private DateTime startTime;
   private DateTime expTime;
@@ -17,21 +16,12 @@ public class Session {
 
   private User user;
 
-  public long getId() {
+  public String getId() {
     return id;
   }
 
-  public Session setId(long id) {
+  public Session setId(String id) {
     this.id = id;
-    return this;
-  }
-
-  public String getIdToken() {
-    return idToken;
-  }
-
-  public Session setIdToken(String idToken) {
-    this.idToken = idToken;
     return this;
   }
 

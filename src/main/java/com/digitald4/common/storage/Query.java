@@ -47,6 +47,10 @@ public class Query {
     return pageSize;
   }
 
+  public Query setLimit(int limit) {
+    return setPageSize(pageSize);
+  }
+
   public int getLimit() {
     return getPageSize();
   }
@@ -134,6 +138,22 @@ public class Query {
           .addAll(filters)
           .add(filter)
           .build();
+      return this;
+    }
+
+    @Override
+    public Query.List setOrderBys(OrderBy... orderBys) {
+      super.setOrderBys(orderBys);
+      return this;
+    }
+
+    public Query.List setLimit(int limit) {
+      super.setPageToken(limit);
+      return this;
+    }
+
+    public Query.List setOffset(int offset) {
+      super.setPageToken(offset);
       return this;
     }
   }

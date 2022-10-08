@@ -25,6 +25,7 @@ import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,24 +41,48 @@ import org.json.JSONObject;
 public class DAOCloudDS implements DAO {
 	private static final Map<Class<?>, ImmutableMap<String, Field>> typeFields = new HashMap<>();
 	private final DatastoreService datastoreService;
+	private final Clock clock;
 
 	@Inject
-	public DAOCloudDS(DatastoreService datastoreService) {
+	public DAOCloudDS(DatastoreService datastoreService, Clock clock) {
 		this.datastoreService = datastoreService;
+		this.clock = clock;
+	}
+
+	@Override
+	public Clock getClock() {
+		return clock;
 	}
 
 	@Override
 	public <T> T create(T t) {
 		return Calculate.executeWithRetries(2, () -> {
 			JSONObject json = new JSONObject(t);
-			Object id = json.has("id") ? json.get("id") : null;
-			Entity entity = (id instanceof Long && (Long) id != 0L) ?
-					new Entity(t.getClass().getSimpleName(), (Long) id) : new Entity(t.getClass().getSimpleName());
+			Object id = json.opt("id");
+			Entity entity = createEntity(t.getClass().getSimpleName(), id);
 			ImmutableMap<String, Field> fields = getFields(t.getClass());
 			json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
 
-			return fields.get("id").invokeSet(t, datastoreService.put(entity).getId());
+			Key keyResult = datastoreService.put(entity);
+			if (keyResult.getId() > 0) {
+				return fields.get("id").invokeSet(t, keyResult.getId());
+			//} else if (keyResult.getName() != null) {
+				// return fields.get("id").invokeSet(t, keyResult.getName());
+			}
+
+			return t;
 		});
+	}
+
+	private static Entity createEntity(String kind, Object id) {
+		if (id instanceof Long && (Long) id > 0L) {
+			return new Entity(kind, (Long) id);
+		} else if (id instanceof String) {
+			return new Entity(kind, (String) id);
+		}
+
+		return new Entity(kind);
+
 	}
 
 	@Override
@@ -66,14 +91,14 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T> T get(Class<T> c, long id) {
-		return Calculate.executeWithRetries(2, () -> get(c, createKey(c.getSimpleName(), id)));
+	public <T, I> T get(Class<T> c, I id) {
+		return Calculate.executeWithRetries(2, () -> get(c, createFactorKey(c.getSimpleName(), id)));
 	}
 
 	@Override
-	public <T> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
 		return Calculate.executeWithRetries(2, () ->
-				getEntities(c, stream(ids).map(id -> createKey(c.getSimpleName(), id)).collect(toImmutableList()))
+				getEntities(c, stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList()))
 						.values()
 						.stream()
 						.map(v -> convert(c, v))
@@ -89,20 +114,21 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
 		return update(c, ImmutableList.of(id), updater).get(0);
 	}
 
 	@Override
-	public <T> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
 		return Calculate.executeWithRetries(2,
-				() -> getEntities(c, stream(ids).map(id -> createKey(c.getSimpleName(), id)).collect(toImmutableList()))
+				() -> getEntities(c, stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList()))
 						.entrySet()
 						.stream()
 						.map(entry -> {
-							long id = entry.getKey().getId();
+							Entity entity = entry.getKey().getId() > 0
+									? new Entity(c.getSimpleName(), entry.getKey().getId())
+									: new Entity(c.getSimpleName(), entry.getKey().getName());
 							T t = updater.apply(convert(c, entry.getValue()));
-							Entity entity = new Entity(c.getSimpleName(), id);
 							JSONObject json = new JSONObject(t);
 							ImmutableMap<String, Field> fields = getFields(t.getClass());
 							json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
@@ -114,9 +140,9 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, long id) {
+	public <T, I> void delete(Class<T> c, I id) {
 		Calculate.executeWithRetries(2, () -> {
-			Key key = createKey(c.getSimpleName(), id);
+			Key key = createFactorKey(c.getSimpleName(), id);
 			get(c, key); // Fetch the entry to make sure it exists.
 			datastoreService.delete(key);
 			return true;
@@ -124,10 +150,10 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, Iterable<Long> ids) {
+	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
 		Calculate.executeWithRetries(2, () -> {
-			ImmutableList<Key> keys = stream(ids).map(id -> createKey(c.getSimpleName(), id)).collect(toImmutableList());
-			getEntities(c, keys); // Get all entries to make sure they all exist.
+			ImmutableList<Key> keys = stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList());
+			// getEntities(c, keys); // Get all entries to make sure they all exist.
 			datastoreService.delete(keys);
 
 			return keys.size();
@@ -141,6 +167,10 @@ public class DAOCloudDS implements DAO {
 			throw new DD4StorageException(
 					"Error fetching item: " + c.getSimpleName() + ":" + key.getId(), e, ErrorCode.NOT_FOUND);
 		}
+	}
+
+	private static Key createFactorKey(String kind, Object id) {
+		return (id instanceof Long) ? createKey(kind, (Long) id) : createKey(kind, id.toString());
 	}
 
 	private <T> ImmutableMap<Key, Entity> getEntities(Class<T> c, Iterable<Key> keys) {
@@ -218,7 +248,8 @@ public class DAOCloudDS implements DAO {
 		JSONObject jsonObject = new JSONObject();
 		Field idField = fieldMap.get("id");
 		if (idField != null && idField.setMethod != null) {
-			jsonObject.put("id", entity.getKey().getId());
+			Class<?> idType = idField.setMethod.getParameterTypes()[0];
+			jsonObject.put("id", idType == String.class ? entity.getKey().getName() : entity.getKey().getId());
 		}
 		entity.getProperties().forEach((colName, value) -> {
 			String javaName = FormatText.toLowerCamel(colName);

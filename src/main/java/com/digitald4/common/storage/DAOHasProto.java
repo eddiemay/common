@@ -15,13 +15,13 @@ import javax.inject.Inject;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-public class HasProtoDAO implements TypedDAO<HasProto> {
+public class DAOHasProto implements TypedDAO<HasProto> {
   private static final Map<Class<? extends HasProto>, Constructor<? extends HasProto>> defaultConstructors = new HashMap<>();
   private static final Map<Class<? extends HasProto>, Class<? extends Message>> protoTypeMap = new HashMap<>();
   private TypedDAO<Message> messageDAO;
 
   @Inject
-  public HasProtoDAO(TypedDAO<Message> messageDAO) {
+  public DAOHasProto(TypedDAO<Message> messageDAO) {
     this.messageDAO = messageDAO;
   }
 
@@ -37,12 +37,12 @@ public class HasProtoDAO implements TypedDAO<HasProto> {
   }
 
   @Override
-  public <T extends HasProto> T get(Class<T> c, long id) {
+  public <T extends HasProto, I> T get(Class<T> c, I id) {
     return (T) fromProto(c, messageDAO.get(getProtoType(c), id));
   }
 
   @Override
-  public <T extends HasProto> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+  public <T extends HasProto, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
     return fromProto(c, messageDAO.get(getProtoType(c), ids));
   }
 
@@ -53,23 +53,23 @@ public class HasProtoDAO implements TypedDAO<HasProto> {
   }
 
   @Override
-  public <T extends HasProto> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+  public <T extends HasProto, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
     return (T) fromProto(
         c, messageDAO.update(getProtoType(c), id, proto -> updater.apply(fromProto(c, proto)).toProto()));
   }
 
   @Override
-  public <T extends HasProto> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+  public <T extends HasProto, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
     return stream(ids).map(id -> update(c, id, updater)).collect(toImmutableList());
   }
 
   @Override
-  public <T extends HasProto> void delete(Class<T> c, long id) {
+  public <T extends HasProto, I> void delete(Class<T> c, I id) {
     messageDAO.delete(getProtoType(c), id);
   }
 
   @Override
-  public <T extends HasProto> void delete(Class<T> c, Iterable<Long> ids) {
+  public <T extends HasProto, I> void delete(Class<T> c, Iterable<I> ids) {
     messageDAO.delete(getProtoType(c), ids);
   }
 

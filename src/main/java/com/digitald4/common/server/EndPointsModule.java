@@ -15,7 +15,6 @@ import com.google.protobuf.Message;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 public class EndPointsModule extends EndpointsModule {
@@ -61,11 +60,11 @@ public class EndPointsModule extends EndpointsModule {
 		bind(Datastore.class).toInstance(DatastoreOptions.getDefaultInstance().getService());
 		bind(DatastoreService.class).toInstance(DatastoreServiceFactory.getDatastoreService());
 		bind(new TypeLiteral<TypedDAO<Message>>(){}).to(DAOCloudDSProto.class);
-		bind(new TypeLiteral<TypedDAO<HasProto>>(){}).to(HasProtoDAO.class);
+		bind(new TypeLiteral<TypedDAO<HasProto>>(){}).to(DAOHasProto.class);
 		bind(DAO.class).annotatedWith(Annotations.DefaultDAO.class).to(DAOCloudDS.class);
 		bind(DAO.class).to(DAORouterImpl.class);
 
-		bind(new TypeLiteral<Store<DataFile>>(){}).to(new TypeLiteral<GenericStore<DataFile>>(){});
+		bind(new TypeLiteral<Store<DataFile, Long>>(){}).to(new TypeLiteral<GenericStore<DataFile, Long>>(){});
 
 		//configureEndpoints(getApiUrlPattern(),
 			//	ImmutableList.of(FileService.class, GeneralDataService.class, UserService.class));

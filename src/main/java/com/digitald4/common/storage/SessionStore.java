@@ -15,7 +15,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 
-public class SessionStore<U extends User> extends GenericStore<Session> implements LoginResolver {
+public class SessionStore<U extends User> extends GenericStore<Session, String> implements LoginResolver {
   private static final DD4StorageException NOT_AUTHENICATED =
       new DD4StorageException("Not authenicated", ErrorCode.NOT_AUTHENTICATED);
 
@@ -57,17 +57,16 @@ public class SessionStore<U extends User> extends GenericStore<Session> implemen
     passwordStore.verify(user.getId(), password);
 
     DateTime now = new DateTime(clock.millis());
-    Session session = cachePut(
+
+    return cachePut(
         create(
             new Session()
-                .setIdToken(String.valueOf((int) (Math.random() * Integer.MAX_VALUE)))
+                .setId(String.valueOf((int) (Math.random() * Integer.MAX_VALUE)))
                 .setUserId(user.getId())
                 .setStartTime(now)
                 .setExpTime(now.plus(sessionDuration.toMillis()))
                 .setState(Session.State.ACTIVE))
         .user(user));
-
-    return session;
   }
 
   public Session get(String token) {
@@ -78,24 +77,16 @@ public class SessionStore<U extends User> extends GenericStore<Session> implemen
     DateTime now = new DateTime(clock.millis());
     Session activeSession = cacheGet(token);
     if (activeSession == null) {
-        activeSession =
-            list(Query.forList().setFilters(Query.Filter.of("idToken", "=", token)))
-                .getItems()
-                .stream()
-                .peek(session -> {
-                  // Only set the user on active sessions.
-                  if (session.getState() == Session.State.ACTIVE && session.getExpTime().isAfter(now)) {
-                    session.user(userStore.get(session.getUserId()));
-                  }
-                })
-                .findFirst()
-                .orElse(null);
+      activeSession = super.get(token);
 
-        if (activeSession == null) {
-          return null;
-        }
+      if (activeSession == null || activeSession.getState() != Session.State.ACTIVE) {
+        return null;
+      }
 
-        cachePut(activeSession);
+      // Only set the user on active sessions.
+      if (activeSession.getExpTime().isAfter(now)) {
+        activeSession = cachePut(activeSession.user(userStore.get(activeSession.getUserId())));
+      }
     }
 
     // If the session should be expired, expire it.
@@ -132,13 +123,18 @@ public class SessionStore<U extends User> extends GenericStore<Session> implemen
   }
 
   private Session close(Session session) {
-    return update(cacheRemove(session).getId(), s -> s.setEndTime(new DateTime(clock.millis())).setState(Session.State.CLOSED));
+    if (session == null) {
+      return null;
+    }
+
+    return update(
+        cacheRemove(session).getId(), s -> s.setEndTime(new DateTime(clock.millis())).setState(Session.State.CLOSED));
   }
 
 
   private Session cachePut(Session session) {
     if (sessionCacheEnabled) {
-      activeSessions.put(session.getIdToken(), session);
+      activeSessions.put(session.getId(), session);
     }
     return session;
   }
@@ -149,7 +145,7 @@ public class SessionStore<U extends User> extends GenericStore<Session> implemen
 
   private Session cacheRemove(Session session) {
     if (sessionCacheEnabled) {
-      activeSessions.remove(session.getIdToken());
+      activeSessions.remove(session.getId());
     }
     return session;
   }

@@ -4,24 +4,24 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.function.UnaryOperator;
 
-public interface Store<T> {
+public interface Store<T, I> {
 	T getType();
 
 	T create(T t);
 
 	ImmutableList<T> create(Iterable<T> entities);
 
-	T get(long id);
+	T get(I id);
 
-	ImmutableList<T> get(Iterable<Long> ids);
+	ImmutableList<T> get(Iterable<I> ids);
 
 	QueryResult<T> list(Query.List listQuery);
 
-	T update(long id, UnaryOperator<T> updater);
+	T update(I id, UnaryOperator<T> updater);
 
-	ImmutableList<T> update(Iterable<Long> ids, UnaryOperator<T> updater);
+	ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater);
 
-	void delete(long id);
+	void delete(I id);
 
-	void delete(Iterable<Long> ids);
+	void delete(Iterable<I> ids);
 }

@@ -21,8 +21,8 @@ import org.mockito.Mock;
 
 public class GeneralDataServiceTest {
 	@Mock private final GeneralDataStore mockStore = mock(GeneralDataStore.class);
-	@Mock private final UserStore mockUserStore = mock(UserStore.class);
-	@Mock private final SessionStore sessionStore = mock(SessionStore.class);
+	@Mock private final UserStore<BasicUser> mockUserStore = mock(UserStore.class);
+	@Mock private final SessionStore<BasicUser> sessionStore = mock(SessionStore.class);
 
 	@Test
 	public void testCreate() throws Exception {
@@ -68,10 +68,10 @@ public class GeneralDataServiceTest {
 	public void testCreateUser() throws Exception {
 		when(mockUserStore.getType()).thenReturn(new BasicUser());
 		when(mockUserStore.create(any(BasicUser.class))).thenAnswer(i -> i.getArguments()[0]);
-		UserService<BasicUser> userService = new UserService<>(mockUserStore, sessionStore, null, null);
+		UserService<BasicUser> userService = new UserService<>(mockUserStore, sessionStore, null);
 		UserService.UserJSONService<BasicUser> userJSONService = new UserService.UserJSONService<>(userService);
 
-		BasicUser basicUser = userService.create(new BasicUser().setUsername("user@test.com").setId(1), null);
+		BasicUser basicUser = userService.create(new BasicUser().setUsername("user@test.com").setId(1L), null);
 		assertEquals("user@test.com", basicUser.getUsername());
 
 		userJSONService.performAction("create", new JSONObject("{entity:{\"id\":2,\"username\":\"Test User\"}}"));

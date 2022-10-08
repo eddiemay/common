@@ -7,6 +7,7 @@ import com.digitald4.common.storage.Annotations.DefaultDAO;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.protobuf.Message;;
+import java.time.Clock;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -24,6 +25,11 @@ public class DAORouterImpl implements DAO {
     this.messageDao = messageDao;
     this.hasProtoDao = hasProtoDao;
     this.defaultDao = defaultDao;
+  }
+
+  @Override
+  public Clock getClock() {
+    return defaultDao.getClock();
   }
 
   @Override
@@ -58,7 +64,7 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> T get(Class<T> c, long id) {
+  public <T, I> T get(Class<T> c, I id) {
     T t = getDefaultInstance(c);
 
     if (t instanceof Message) {
@@ -73,7 +79,7 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+  public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
     T t = getDefaultInstance(c);
 
     if (t instanceof Message) {
@@ -103,7 +109,7 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+  public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
     T t = getDefaultInstance(c);
 
     if (t instanceof Message) {
@@ -118,7 +124,7 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+  public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
     T t = getDefaultInstance(c);
 
     if (t instanceof Message) {
@@ -133,7 +139,7 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> void delete(Class<T> c, long id) {
+  public <T, I> void delete(Class<T> c, I id) {
     Object t = getDefaultInstance(c);
 
     if (t instanceof Message) {
@@ -150,7 +156,7 @@ public class DAORouterImpl implements DAO {
   }
 
   @Override
-  public <T> void delete(Class<T> c, Iterable<Long> ids) {
+  public <T, I> void delete(Class<T> c, Iterable<I> ids) {
     Object t = getDefaultInstance(c);
 
     if (t instanceof Message) {

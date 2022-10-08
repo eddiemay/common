@@ -2,7 +2,7 @@ package com.digitald4.common.model;
 
 import org.joda.time.DateTime;
 
-public class Password {
+public class Password implements ModelObject<Long> {
   private long id;
   private long userId;
   private String digest;
@@ -10,11 +10,11 @@ public class Password {
   private String resetToken;
   private DateTime resetSentAt;
 
-  public long getId() {
+  public Long getId() {
     return id;
   }
 
-  public Password setId(long id) {
+  public Password setId(Long id) {
     this.id = id;
     return this;
   }

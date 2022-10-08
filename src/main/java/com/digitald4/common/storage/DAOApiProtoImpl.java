@@ -72,7 +72,7 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> T get(Class<T> c, long id) {
+	public <T extends Message, I> T get(Class<T> c, I id) {
 		String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
 		String json = apiConnector.sendGet(url);
 		Message.Builder builder = ProtoUtil.getDefaultInstance(c).toBuilder();
@@ -81,7 +81,7 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+	public <T extends Message, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
 		String url = apiConnector.formatUrl(getResourceName(c)) + "/batchGet";
 		try {
 			JSONObject postData = new JSONObject();
@@ -131,7 +131,7 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T extends Message, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
 		return Calculate.executeWithRetries(2, () -> {
 			T orig = get(c, id);
 			T updated = updater.apply(orig);
@@ -171,18 +171,18 @@ public class DAOApiProtoImpl implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+	public <T extends Message, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
 		throw new DD4StorageException("Unimplemented");
 	}
 
 	@Override
-	public <T extends Message> void delete(Class<T> c, long id) {
+	public <T extends Message, I> void delete(Class<T> c, I id) {
 		String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
 		apiConnector.send("DELETE", url, null);
 	}
 
 	@Override
-	public <T extends Message> void delete(Class<T> c, Iterable<Long> ids) {
+	public <T extends Message, I> void delete(Class<T> c, Iterable<I> ids) {
 		String url = apiConnector.formatUrl(getResourceName(c)) + ":batchDelete";
 		apiConnector.send("DELETE", url, new JSONArray(ids).toString());
 	}

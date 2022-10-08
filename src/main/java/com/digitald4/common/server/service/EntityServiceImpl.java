@@ -9,20 +9,24 @@ import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 
-public class EntityServiceImpl<T>
-		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T> {
+public class EntityServiceImpl<T,I>
+		implements Createable<T>, Getable<T,I>, Listable<T>, Updateable<T,I>, Deleteable<T,I> {
 
-	private final Store<T> store;
+	private final Store<T,I> store;
 	private final LoginResolver loginResolver;
 	private final boolean requiresLoginDefault;
 
-	public EntityServiceImpl(Store<T> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
+	public EntityServiceImpl(Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
 		this.store = store;
 		this.loginResolver = loginResolver;
 		this.requiresLoginDefault = requiresLoginDefault;
 	}
 
-	protected Store<T> getStore() {
+	public EntityServiceImpl(Store<T,I> store, LoginResolver loginResolver) {
+		this(store, loginResolver, true);
+	}
+
+	protected Store<T,I> getStore() {
 		return store;
 	}
 
@@ -44,7 +48,7 @@ public class EntityServiceImpl<T>
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}")
-	public T get(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
+	public T get(@Named("id") I id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"get");
 			return getStore().get(id);
@@ -70,19 +74,20 @@ public class EntityServiceImpl<T>
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
 	public T update(
-			@Named("id") long id, T entity, @Named("updateMask") String updateMask,
+			@Named("id") I id, T entity, @Named("updateMask") String updateMask,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"update");
 			return getStore().update(id, current -> JSONUtil.merge(updateMask, entity, current));
 		} catch (DD4StorageException e) {
+			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
 		}
 	}
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "{id}")
-	public Empty delete(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
+	public Empty delete(@Named("id") I id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"delete");
 			getStore().delete(id);

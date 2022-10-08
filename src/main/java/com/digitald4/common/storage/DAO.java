@@ -1,3 +1,7 @@
 package com.digitald4.common.storage;
 
-public interface DAO extends TypedDAO<Object> {}
+import java.time.Clock;
+
+public interface DAO extends TypedDAO<Object> {
+  Clock getClock();
+}

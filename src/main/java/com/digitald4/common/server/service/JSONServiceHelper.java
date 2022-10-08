@@ -31,8 +31,8 @@ public class JSONServiceHelper<T> implements JSONService {
 			}
 			case "get": {
 				if (entityService instanceof Getable) {
-					return toJSON(((Getable<?>) entityService).get(
-							jsonRequest.getInt("id"), jsonRequest.optString("idToken")));
+					return toJSON(((Getable<?,Long>) entityService).get(
+							jsonRequest.getLong("id"), jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}
@@ -49,7 +49,7 @@ public class JSONServiceHelper<T> implements JSONService {
 			case "update": {
 				if (entityService instanceof Updateable) {
 					return toJSON(
-							((Updateable<T>) entityService).update(
+							((Updateable<T, Long>) entityService).update(
 									jsonRequest.getLong("id"),
 									toObject(cls, jsonRequest.getJSONObject("entity")),
 									jsonRequest.getString("updateMask"), jsonRequest.optString("idToken")));
@@ -66,8 +66,9 @@ public class JSONServiceHelper<T> implements JSONService {
 			case "batchDelete": {
 				if (entityService instanceof BulkDeleteable) {
 					JSONArray ids = jsonRequest.getJSONArray("ids");
-					return toJSON(((BulkDeleteable) entityService).batchDelete(
-							JSONUtil.transform(ids, ids::getLong), jsonRequest.optString("idToken")));
+					return toJSON(
+							((BulkDeleteable) entityService).batchDelete(
+									JSONUtil.transform(ids, ids::getLong), jsonRequest.optString("idToken")));
 				}
 				throw BAD_REQUEST;
 			}

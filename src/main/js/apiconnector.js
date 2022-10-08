@@ -11,7 +11,7 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
   this.sendRequest = function(request, successCallback, errorCallback) {
     var url = this.baseUrl + request.url;
     var params = request.params || {};
-    params.idToken = globalData.activeSession ? globalData.activeSession.idToken : params.idToken;
+    params.idToken = globalData.activeSession ? globalData.activeSession.id : params.idToken;
     var serializedParams = this.$httpParamSerializer(params);
     if (params != undefined && serializedParams.length > 0) {
       url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;

@@ -20,10 +20,10 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class DualProtoService<T extends Message, I extends Message, U extends User>
-		implements Createable<T>, Getable<T>, Listable<T>, Updateable<T>, Deleteable<T> {
+		implements Createable<T>, Getable<T,Long>, Listable<T>, Updateable<T,Long>, Deleteable<T,Long> {
 
 	private final T type;
-	private final Store<I> store;
+	private final Store<I, Long> store;
 	private final Descriptor internalDescriptor;
 	private final Descriptor externalDescriptor;
 	private final SessionStore<U> sessionStore;
@@ -71,11 +71,11 @@ public class DualProtoService<T extends Message, I extends Message, U extends Us
 		}
 	};
 	
-	public DualProtoService(Class<T> c, Store<I> store, SessionStore<U> sessionStore, boolean requiresLoginDefault) {
+	public DualProtoService(Class<T> c, Store<I, Long> store, SessionStore<U> sessionStore, boolean requiresLoginDefault) {
 		this(ProtoUtil.getDefaultInstance(c), store, sessionStore, requiresLoginDefault);
 	}
 
-	protected DualProtoService(T type, Store<I> store, SessionStore<U> sessionStore, boolean requiresLoginDefault) {
+	protected DualProtoService(T type, Store<I, Long> store, SessionStore<U> sessionStore, boolean requiresLoginDefault) {
 		this.type = type;
 		this.externalDescriptor = type.getDescriptorForType();
 		this.store = store;
@@ -84,7 +84,7 @@ public class DualProtoService<T extends Message, I extends Message, U extends Us
 		this.requiresLoginDefault = requiresLoginDefault;
 	}
 
-	protected Store<T> getStore() {
+	protected Store<T, Long> getStore() {
 		return null;
 	}
 
@@ -113,7 +113,7 @@ public class DualProtoService<T extends Message, I extends Message, U extends Us
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}")
-	public T get(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
+	public T get(@Named("id") Long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			sessionStore.resolve(idToken, requiresLogin("create"));
 			return getConverter().apply(store.get(id));
@@ -138,7 +138,7 @@ public class DualProtoService<T extends Message, I extends Message, U extends Us
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
-	public T update(@Named("id") long id, T entity, @Named("updateMask") String updateMask,
+	public T update(@Named("id") Long id, T entity, @Named("updateMask") String updateMask,
 									@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			sessionStore.resolve(idToken, requiresLogin("create"));
@@ -151,7 +151,7 @@ public class DualProtoService<T extends Message, I extends Message, U extends Us
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "id/{id}")
-	public Empty delete(@Named("id") long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
+	public Empty delete(@Named("id") Long id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			sessionStore.resolve(idToken, requiresLogin("create"));
 			store.delete(id);

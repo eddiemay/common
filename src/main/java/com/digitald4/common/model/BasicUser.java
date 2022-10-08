@@ -11,12 +11,12 @@ public class BasicUser implements User {
 	private String lastName;
 
 	@Override
-	public long getId() {
+	public Long getId() {
 		return id;
 	}
 
 	@Override
-	public BasicUser setId(long id) {
+	public BasicUser setId(Long id) {
 		this.id = id;
 		return this;
 	}

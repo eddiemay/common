@@ -22,8 +22,6 @@ com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(glo
           // If we get an error trying to refresh the session then just logout.
           userService.logout();
         });
-      } else {
-        console.log(((globalData.activeSession.expTime - now) / 1000) + ' seconds remaining in session.');
       }
     }.bind(this), ONE_MINUTE);
   };

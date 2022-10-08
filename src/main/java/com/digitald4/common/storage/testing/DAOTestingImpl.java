@@ -10,6 +10,8 @@ import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
+
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,17 +20,30 @@ import org.json.JSONObject;
 
 public class DAOTestingImpl implements DAO {
 	private final AtomicLong idGenerator = new AtomicLong(5000);
-	private final Map<Class<?>, Map<Long, JSONObject>> tables = new HashMap<>();
+	private final Map<Class<?>, Map<String, JSONObject>> tables = new HashMap<>();
+	private final Clock clock;
+
+	public DAOTestingImpl() {
+		this(null);
+	}
+
+	public DAOTestingImpl(Clock clock) {
+		this.clock = clock;
+	}
+
+	public Clock getClock() {
+		return clock;
+	}
 
 	@Override
 	public <T> T create(T t) {
-		Map<Long, JSONObject> table = tables.computeIfAbsent(t.getClass(), c -> new HashMap<>());
+		Map<String, JSONObject> table = tables.computeIfAbsent(t.getClass(), c -> new HashMap<>());
 		JSONObject jsonObject = JSONUtil.toJSON(t);
-		long id = jsonObject.optLong("id");
-		if (id == 0L) {
+		Object id = jsonObject.opt("id");
+		if (id == null || id instanceof Long && (long) id == 0L) {
 			jsonObject.put("id", id = idGenerator.incrementAndGet());
 		}
-		table.put(id, jsonObject);
+		table.put(id.toString(), jsonObject);
 		return JSONUtil.toObject((Class<T>) t.getClass(), jsonObject);
 	}
 
@@ -38,23 +53,23 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T> T get(Class<T> c, long id) {
-		Map<Long, JSONObject> table = tables.get(c);
+	public <T, I> T get(Class<T> c, I id) {
+		Map<String, JSONObject> table = tables.get(c);
 		if (table == null) {
 			return null;
 		}
 
-		return JSONUtil.toObject(c, table.get(id));
+		return JSONUtil.toObject(c, table.get(id.toString()));
 	}
 
 	@Override
-	public <T> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
 		return stream(ids).map(id -> get(c, id)).collect(toImmutableList());
 	}
 
 	@Override
 	public <T> QueryResult<T> list(Class<T> c, Query.List query) {
-		Map<Long, JSONObject> table = tables.get(c);
+		Map<String, JSONObject> table = tables.get(c);
 		if (table != null) {
 			ImmutableList<JSONObject> results = ImmutableList.copyOf(table.values());
 			for (Filter filter : query.getFilters()) {
@@ -88,35 +103,34 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
 		T t = get(c, id);
 		if (t != null) {
 			t = updater.apply(t);
-			Map<Long, JSONObject> table = tables.get(c);
-			table.put(id, JSONUtil.toJSON(t));
+			tables.get(c).put(id.toString(), JSONUtil.toJSON(t));
 		}
 
 		return t;
 	}
 
 	@Override
-	public <T> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
 		return stream(ids).map(id -> update(c, id, updater)).collect(toImmutableList());
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, long id) {
-		Map<Long, JSONObject> table = tables.get(c);
+	public <T, I> void delete(Class<T> c, I id) {
+		Map<String, JSONObject> table = tables.get(c);
 		if (table != null) {
-			table.remove(id);
+			table.remove(id.toString());
 		}
 	}
 
 	@Override
-	public <T> void delete(Class<T> c, Iterable<Long> ids) {
-		Map<Long, JSONObject> table = tables.get(c);
+	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
+		Map<String, JSONObject> table = tables.get(c);
 		if (table != null) {
-			stream(ids).forEach(table::remove);
+			stream(ids).map(Object::toString).forEach(table::remove);
 		}
 	}
 }

@@ -47,17 +47,17 @@ import org.json.JSONObject;
 		}
 		// [END_EXCLUDE]
 )
-public class FileService<U extends User> extends EntityServiceImpl<DataFile> implements JSONService {
+public class FileService<U extends User> extends EntityServiceImpl<DataFile, Long> implements JSONService {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
-	private final Store<DataFile> dataFileStore;
+	private final Store<DataFile, Long> dataFileStore;
 	private final Provider<HttpServletRequest> requestProvider;
 	private final Provider<HttpServletResponse> responseProvider;
 
 	@Inject
 	public FileService(
-			Store<DataFile> dataFileStore, SessionStore<U> sessionStore,
-			Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider) {
+			Store<DataFile, Long> dataFileStore, SessionStore<U> sessionStore, Provider<HttpServletRequest> requestProvider,
+			Provider<HttpServletResponse> responseProvider) {
 		super(dataFileStore, sessionStore, true);
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;
@@ -73,7 +73,7 @@ public class FileService<U extends User> extends EntityServiceImpl<DataFile> imp
 	}
 
 	public JSONObject get(JSONObject request) {
-		DataFile df = dataFileStore.get(request.getInt("id"));
+		DataFile df = dataFileStore.get((long) request.getInt("id"));
 		HttpServletResponse response = responseProvider.get();
 		byte[] bytes = df.getData().toByteArray();
 		response.setContentType("application/" + (!df.getType().isEmpty() ? df.getType() : "pdf"));
@@ -91,7 +91,7 @@ public class FileService<U extends User> extends EntityServiceImpl<DataFile> imp
 	public JSONObject update() {
 		HttpServletRequest request = requestProvider.get();
 		String[] urlParts = request.getRequestURL().toString().split("/");
-		int id = Integer.parseInt(urlParts[urlParts.length - 1]);
+		long id = Long.parseLong(urlParts[urlParts.length - 1]);
 		try {
 			DataFile replacement = converter.apply(request.getPart("file"));
 			return toJSON.apply(dataFileStore.update(id, dataFile -> replacement));

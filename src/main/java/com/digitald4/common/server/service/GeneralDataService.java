@@ -28,7 +28,7 @@ import javax.inject.Inject;
 		}
 		// [END_EXCLUDE]
 )
-public class GeneralDataService<U extends User> extends EntityServiceImpl<GeneralData> {
+public class GeneralDataService<U extends User> extends EntityServiceImpl<GeneralData, Long> {
 
 	@Inject
 	public GeneralDataService(GeneralDataStore generalDataStore, SessionStore<U> sessionStore) {

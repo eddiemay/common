@@ -1,5 +1,6 @@
 package com.digitald4.common.storage;
 
+import static com.google.appengine.api.datastore.KeyFactory.createKey;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 
@@ -60,15 +61,15 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> T get(Class<T> c, long id) {
-		return Calculate.executeWithRetries(2, () -> convert(c, datastore.get(getKeyFactory(c).newKey(id))));
+	public <T extends Message, I> T get(Class<T> c, I id) {
+		return Calculate.executeWithRetries(2, () -> convert(c, datastore.get(createFactorKey(c, id))));
 	}
 
 	@Override
-	public <T extends Message> ImmutableList<T> get(Class<T> c, Iterable<Long> ids) {
+	public <T extends Message, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
 		KeyFactory keyFactory = getKeyFactory(c);
 		return Calculate.executeWithRetries(
-				2, () -> convert(c, datastore.get(stream(ids).map(keyFactory::newKey).collect(toImmutableList()))));
+				2, () -> convert(c, datastore.get(stream(ids).map(id -> createFactorKey(keyFactory, id)).collect(toImmutableList()))));
 	}
 
 	@Override
@@ -109,17 +110,17 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> T update(Class<T> c, long id, UnaryOperator<T> updater) {
+	public <T extends Message, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
 		return Calculate.executeWithRetries(2, () -> {
 			T t = updater.apply(get(c, id));
-			Entity.Builder entity = Entity.newBuilder(getKeyFactory(c).newKey(id));
+			Entity.Builder entity = Entity.newBuilder(createFactorKey(c, id));
 			t.getAllFields().forEach((field, value) -> setObject(entity, t, field, value));
 			return convert(c, datastore.put(entity.build()));
 		});
 	}
 
 	@Override
-	public <T extends Message> ImmutableList<T> update(Class<T> c, Iterable<Long> ids, UnaryOperator<T> updater) {
+	public <T extends Message, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
 		KeyFactory keyFactory = getKeyFactory(c);
 		return Calculate.executeWithRetries(2,
 				() -> get(c, ids).stream()
@@ -134,20 +135,28 @@ public class DAOCloudDSProto implements TypedDAO<Message> {
 	}
 
 	@Override
-	public <T extends Message> void delete(Class<T> c, long id) {
+	public <T extends Message, I> void delete(Class<T> c, I id) {
 		Calculate.executeWithRetries(2, () -> {
-			datastore.delete(getKeyFactory(c).newKey(id));
+			datastore.delete(createFactorKey(c, id));
 			return true;
 		});
 	}
 
 	@Override
-	public <T extends Message> void delete(Class<T> c, Iterable<Long> ids) {
+	public <T extends Message, I> void delete(Class<T> c, Iterable<I> ids) {
 		Calculate.executeWithRetries(2, () -> {
 			KeyFactory keyFactory = getKeyFactory(c);
-			stream(ids).map(keyFactory::newKey).forEach(datastore::delete);
+			stream(ids).map(id -> (Long) id).map(keyFactory::newKey).forEach(datastore::delete);
 			return true;
 		});
+	}
+
+	private Key createFactorKey(Class<?> c, Object id) {
+		return createFactorKey(getKeyFactory(c), id);
+	}
+
+	private Key createFactorKey(KeyFactory keyFactory, Object id) {
+		return (id instanceof Long) ? keyFactory.newKey((Long) id) : keyFactory.newKey(id.toString());
 	}
 
 	private <T extends Message> void setObject(Entity.Builder entity, T t, FieldDescriptor field, Object value) {

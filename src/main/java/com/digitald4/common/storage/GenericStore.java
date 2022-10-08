@@ -1,14 +1,16 @@
 package com.digitald4.common.storage;
 
+import com.digitald4.common.model.HasModificationTimes;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+import org.joda.time.DateTime;
 
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class GenericStore<T> implements Store<T> {
+public class GenericStore<T, I> implements Store<T, I> {
 
 	private final Class<T> c;
 	private final Provider<DAO> daoProvider;
@@ -34,21 +36,21 @@ public class GenericStore<T> implements Store<T> {
 
 	@Override
 	public T create(T t) {
-		return postprocess(daoProvider.get().create(preprocess(t)));
+		return postprocess(daoProvider.get().create(preprocess(t, true)));
 	}
 
 	@Override
 	public ImmutableList<T> create(Iterable<T> entities) {
-		return postprocess(daoProvider.get().create(preprocess(entities)));
+		return postprocess(daoProvider.get().create(preprocess(entities, true)));
 	}
 
 	@Override
-	public T get(long id) {
+	public T get(I id) {
 		return daoProvider.get().get(c, id);
 	}
 
 	@Override
-	public ImmutableList<T> get(Iterable<Long> ids) {
+	public ImmutableList<T> get(Iterable<I> ids) {
 		return daoProvider.get().get(c, ids);
 	}
 
@@ -58,36 +60,47 @@ public class GenericStore<T> implements Store<T> {
 	}
 
 	@Override
-	public T update(long id, UnaryOperator<T> updater) {
-		return postprocess(daoProvider.get().update(c, id, current -> preprocess(updater.apply(current))));
+	public T update(I id, UnaryOperator<T> updater) {
+		return postprocess(daoProvider.get().update(c, id, current -> preprocess(updater.apply(current), false)));
 	}
 
 	@Override
-	public ImmutableList<T> update(Iterable<Long> ids, UnaryOperator<T> updater) {
-		return postprocess(daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current))));
+	public ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater) {
+		return postprocess(daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current), false)));
 	}
 
 	@Override
-	public void delete(long id) {
+	public void delete(I id) {
 		daoProvider.get().delete(c, id);
 		postdelete(ImmutableList.of(id));
 	}
 
 	@Override
-	public void delete(Iterable<Long> ids) {
+	public void delete(Iterable<I> ids) {
 		daoProvider.get().delete(c, ids);
 		postdelete(ids);
 	}
 
-	protected T preprocess(T t) {
-		return preprocess(ImmutableList.of(t)).iterator().next();
+	private T preprocess(T t, boolean isCreate) {
+		return preprocess(ImmutableList.of(t), isCreate).iterator().next();
 	}
 
-	protected Iterable<T> preprocess(Iterable<T> entities) {
+	protected Iterable<T> preprocess(Iterable<T> entities, boolean isCreate) {
+		T entity = entities.iterator().next();
+		if (entity instanceof HasModificationTimes) {
+			DateTime time = new DateTime(daoProvider.get().getClock().millis());
+			Streams.stream((Iterable<HasModificationTimes>) entities)
+					.forEach(mod -> {
+						if (isCreate) {
+							mod.setCreationTime(time);
+						}
+						mod.setLastModifiedTime(time);
+					});
+		}
 		return entities;
 	}
 
-	protected T postprocess(T t) {
+	private T postprocess(T t) {
 		return postprocess(ImmutableList.of(t)).get(0);
 	}
 
@@ -95,6 +108,5 @@ public class GenericStore<T> implements Store<T> {
 		return entities;
 	}
 
-	protected void postdelete(Iterable<Long> ids) {
-	}
+	protected void postdelete(Iterable<I> ids) {}
 }

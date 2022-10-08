@@ -42,6 +42,7 @@ public class ApiServiceServlet extends HttpServlet {
 
 	private final Map<String, JSONService> services = new HashMap<>();
 	private DAO dao;
+	private Clock clock = Clock.systemUTC();
 	private Emailer emailer;
 	private Encryptor encryptor;
 	protected final Provider<DAO> daoProvider = () -> dao;
@@ -50,15 +51,13 @@ public class ApiServiceServlet extends HttpServlet {
 	protected final UserService userService;
 	protected final SessionStore sessionStore;
 	protected final PasswordStore passwordStore;
-	protected final Store<DataFile> dataFileStore;
+	protected final Store<DataFile, Long> dataFileStore;
 	protected final ProviderThreadLocalImpl<BasicUser> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
 	protected boolean useViews;
 
 	public ApiServiceServlet() {
-		Clock clock = Clock.systemUTC();
-
 		userStore = new GenericUserStore<>(BasicUser.class, daoProvider);
 		passwordStore = new PasswordStore(daoProvider, clock);
 
@@ -70,7 +69,7 @@ public class ApiServiceServlet extends HttpServlet {
 		addService(
 				"user",
 				new UserService.UserJSONService<>(
-						userService = new UserService<BasicUser>(userStore, sessionStore, passwordStore, clock)));
+						userService = new UserService<BasicUser>(userStore, sessionStore, passwordStore)));
 
 		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
 		addService("file", new FileService(dataFileStore, sessionStore, requestProvider, responseProvider));
@@ -82,7 +81,7 @@ public class ApiServiceServlet extends HttpServlet {
 		TypedDAO<Message> messageDAO;
 		DAO defaultDAO;
 		if (serverType == ServerType.TOMCAT) {
-			// We use Tomcat with MySQL, so if Tomcat, MySQL
+			// We use MySQL with Tomcat, so if Tomcat, MySQL
 			messageDAO = new DAOSQLImpl(
 					new DBConnectorThreadPoolImpl(
 							sc.getInitParameter("dbdriver"),
@@ -94,9 +93,9 @@ public class ApiServiceServlet extends HttpServlet {
 		} else {
 			// We use CloudDataStore with AppEngine.
 			messageDAO = new DAOCloudDSProto(DatastoreOptions.getDefaultInstance().getService());
-			defaultDAO = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService());
+			defaultDAO = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), clock);
 		}
-		dao = new DAORouterImpl(messageDAO, new HasProtoDAO(messageDAO), defaultDAO);
+		dao = new DAORouterImpl(messageDAO, new DAOHasProto(messageDAO), defaultDAO);
 	}
 
 	protected ApiServiceServlet addService(String entity, JSONService service) {

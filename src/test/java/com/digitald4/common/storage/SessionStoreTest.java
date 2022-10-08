@@ -78,7 +78,7 @@ public class SessionStoreTest {
   @Test
   public void create_wrongPassword() {
     try {
-      when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1).setUsername("username"));
+      when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
       when(mockPasswordStore.verify(1L, "0123456789ABCDEF")).thenThrow(PasswordStore.BAD_LOGIN);
 
       sessionStore.create("username", "0123456789ABCDEF");
@@ -91,7 +91,7 @@ public class SessionStoreTest {
 
   @Test
   public void create_success() {
-    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1).setUsername("username"));
+    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(clock.millis()).thenReturn(10000L);
 
     Session session = sessionStore.create("username", "0123456789ABCDEF");
@@ -104,13 +104,13 @@ public class SessionStoreTest {
 
   @Test
   public void get() {
-    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1).setUsername("username"));
+    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
         QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, Query.forList()));
     when(clock.millis()).thenReturn(10000L).thenReturn(15000L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 
-    session = sessionStore.get(session.getIdToken());
+    session = sessionStore.get(session.getId());
     assertEquals(10000L, session.startTime());
     assertEquals(20000L, session.expTime());
     assertNull(session.getEndTime());
@@ -119,13 +119,13 @@ public class SessionStoreTest {
 
   @Test
   public void get_closesOutExpiredSession() {
-    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1).setUsername("username"));
+    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
         QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
     when(clock.millis()).thenReturn(10000L).thenReturn(25000L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 
-    session = sessionStore.get(session.getIdToken());
+    session = sessionStore.get(session.getId());
     assertEquals(10000L, session.getStartTime().getMillis());
     assertEquals(20000L, session.expTime());
     assertEquals(25000L, session.endTime().longValue());
@@ -135,13 +135,13 @@ public class SessionStoreTest {
 
   @Test
   public void resolve_works() {
-    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1).setUsername("username"));
+    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
         QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
     when(clock.millis()).thenReturn(10000L).thenReturn(11000L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 
-    session = sessionStore.resolve(session.getIdToken(), true);
+    session = sessionStore.resolve(session.getId(), true);
     assertEquals(10000L, session.startTime());
     assertEquals(20000L, session.expTime());
     assertNull(session.endTime());
@@ -150,19 +150,19 @@ public class SessionStoreTest {
 
   @Test
   public void resolve_extendsHalfwayOverSession() {
-    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1).setUsername("username"));
+    when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
         QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
     when(clock.millis()).thenReturn(10000L).thenReturn(15001L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 
-    session = sessionStore.resolve(session.getIdToken(), true);
+    session = sessionStore.resolve(session.getId(), true);
     assertEquals(10000L, session.getStartTime().getMillis());
     assertEquals(25001L, session.expTime());
     assertNull(session.getEndTime());
     assertEquals(Session.State.ACTIVE, session.getState());
 
-    session = sessionStore.get(session.getIdToken());
+    session = sessionStore.get(session.getId());
     assertEquals(10000L, session.getStartTime().getMillis());
     assertEquals(25001L, session.expTime());
     assertNull(session.getEndTime());
@@ -172,18 +172,18 @@ public class SessionStoreTest {
   @Test
   public void testStoreToJSON() {
     Session session = new Session()
+        .setId("4567")
         .setUserId(123)
         .setStartTime(new DateTime(1000))
         .setExpTime(new DateTime(10000))
-        .setIdToken("4567")
         .setState(Session.State.ACTIVE);
 
     JSONObject json = new JSONObject(session);
 
+    assertEquals("4567", json.getString("id"));
     assertEquals(session.getUserId(), json.getLong("userId"));
     assertEquals(session.getStartTime().getMillis(), json.get("startTime"));
     assertEquals(session.getExpTime().getMillis(), json.getLong("expTime"));
-    assertEquals(session.getIdToken(), json.getString("idToken"));
     assertEquals(session.getState(), json.get("state"));
   }
 }

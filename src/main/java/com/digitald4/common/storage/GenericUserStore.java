@@ -4,7 +4,7 @@ import com.digitald4.common.model.User;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class GenericUserStore<U extends User> extends GenericStore<U> implements UserStore<U> {
+public class GenericUserStore<U extends User> extends GenericStore<U, Long> implements UserStore<U> {
 	@Inject
 	public GenericUserStore(U type, Provider<DAO> daoProvider) {
 		super(type, daoProvider);
