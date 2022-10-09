@@ -5,11 +5,12 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
-    .service('userService', ['apiConnector', 'globalData', function(apiConnector, globalData) {
+    .service('userService', ['apiConnector', 'globalData', '$location', function(apiConnector, globalData, $location) {
       var userService = new com.digitald4.common.JSONService('user', apiConnector);
       userService.login = function(username, password, success, error) {
         this.performRequest(['login', 'POST'], undefined, undefined,
             {username: username, password: CryptoJS.MD5(password).toString().toUpperCase()}, success, error);
+        $location.search('idToken', globalData.activeSession);
       };
       userService.logout = function() {
         if (globalData.activeSession) {
