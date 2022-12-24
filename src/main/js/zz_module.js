@@ -8,19 +8,22 @@ com.digitald4.common.module = angular.module('DD4Common', [])
     .service('userService', ['apiConnector', 'globalData', '$location', function(apiConnector, globalData, $location) {
       var userService = new com.digitald4.common.JSONService('user', apiConnector);
       userService.login = function(username, password, success, error) {
-        this.performRequest(['login', 'POST'], undefined, undefined,
-            {username: username, password: CryptoJS.MD5(password).toString().toUpperCase()}, success, error);
-        $location.search('idToken', globalData.activeSession);
+        var request = {username: username, password: CryptoJS.MD5(password).toString().toUpperCase()};
+        this.sendRequest({action: 'login', method: 'POST', params: request}, function(activeSession) {
+          globalData.activeSession = activeSession;
+          $location.search('idToken', activeSession.id);
+          success(activeSession);
+        }, error);
       };
-      userService.logout = function() {
+      userService.logout = function(success, error) {
         if (globalData.activeSession) {
-          this.performRequest(['logout'], undefined, undefined, undefined, function() {}, notify);
+          this.sendRequest({action: 'logout'}, success, error);
           globalData.activeSession = undefined;
           $location.search('idToken', undefined);
         }
       };
-      userService.getActiveSession = function(idToken, success, error) {
-        this.performRequest(['activeSession'], undefined, {idToken: idToken}, undefined, success, error);
+      userService.getActiveSession = function(success, error) {
+        this.sendRequest({action: 'activeSession'}, success, error);
       };
       return userService;
     }])

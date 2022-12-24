@@ -105,6 +105,10 @@ public class EntityServiceImpl<T,I>
 		loginResolver.resolve(idToken, requiresLogin);
 	}
 
+	protected void resolveLogin(String idToken) {
+		loginResolver.resolve(idToken, true);
+	}
+
 	protected void resolveLogin(String idToken, String method) {
 		resolveLogin(idToken, requiresLogin(method));
 	}

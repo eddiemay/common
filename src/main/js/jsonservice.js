@@ -166,6 +166,28 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 }
 
 /**
+* Updates a batch of objects in the data store.
+*
+* @param {Object} entity The object to update.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.batchUpdate = function(entities, props, onSuccess, onError) {
+	var updates = [];
+	for (var e = 0; e < entities.length; e++) {
+	  var entity = entities[e];
+	  var updated = {id: entity.id};
+    for (var p = 0; p < props.length; p++) {
+      updated[props[p]] = entity[props[p]];
+    }
+    updates.push(updated);
+	}
+	this.sendRequest(
+	    {method: 'PUT', action: 'batchUpdate',  params: {updateMask: props.join()}, data: {items: updates}},
+	    onSuccess, onError);
+}
+
+/**
 * Deletes an object from the data store.
 *
 * @param {number} id The id of the object to delete.

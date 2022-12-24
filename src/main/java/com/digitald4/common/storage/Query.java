@@ -30,14 +30,6 @@ public class Query {
     return setOrderBys(Arrays.asList(orderBys));
   }
 
-  public Query addOrderBy(OrderBy orderBy) {
-    this.orderBys = ImmutableList.<OrderBy>builder()
-        .addAll(orderBys)
-        .add(orderBy)
-        .build();
-    return this;
-  }
-
   public Query setPageSize(int pageSize) {
     this.pageSize = pageSize;
     return this;
@@ -131,14 +123,6 @@ public class Query {
 
     public Query.List setFilters(Filter... filters) {
       return setFilters(Arrays.asList(filters));
-    }
-
-    public Query.List addFilter(Filter filter) {
-      this.filters = ImmutableList.<Filter>builder()
-          .addAll(filters)
-          .add(filter)
-          .build();
-      return this;
     }
 
     @Override

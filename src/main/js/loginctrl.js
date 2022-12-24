@@ -1,18 +1,14 @@
-com.digitald4.common.LoginController = function($location, userService, sessionWatcher, globalData) {
-  this.locationProvider = $location;
+com.digitald4.common.LoginController = function(userService, sessionWatcher) {
   this.userService = userService;
-  this.globalData = globalData;
   this.sessionWatcher = sessionWatcher;
   sessionWatcher.disable();
 }
 
-com.digitald4.common.LoginCtrl = ['$location', 'userService', 'sessionWatcher', 'globalData', com.digitald4.common.LoginController];
+com.digitald4.common.LoginCtrl = ['userService', 'sessionWatcher', com.digitald4.common.LoginController];
 
 com.digitald4.common.LoginController.prototype.login = function() {
   this.userService.login(this.email, this.password, function(activeSession) {
-    this.globalData.activeSession = activeSession;
-    this.locationProvider.search('idToken', activeSession.idToken);
-	  this.sessionWatcher.enable();
+    this.sessionWatcher.enable();
 	  if (this.onLoginSuccess) {
 	    this.onLoginSuccess();
 	  }
