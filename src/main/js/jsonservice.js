@@ -74,7 +74,7 @@ com.digitald4.common.JSONService.prototype.sendRequest = function(request, onSuc
 */
 com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, onError) {
   entity.$$hashKey = undefined;
-  this.sendRequest({method: 'POST', data: entity}, onSuccess, onError);
+  this.sendRequest({action: 'create', method: 'POST', data: entity}, onSuccess, onError);
 }
 
 /**
@@ -85,7 +85,7 @@ com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, 
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError) {
-	this.sendRequest({method: 'GET', urlParams: id}, onSuccess, onError);
+	this.sendRequest({action: 'get', method: 'GET', urlParams: id}, onSuccess, onError);
 }
 
 /**
@@ -109,44 +109,9 @@ com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, o
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.list_ = function(urlParams, listOptions, onSuccess, onError) {
-  this.sendRequest({method: 'GET', urlParams: urlParams, params: listOptions}, function(response) {
+  this.sendRequest({method: 'GET', action: 'list', urlParams: urlParams, params: listOptions}, function(response) {
     onSuccess(processPagination(response));
   }, onError);
-}
-
-/**
-* Search of objects from the data store.
-*
-* @param {Object{searchText, orderBy, pageSize, pageToken}} request The parameters associated with a list request.
-* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
-* @param {!function(!Object)} onError The call back function to call after a submission onError.
-*/
-com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
-  this.sendRequest({method: 'GET', action: 'search', params: request}, function(response) {
-    onSuccess(processPagination(response));
-  }, onError);
-}
-
-processPagination = function(response) {
-  response.items = response.items || [];
-  response.pageToken = response.pageToken || 0;
-  response.pageSize = response.pageSize || 0;
-  response.totalSize = response.totalSize || response.items.length;
-
-  response.start = (response.pageToken - 1) * response.pageSize;
-  response.end = response.start + response.items.length;
-  if (response.end > 0) {
-    response.start++;
-  }
-
-  response.pages = [];
-  if (response.pageSize > 0) {
-    for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
-      response.pages.push(++p);
-    }
-  }
-
-  return response;
 }
 
 /**
@@ -162,7 +127,31 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 	  updated[props[p]] = entity[props[p]];
 	}
 	this.sendRequest(
-	    {method: 'PUT', urlParams: entity.id, params: {updateMask: props.join()}, data: updated}, onSuccess, onError);
+	    {method: 'PUT', action: 'update', params: {id: entity.id, updateMask: props.join()}, data: updated}, onSuccess, onError);
+}
+
+/**
+* Deletes an object from the data store.
+*
+* @param {number} id The id of the object to delete.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onError) {
+  this.sendRequest({method: 'DELETE', action: 'delete', urlParams: id}, onSuccess, onError);
+}
+
+/**
+* Search of objects from the data store.
+*
+* @param {Object{searchText, orderBy, pageSize, pageToken}} request The parameters associated with a list request.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
+  this.sendRequest({method: 'GET', action: 'search', params: request}, function(response) {
+    onSuccess(processPagination(response));
+  }, onError);
 }
 
 /**
@@ -187,13 +176,24 @@ com.digitald4.common.JSONService.prototype.batchUpdate = function(entities, prop
 	    onSuccess, onError);
 }
 
-/**
-* Deletes an object from the data store.
-*
-* @param {number} id The id of the object to delete.
-* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
-* @param {!function(!Object)} onError The call back function to call after a submission onError.
-*/
-com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onError) {
-  this.sendRequest({method: 'DELETE', urlParams: id}, onSuccess, onError);
+processPagination = function(response) {
+  response.items = response.items || [];
+  response.pageToken = response.pageToken || 0;
+  response.pageSize = response.pageSize || 0;
+  response.totalSize = response.totalSize || response.items.length;
+
+  response.start = (response.pageToken - 1) * response.pageSize;
+  response.end = response.start + response.items.length;
+  if (response.end > 0) {
+    response.start++;
+  }
+
+  response.pages = [];
+  if (response.pageSize > 0) {
+    for (var p = 0; p < Math.ceil(response.totalSize / response.pageSize);) {
+      response.pages.push(++p);
+    }
+  }
+
+  return response;
 }

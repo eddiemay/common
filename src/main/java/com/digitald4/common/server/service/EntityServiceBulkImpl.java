@@ -29,7 +29,7 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
   }
 
   @Override
-  @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchCreate")
   public ImmutableList<T> batchCreate(Iterable<T> entities, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
@@ -41,7 +41,7 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
   }
 
   @Override
-  @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "batchGet")
   public ImmutableList<T> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
@@ -68,6 +68,7 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
   }
 
   @Override
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "batchDelete")
   public Empty batchDelete(Iterable<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
     try {
       resolveLogin(idToken,"batchDelete");

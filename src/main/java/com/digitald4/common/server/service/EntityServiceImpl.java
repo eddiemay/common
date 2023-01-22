@@ -36,7 +36,7 @@ public class EntityServiceImpl<T,I>
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "_")
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "create")
 	public T create(T entity, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken, "create");
@@ -47,7 +47,7 @@ public class EntityServiceImpl<T,I>
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}")
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "get")
 	public T get(@Named("id") I id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"get");
@@ -58,7 +58,7 @@ public class EntityServiceImpl<T,I>
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "_")
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "list")
 	public QueryResult<T> list(
 			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
 			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
@@ -72,7 +72,7 @@ public class EntityServiceImpl<T,I>
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "{id}")
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "update")
 	public T update(
 			@Named("id") I id, T entity, @Named("updateMask") String updateMask,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
@@ -86,7 +86,7 @@ public class EntityServiceImpl<T,I>
 	}
 
 	@Override
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "{id}")
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "delete")
 	public Empty delete(@Named("id") I id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"delete");
