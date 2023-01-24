@@ -2,14 +2,13 @@ package com.digitald4.common.model;
 
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
-import com.google.protobuf.ByteString;
 
 public class DataFile {
   private long id;
   private String name;
   private String type;
   private int size;
-  private ByteString data;
+  private byte[] data;
 
   public long getId() {
     return id;
@@ -48,11 +47,11 @@ public class DataFile {
   }
 
   @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-  public ByteString getData() {
+  public byte[] getData() {
     return data;
   }
 
-  public DataFile setData(ByteString data) {
+  public DataFile setData(byte[] data) {
     this.data = data;
     return this;
   }

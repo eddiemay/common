@@ -2,7 +2,7 @@ package com.digitald4.common.server.service;
 
 import static java.util.stream.Collectors.joining;
 
-import com.google.api.server.spi.auth.EspAuthenticator;
+// import com.google.api.server.spi.auth.EspAuthenticator;
 import com.google.api.server.spi.auth.common.User;
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.Api;
@@ -111,7 +111,7 @@ public class Echo {
 	@ApiMethod(
 			path = "email",
 			httpMethod = ApiMethod.HttpMethod.GET,
-			authenticators = {EspAuthenticator.class},
+			// authenticators = {EspAuthenticator.class},
 			audiences = {"YOUR_OAUTH_CLIENT_ID"},
 			clientIds = {"YOUR_OAUTH_CLIENT_ID"}
 	)
@@ -136,7 +136,7 @@ public class Echo {
 	@ApiMethod(
 			path = "firebase_user",
 			httpMethod = ApiMethod.HttpMethod.GET,
-			authenticators = {EspAuthenticator.class},
+			// authenticators = {EspAuthenticator.class},
 			issuerAudiences = {@ApiIssuerAudience(name = "firebase", audiences = {"YOUR-PROJECT-ID"})}
 	)
 	public Email getUserEmailFirebase(User user) throws UnauthorizedException {

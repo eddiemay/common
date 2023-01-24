@@ -9,7 +9,6 @@ import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
 import com.google.api.server.spi.config.ApiNamespace;
-import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,7 +74,7 @@ public class FileService<U extends User> extends EntityServiceImpl<DataFile, Lon
 	public JSONObject get(JSONObject request) {
 		DataFile df = dataFileStore.get((long) request.getInt("id"));
 		HttpServletResponse response = responseProvider.get();
-		byte[] bytes = df.getData().toByteArray();
+		byte[] bytes = df.getData();
 		response.setContentType("application/" + (!df.getType().isEmpty() ? df.getType() : "pdf"));
 		response.setHeader("Cache-Control", "no-cache, must-revalidate");
 		response.setContentLength(bytes.length);
@@ -130,7 +129,7 @@ public class FileService<U extends User> extends EntityServiceImpl<DataFile, Lon
 					.setName(fileName)
 					.setType(fileName.substring(fileName.length() - 4))
 					.setSize(data.length)
-					.setData(ByteString.copyFrom(data));
+					.setData(data);
 		} catch (IOException e) {
 			e.printStackTrace();
 			LOGGER.log(Level.SEVERE, "Problems during file upload. Error: {0}", e.getMessage());

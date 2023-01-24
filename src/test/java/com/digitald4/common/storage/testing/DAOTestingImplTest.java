@@ -3,40 +3,32 @@ package com.digitald4.common.storage.testing;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.digitald4.common.proto.DD4Protos.User;
+import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.storage.*;
 import org.junit.Test;
 
 public class DAOTestingImplTest {
 	private final DAOTestingImpl dao = new DAOTestingImpl();
-	private final GenericStore<User, Long> userStore = new GenericStore<>(User.class, () -> dao);
+	private final GenericStore<BasicUser, Long> userStore = new GenericStore<>(BasicUser.class, () -> dao);
 
 	@Test
 	public void testCreate() {
-		User user = userStore.create(User.newBuilder()
-				.setUsername("eddiemay@gmail.com")
-				.setTypeId(56)
-				.build());
+		BasicUser user = userStore.create(new BasicUser().setUsername("eddiemay@gmail.com").setTypeId(56));
 		assertTrue(user.getId() > 0);
 		assertEquals("eddiemay@gmail.com", user.getUsername());
 		assertEquals(56, user.getTypeId());
 
 		assertEquals(user, userStore.get(user.getId()));
 
-		QueryResult<User> users = userStore.list(Query.forList());
+		QueryResult<BasicUser> users = userStore.list(Query.forList());
 		assertEquals(1, users.getTotalSize());
 		assertEquals(1, users.getItems().size());
 		assertEquals(user, users.getItems().get(0));
 
-		user = userStore.update(user.getId(), user_ -> user_.toBuilder()
-				.setUsername("eddiemay1999@yahoo.com")
-				.build());
+		user = userStore.update(user.getId(), user_ -> user_.setUsername("eddiemay1999@yahoo.com"));
 		assertEquals("eddiemay1999@yahoo.com", user.getUsername());
 
-		User user2 = userStore.create(User.newBuilder()
-				.setUsername("benfrank@gmail.com")
-				.setTypeId(34)
-				.build());
+		BasicUser user2 = userStore.create(new BasicUser().setUsername("benfrank@gmail.com").setTypeId(34));
 		assertTrue(user2.getId() > 0);
 		assertEquals("benfrank@gmail.com", user2.getUsername());
 		assertEquals(34, user2.getTypeId());

@@ -1,6 +1,6 @@
 package com.digitald4.common.server.service;
 
-import static com.digitald4.common.util.ProtoUtil.toJSON;
+import static com.digitald4.common.util.JSONUtil.toJSON;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Session;

@@ -13,9 +13,7 @@ import com.digitald4.common.util.Encryptor;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.cloud.datastore.DatastoreOptions;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.Message;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -78,24 +76,20 @@ public class ApiServiceServlet extends HttpServlet {
 	public void init() {
 		ServletContext sc = getServletContext();
 		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
-		TypedDAO<Message> messageDAO;
-		DAO defaultDAO;
 		if (serverType == ServerType.TOMCAT) {
 			// We use MySQL with Tomcat, so if Tomcat, MySQL
-			messageDAO = new DAOSQLImpl(
+			dao = new DAOSQLImpl(
 					new DBConnectorThreadPoolImpl(
 							sc.getInitParameter("dbdriver"),
 							sc.getInitParameter("dburl"),
 							sc.getInitParameter("dbuser"),
 							sc.getInitParameter("dbpass")),
+					clock,
 					useViews);
-			defaultDAO = null;
 		} else {
 			// We use CloudDataStore with AppEngine.
-			messageDAO = new DAOCloudDSProto(DatastoreOptions.getDefaultInstance().getService());
-			defaultDAO = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), clock);
+			dao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), clock);
 		}
-		dao = new DAORouterImpl(messageDAO, new DAOHasProto(messageDAO), defaultDAO);
 	}
 
 	protected ApiServiceServlet addService(String entity, JSONService service) {

@@ -1,5 +1,6 @@
 package com.digitald4.common.model;
 
+import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.config.ApiResourceProperty;
 
 public class BasicUser implements User {
@@ -78,5 +79,15 @@ public class BasicUser implements User {
 	@ApiResourceProperty
 	public String fullName() {
 		return String.format("%s %s", getFirstName(), getLastName());
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof BasicUser && toString().equals(obj.toString());
+	}
+
+	@Override
+	public String toString() {
+		return JSONUtil.toJSON(this).toString();
 	}
 }
