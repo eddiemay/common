@@ -22,8 +22,8 @@ com.digitald4.common.module = angular.module('DD4Common', [])
           $location.search('idToken', undefined);
         }
       };
-      userService.getActiveSession = function(success, error) {
-        this.sendRequest({action: 'activeSession'}, success, error);
+      userService.getActiveSession = function(idToken, success, error) {
+        this.sendRequest({action: 'activeSession', params: {idToken: idToken}}, success, error);
       };
       return userService;
     }])
