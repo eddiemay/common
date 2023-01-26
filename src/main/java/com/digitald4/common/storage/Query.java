@@ -72,15 +72,14 @@ public class Query {
     Query.List query = new Query.List();
     query.setPageSize(pageSize).setPageToken(pageToken);
     if (filters != null && !filters.isEmpty()) {
-      query.setFilters(Arrays.stream(filters.split(","))
-          .map(filter -> {
-            Matcher matcher = FILTER_PATTERN.matcher(filter);
-            if (matcher.find()) {
-              return Filter.of(matcher.group(1).trim(), matcher.group(2), matcher.group(3).trim());
-            }
-            return null;
-          })
-          .collect(toImmutableList()));
+      query.setFilters(
+          Arrays.stream(filters.split(","))
+              .map(filter -> {
+                Matcher matcher = FILTER_PATTERN.matcher(filter);
+                return matcher.find()
+                    ? Filter.of(matcher.group(1).trim(), matcher.group(2), matcher.group(3).trim()) : null;
+              })
+              .collect(toImmutableList()));
     }
     if (orderBys != null && !orderBys.isEmpty()) {
       query.setOrderBys(Arrays.stream(orderBys.split(","))

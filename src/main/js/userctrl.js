@@ -15,11 +15,11 @@ com.digitald4.common.UserCtrl =
 com.digitald4.common.UserController.prototype.refresh = function() {
 	this.userService.get(this.userId, function(user) {
 		this.user = user;
-	}.bind(this), notify);
+	}.bind(this), notifyError);
 }
 
 com.digitald4.common.UserController.prototype.update = function(prop) {
   this.userService.update(this.user, [prop], function(user) {
     this.user = user;
-  }.bind(this), notify);
+  }.bind(this), notifyError);
 }

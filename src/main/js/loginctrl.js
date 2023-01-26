@@ -12,7 +12,7 @@ com.digitald4.common.LoginController.prototype.login = function() {
 	  if (this.onLoginSuccess) {
 	    this.onLoginSuccess();
 	  }
-  }.bind(this), notify);
+  }.bind(this), notifyError);
 }
 
 com.digitald4.common.LoginController.prototype.showSignUpDialog = function() {
@@ -35,7 +35,7 @@ com.digitald4.common.LoginController.prototype.processSignUp = function() {
     password: this.password,
     typeId: 4
   };
-  this.userService.create(user, function(user) {}, notify);
+  this.userService.create(user, function(user) {}, notifyError);
 }
 
 com.digitald4.common.LoginController.prototype.toggleRecoveryShown = function() {

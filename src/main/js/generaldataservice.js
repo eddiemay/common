@@ -31,7 +31,7 @@ com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
       }
     }
     this.generalDataMap = map;
-  }.bind(this), notify);
+  }.bind(this), notifyError);
 }
 
 com.digitald4.common.GeneralDataServ.prototype.get = function(id) {

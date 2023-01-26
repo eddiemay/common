@@ -4,10 +4,6 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
   this.$http = $http;
   this.$httpParamSerializer = $httpParamSerializer;
 
-  this.performRequest = function(method, url, params, data, successCallback, errorCallback) {
-    this.sendRequest({method: method, url: url, params: params, data: data}, successCallback, errorCallback);
-  }
-
   this.sendRequest = function(request, successCallback, errorCallback) {
     var url = this.baseUrl + request.url;
     var params = request.params || {};

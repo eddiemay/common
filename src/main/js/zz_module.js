@@ -38,7 +38,7 @@ com.digitald4.common.module = angular.module('DD4Common', [])
               globalData.activeSession = activeSession;
               sessionWatcher.enable();
             }
-          }, notify);
+          }, notifyError);
         }, 2000); // Give some time for everything to be setup before checking the session.
       }
       this.getIdTokenParameter = function() {

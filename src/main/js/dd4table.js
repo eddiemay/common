@@ -14,7 +14,7 @@ com.digitald4.common.TableController.prototype.refresh = function() {
   this.jsonService.list({filter: this.metadata.filter}, function(response) {
     this.entities = response.items;
     this.loading = this.scope.loading = false;
-  }.bind(this), notify);
+  }.bind(this), notifyError);
 }
 
 com.digitald4.common.TableController.prototype.update = function(entity, prop) {
@@ -23,5 +23,5 @@ com.digitald4.common.TableController.prototype.update = function(entity, prop) {
   this.jsonService.update(entity, [prop], function(entity) {
     this.entities.splice(index, 1, entity);
     this.loading = this.scope.loading = false;
-  }.bind(this), notify);
+  }.bind(this), notifyError);
 }
