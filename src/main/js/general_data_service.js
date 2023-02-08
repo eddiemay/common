@@ -5,10 +5,9 @@ com.digitald4.common.GeneralDataServ = function(apiConnector) {
 
 com.digitald4.common.GeneralDataService = ['apiConnector', com.digitald4.common.GeneralDataServ];
 
-com.digitald4.common.GeneralDataServ.prototype.generalDataMap = {};
-
 com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
-  this.jsonService.list({}, function(response) {
+  this.callers = [];
+  this.jsonService.list({pageSize: 0}, function(response) {
     var generalDatas = response.items;
     var map = {};
     for (var x = 0; x < generalDatas.length; x++) {
@@ -31,13 +30,32 @@ com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
       }
     }
     this.generalDataMap = map;
+    for (var c = 0; c < this.callers.length; c++) {
+      this.callers[c](map);
+    }
+    this.callers = undefined;
   }.bind(this), notifyError);
 }
 
-com.digitald4.common.GeneralDataServ.prototype.get = function(id) {
-  return this.generalDataMap[id] || {};
+com.digitald4.common.GeneralDataServ.prototype.get = function(id, success, error) {
+  success = success || function() {};
+  if (!this.generalDataMap) {
+    this.callers.push(function(generalDataMap) {success(generalDataMap[id] || {generalDatas: []})});
+    // For legacy callers before cache is set, returns empty result.
+    return {generalDatas: []};
+  } else {
+    success(this.generalDataMap[id] || {generalDatas: []});
+  }
+
+  // This is here for legacy purposes of callers that expect a return.
+  return this.generalDataMap[id] || {generalDatas: []};
 }
 
-com.digitald4.common.GeneralDataServ.prototype.list = function(groupId) {
-  return this.get(groupId).generalDatas;
+com.digitald4.common.GeneralDataServ.prototype.list = function(groupId, success, error) {
+  success = success || function() {};
+  var result = this.get(groupId, function(gd) {success(gd.generalDatas)}, error);
+
+  // This is here for legacy purposes of callers that expect a return.
+  // Will return empty array if data has not been fetched.
+  return result.generalDatas;
 }

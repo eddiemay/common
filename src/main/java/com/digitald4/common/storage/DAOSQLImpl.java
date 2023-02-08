@@ -138,7 +138,10 @@ public class DAOSQLImpl implements DAO {
 		return Calculate.executeWithRetries(2, () -> {
 			String where = query.getFilters().isEmpty() ? "" :
 					query.getFilters().stream()
-							.map(filter -> filter.getColumn() + filter.getOperator() + "?")
+							.map(
+									filter -> String.format("%s%s",
+											filter.getColumn(),
+											filter.getOperator().equals("IN") ? " IN (?)" : filter.getOperator() + "?"))
 							.collect(joining(" AND ", " WHERE ", ""));
 			String orderBy = query.getOrderBys().isEmpty() ? "" :
 					query.getOrderBys().stream()
@@ -156,7 +159,11 @@ public class DAOSQLImpl implements DAO {
 					 PreparedStatement ps = con.prepareStatement(sql)) {
 				int p = 1;
 				for (Query.Filter filter : query.getFilters()) {
-					setObject(ps, p++, filter.getValue());
+					Object value = filter.getValue();
+					if (value instanceof Collection) {
+						value = value.toString().substring(1, value.toString().length() - 1).replace(" ", "");
+					}
+					setObject(ps, p++, value);
 				}
 				ResultSet rs = ps.executeQuery();
 				List<T> results = process(c, rs);

@@ -62,6 +62,15 @@ public class DAOSQLImplTest {
 	}
 
 	@Test
+	public void list_withIn() throws SQLException {
+		daoSql.list(BasicUser.class, Query.forList("read_only=true,type_id IN 5|10", null, 0, 0));
+
+		verify(connection).prepareStatement("SELECT * FROM BasicUser WHERE read_only=? AND type_id IN (?);");
+		verify(ps).setObject(1, "true");
+		verify(ps).setObject(2, "5,10");
+	}
+
+	@Test
 	public void list_advanced() throws SQLException {
 		daoSql.list(BasicUser.class, Query.forList("read_only=true,type_id>10", "username", 10, 3));
 

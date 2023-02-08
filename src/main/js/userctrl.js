@@ -1,7 +1,6 @@
-com.digitald4.common.UserController = function($routeParams, userService, generalDataService) {
+com.digitald4.common.UserController = function($routeParams, userService) {
 	this.userId = parseInt($routeParams.id, 10);
 	this.userService = userService;
-	this.generalDataService = generalDataService;
   this.userTypes = [
       {id: 0, name: 'Unknown'},
       {id: 1, name: 'Standard'},
@@ -9,8 +8,7 @@ com.digitald4.common.UserController = function($routeParams, userService, genera
 	this.refresh();
 }
 
-com.digitald4.common.UserCtrl =
-    ['$routeParams', 'userService', 'generalDataService', com.digitald4.common.UserController];
+com.digitald4.common.UserCtrl = ['$routeParams', 'userService', com.digitald4.common.UserController];
 
 com.digitald4.common.UserController.prototype.refresh = function() {
 	this.userService.get(this.userId, function(user) {

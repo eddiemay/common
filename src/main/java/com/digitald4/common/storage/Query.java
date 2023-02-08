@@ -2,14 +2,13 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import com.digitald4.common.exception.DD4StorageException;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Query {
-  private static final Pattern FILTER_PATTERN = Pattern.compile("([A-Za-z_ ]+)([!=<>]+)([A-Za-z0-9-_ ]+)");
+  private static final Pattern FILTER_PATTERN = Pattern.compile("([A-Za-z_]+)([!=<> IN]+)([A-Za-z0-9-_|]+)");
 
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();
   private int pageSize;
@@ -48,11 +47,7 @@ public class Query {
   }
 
   public Query setPageToken(int pageToken) {
-    if (pageToken < 1) {
-      pageToken = 1;
-      // throw new DD4StorageException("Pagetoken must be greater than zero", DD4StorageException.ErrorCode.BAD_REQUEST);
-    }
-    this.pageToken = pageToken;
+    this.pageToken = Math.max(pageToken, 1);
     return this;
   }
 
@@ -73,13 +68,7 @@ public class Query {
     query.setPageSize(pageSize).setPageToken(pageToken);
     if (filters != null && !filters.isEmpty()) {
       query.setFilters(
-          Arrays.stream(filters.split(","))
-              .map(filter -> {
-                Matcher matcher = FILTER_PATTERN.matcher(filter);
-                return matcher.find()
-                    ? Filter.of(matcher.group(1).trim(), matcher.group(2), matcher.group(3).trim()) : null;
-              })
-              .collect(toImmutableList()));
+          Arrays.stream(filters.split(",")).map(Filter::parse).collect(toImmutableList()));
     }
     if (orderBys != null && !orderBys.isEmpty()) {
       query.setOrderBys(Arrays.stream(orderBys.split(","))
@@ -170,6 +159,21 @@ public class Query {
 
     public static Filter of(String column, Object value) {
       return new Filter(column, "=", value);
+    }
+
+    public static Filter parse(String filter) {
+      Matcher matcher = FILTER_PATTERN.matcher(filter);
+      if (!matcher.find()) {
+        return null;
+      }
+
+      String operator = matcher.group(2).trim();
+      Object value = matcher.group(3).trim();
+      if (operator.equals("IN")) {
+        value = Arrays.asList(value.toString().split("\\|"));
+      }
+
+      return new Filter(matcher.group(1).trim(), operator, value);
     }
 
     public String getColumn() {

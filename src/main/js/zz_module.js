@@ -1,52 +1,19 @@
-com.digitald4.common.module = angular.module('DD4Common', [])
-    .factory('globalData', function() {
-      return new com.digitald4.common.GlobalData();
-    })
+com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
+    .factory('globalData', function() { return new com.digitald4.common.GlobalData(); })
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
-    .service('userService', ['apiConnector', 'globalData', '$location', function(apiConnector, globalData, $location) {
-      var userService = new com.digitald4.common.JSONService('user', apiConnector);
-      userService.login = function(username, password, success, error) {
-        var request = {username: username, password: CryptoJS.MD5(password).toString().toUpperCase()};
-        this.sendRequest({action: 'login', method: 'POST', params: request}, function(activeSession) {
-          globalData.activeSession = activeSession;
-          $location.search('idToken', activeSession.id);
-          success(activeSession);
-        }, error);
-      };
-      userService.logout = function(success, error) {
-        if (globalData.activeSession) {
-          this.sendRequest({action: 'logout'}, success, error);
-          globalData.activeSession = undefined;
-          $location.search('idToken', undefined);
-        }
-      };
-      userService.getActiveSession = function(idToken, success, error) {
-        this.sendRequest({action: 'activeSession', params: {idToken: idToken}}, success, error);
-      };
-      return userService;
-    }])
-    .controller('DD4AppCtrl', ['$location', 'globalData', 'userService', 'sessionWatcher', function($location, globalData, userService, sessionWatcher) {
+    .service('userService', com.digitald4.common.UserService)
+    .controller('DD4AppCtrl', ['$cookies', 'globalData', 'userService', 'sessionWatcher', function($cookies, globalData, userService, sessionWatcher) {
       this.globalData = globalData;
-      var idToken = $location.search()['idToken'];
+      globalData.activeSession = $cookies.getObject('activeSession');
       this.isUserLoggedIn = function() { return globalData.activeSession != undefined; }
-      if (idToken) {
-        setTimeout(function() {
-          userService.getActiveSession(idToken, function(activeSession) {
-            if (activeSession.state = 'ACTIVE') {
-              globalData.activeSession = activeSession;
-              sessionWatcher.enable();
-            }
-          }, notifyError);
-        }, 2000); // Give some time for everything to be setup before checking the session.
+      if (globalData.activeSession) {
+        sessionWatcher.enable();
       }
-      this.getIdTokenParameter = function() {
-        return globalData.activeSession ? "idToken=" + globalData.activeSession.id : undefined;
-      };
       this.logout = function() {
         userService.logout();
-      };
+      }
     }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
     .component('dd4Input', {
@@ -95,7 +62,7 @@ com.digitald4.common.module = angular.module('DD4Common', [])
         }
       };
     })
-    .directive('dd4MultiCheck', function($compile) {
+    .directive('dd4MultiCheck', ['$compile', function($compile) {
       return {
         restrict: 'E',
         scope: {
@@ -110,6 +77,7 @@ com.digitald4.common.module = angular.module('DD4Common', [])
             + '</span></span>',
         link: function(scope, element, attrs) {
           scope.$watch('ngModel', function(selected) {
+            selected = selected || [];
             for (var i = 0; i < scope.options.length; i++) {
               scope.options[i].selected = selected.indexOf(scope.options[i].id) >= 0;
             }
@@ -126,7 +94,7 @@ com.digitald4.common.module = angular.module('DD4Common', [])
           };
         }
       }
-    })
+    }])
     .directive('onChange', function() {
       return function(scope, element, attrs) {
         var startingValue = element.val();

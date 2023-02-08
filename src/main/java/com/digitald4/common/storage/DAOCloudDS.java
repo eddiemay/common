@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
@@ -310,30 +311,40 @@ public class DAOCloudDS implements DAO {
 			throw new DD4StorageException("Unknown column: " + colName);
 		}
 
-		Object value;
+		Object value = filter.getValue();
 		switch (field.getType().getSimpleName()) {
 			case "Long":
 			case "long":
-				value = Long.parseLong(filter.getValue().toString());
+				value = value instanceof Collection ?
+						((Collection<?>) value).stream()
+								.map(Object::toString)
+								.map(Long::parseLong)
+								.collect(toImmutableList()) : Long.parseLong(value.toString());
 				break;
 			case "Integer":
 			case "int":
-				value = Integer.parseInt(filter.getValue().toString());
+				value = value instanceof Collection ?
+						((Collection<?>) value).stream()
+								.map(Object::toString)
+								.map(Integer::parseInt)
+								.collect(toImmutableList()) : Integer.parseInt(value.toString());
 				break;
 			case "Boolean":
 			case "boolean":
-				value = Boolean.parseBoolean(filter.getValue().toString());
+				value = Boolean.parseBoolean(value.toString());
 				break;
 			case "Double":
 			case "double":
-				value = Double.parseDouble(filter.getValue().toString());
+				value = Double.parseDouble(value.toString());
 				break;
 			case "Float":
 			case "float":
-				value = Float.parseFloat(filter.getValue().toString());
+				value = Float.parseFloat(value.toString());
 				break;
 			default:
-				value = filter.getValue();
+				value = value instanceof Collection ?
+						((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList())
+						: value.toString();
 		}
 
 		switch (filter.getOperator()) {
@@ -348,6 +359,8 @@ public class DAOCloudDS implements DAO {
 				return new FilterPredicate(colName, FilterOperator.GREATER_THAN_OR_EQUAL, value);
 			case ">":
 				return new FilterPredicate(colName, FilterOperator.GREATER_THAN, value);
+			case "IN":
+				return new FilterPredicate(colName, FilterOperator.IN, value);
 			default:
 				throw new IllegalArgumentException("Unknown operator " + filter.getOperator());
 		}

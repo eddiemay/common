@@ -3,7 +3,7 @@ function addMapAutoComplete(input, callback) {
     componentRestrictions: { country: "us" },
     fields: ["address_components", "formatted_address", "geometry", "icon", "name"],
     strictBounds: false
-  };
+  }
   var autocomplete = new google.maps.places.Autocomplete(input, options);
 
 	google.maps.event.addListener(autocomplete, 'place_changed', function() {
@@ -27,7 +27,7 @@ function addMapAutoComplete(input, callback) {
             },
             function listentoresult(list, status) {
               if (list == null || list.length == 0) {
-                  // There are no suggestions available.
+                // There are no suggestions available.
                   // The user saw an empty list and hit enter.
                   console.log("No results");
               } else {

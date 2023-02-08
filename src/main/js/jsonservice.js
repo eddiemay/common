@@ -25,8 +25,7 @@ com.digitald4.common.JSONService.prototype.sendRequest = function(request, onSuc
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, onError) {
-  entity.$$hashKey = undefined;
-  this.sendRequest({method: 'POST', action: 'create', data: entity}, onSuccess, onError);
+  this.sendRequest({action: 'create', method: 'POST', data: entity}, onSuccess, onError);
 }
 
 /**
@@ -37,7 +36,7 @@ com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, 
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError) {
-	this.sendRequest({method: 'GET', action: 'get', params: {id: id}}, onSuccess, onError);
+	this.sendRequest({action: 'get', method: 'GET', params: {id: id}}, onSuccess, onError);
 }
 
 /**
@@ -48,7 +47,7 @@ com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, onError) {
-  this.sendRequest({method: 'GET', action: 'list', params: request}, function(response) {
+  this.sendRequest({action: 'list', method: 'GET', params: request}, function(response) {
     onSuccess(processPagination(response));
   }, onError);
 }
@@ -66,7 +65,7 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 	  updated[props[p]] = entity[props[p]];
 	}
 	this.sendRequest(
-	    {method: 'PUT', action: 'update', params: {id: entity.id, updateMask: props.join()}, data: updated},
+	    {action: 'update', method: 'PUT', params: {id: entity.id, updateMask: props.join()}, data: updated},
 	    onSuccess, onError);
 }
 
@@ -78,7 +77,7 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onError) {
-  this.sendRequest({method: 'DELETE', action: 'delete', params: id}, onSuccess, onError);
+  this.sendRequest({action: 'delete', method: 'DELETE', params: id}, onSuccess, onError);
 }
 
 /**
@@ -89,7 +88,7 @@ com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onEr
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
-  this.sendRequest({method: 'GET', action: 'search', params: request}, function(response) {
+  this.sendRequest({action: 'search', method: 'GET', params: request}, function(response) {
     onSuccess(processPagination(response));
   }, onError);
 }
@@ -112,7 +111,7 @@ com.digitald4.common.JSONService.prototype.batchUpdate = function(entities, prop
     updates.push(updated);
 	}
 	this.sendRequest(
-	    {method: 'PUT', action: 'batchUpdate',  params: {updateMask: props.join()}, data: {items: updates}},
+	    {action: 'batchUpdate', method: 'PUT', params: {updateMask: props.join()}, data: {items: updates}},
 	    onSuccess, onError);
 }
 
