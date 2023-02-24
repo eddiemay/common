@@ -34,7 +34,7 @@ com.digitald4.common.GeneralDataServ.prototype.refresh = function() {
       this.callers[c](map);
     }
     this.callers = undefined;
-  }.bind(this), notifyError);
+  }.bind(this));
 }
 
 com.digitald4.common.GeneralDataServ.prototype.get = function(id, success, error) {

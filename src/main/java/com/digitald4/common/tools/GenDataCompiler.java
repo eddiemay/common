@@ -1,8 +1,9 @@
 package com.digitald4.common.tools;
 
 import com.digitald4.common.model.GeneralData;
-import com.digitald4.common.storage.DAO;
 
+import com.digitald4.common.storage.GeneralDataStore;
+import com.digitald4.common.storage.Query;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,21 +18,20 @@ public class GenDataCompiler {
 	private static final String JS_DECLARATION = "com.digitald4.%s.GenData = {\n";
 	private static final String JS_ENTRY = "\t%s: %d,\n";
 
+	private final GeneralDataStore store;
 	private final String project;
-	private final DAO dao;
 	private final String javaFile;
 	private final String jsFile;
 
-	public GenDataCompiler(String project, DAO dao, String javaFile, String jsFile) {
+	public GenDataCompiler(GeneralDataStore store, String project, String javaFile, String jsFile) {
+		this.store = store;
 		this.project = project;
-		this.dao = dao;
 		this.javaFile = javaFile;
 		this.jsFile = jsFile;
 	}
 
 	public void compile() {
-		Map<Long, List<GeneralData>> hash = dao.list(GeneralData.class, null)
-				.getItems().stream()
+		Map<Long, List<GeneralData>> hash = store.list(Query.forList()).getItems().stream()
 				.collect(Collectors.groupingBy(GeneralData::getGroupId));
 
 		StringBuilder javaOut = new StringBuilder(String.format(JAVA_DECLARATION, project));

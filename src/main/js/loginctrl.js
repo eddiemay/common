@@ -1,10 +1,11 @@
-com.digitald4.common.LoginController = function(userService, sessionWatcher) {
+com.digitald4.common.LoginController = function($window, userService, sessionWatcher) {
+  this.style = {top: ($window.visualViewport.pageTop + 20) + 'px'};
   this.userService = userService;
   this.sessionWatcher = sessionWatcher;
   sessionWatcher.disable();
 }
 
-com.digitald4.common.LoginCtrl = ['userService', 'sessionWatcher', com.digitald4.common.LoginController];
+com.digitald4.common.LoginCtrl = ['$window', 'userService', 'sessionWatcher', com.digitald4.common.LoginController];
 
 com.digitald4.common.LoginController.prototype.login = function() {
   this.userService.login(this.email, this.password, function(activeSession) {
@@ -12,7 +13,7 @@ com.digitald4.common.LoginController.prototype.login = function() {
 	  if (this.onLoginSuccess) {
 	    this.onLoginSuccess();
 	  }
-  }.bind(this), notifyError);
+  }.bind(this));
 }
 
 com.digitald4.common.LoginController.prototype.showSignUpDialog = function() {
@@ -35,7 +36,7 @@ com.digitald4.common.LoginController.prototype.processSignUp = function() {
     password: this.password,
     typeId: 4
   };
-  this.userService.create(user, function(user) {}, notifyError);
+  this.userService.create(user, function(user) {});
 }
 
 com.digitald4.common.LoginController.prototype.toggleRecoveryShown = function() {

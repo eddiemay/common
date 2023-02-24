@@ -3,13 +3,15 @@ package com.digitald4.common.storage;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.APIConnector;
+import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -20,21 +22,14 @@ import org.json.JSONObject;
 
 public class DAOApiImpl implements DAO {
   private final APIConnector apiConnector;
-  private final Clock clock;
 
-  public DAOApiImpl(APIConnector apiConnector, Clock clock) {
+  public DAOApiImpl(APIConnector apiConnector) {
     this.apiConnector = apiConnector;
-    this.clock = clock;
-  }
-
-  @Override
-  public Clock getClock() {
-    return clock;
   }
 
   @Override
   public <T> T create(T t) {
-    String url = apiConnector.formatUrl(getResourceName(t.getClass())) + "/_";
+    String url = apiConnector.formatUrl(getResourceName(t.getClass())) + "/create";
     return convert((Class<T>) t.getClass(), apiConnector.sendPost(url, new JSONObject(t).toString()));
   }
 
@@ -42,41 +37,83 @@ public class DAOApiImpl implements DAO {
   public <T> ImmutableList<T> create(Iterable<T> entities) {
     Class<T> c = (Class<T>) entities.iterator().next().getClass();
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
-    JSONObject postData = new JSONObject().put("entities", entities);
+    JSONObject postData = new JSONObject().put("items", entities);
     return convertList(c, apiConnector.sendPost(url, postData.toString()));
   }
 
   @Override
   public <T, I> T get(Class<T> c, I id) {
-    String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
+    String url = apiConnector.formatUrl(getResourceName(c)) + "/get?id=" + id;
     return convert(c, apiConnector.sendGet(url));
   }
 
   @Override
   public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
-    return convertList(c, apiConnector.sendPost(url, new JSONObject().put("entities", ids).toString()));
+    return convertList(c, apiConnector.sendPost(url, new JSONObject().put("items", ids).toString()));
   }
 
   @Override
   public <T> QueryResult<T> list(Class<T> c, Query.List query) {
-    StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/_?");
+    StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/list");
 
-    url.append("filter=").append(query.getFilters().stream()
-        .map(filter -> filter.getColumn() + filter.getOperator() + filter.getValue())
-        .collect(Collectors.joining(",")));
+    ArrayList<String> parameters = new ArrayList<>();
+    if (!query.getFilters().isEmpty()) {
+      parameters.add("filter=" + query.getFilters().stream()
+          .map(filter -> filter.getColumn() + filter.getOperator() + filter.getValue())
+          .collect(Collectors.joining(",")));
+    }
     if (!query.getOrderBys().isEmpty()) {
-      url.append("&orderBy=").append(query.getOrderBys().stream()
+      parameters.add("orderBy=" + query.getOrderBys().stream()
           .map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
           .collect(Collectors.joining(",")));
     }
-    if (query.getPageSize() > 0) {
-      url.append("&pageSize").append("=").append(query.getPageSize());
+    if (query.getPageSize() != null) {
+      parameters.add("pageSize=" + query.getPageSize());
     }
     if (query.getPageToken() > 0) {
-      url.append("&pageToken").append("=").append(query.getPageToken());
+      parameters.add("pageToken=" + query.getPageToken());
     }
 
+    if (!parameters.isEmpty()) {
+      url.append(parameters.stream().collect(Collectors.joining("&", "?", "")));
+    }
+    System.out.println(url);
+    String json = apiConnector.sendGet(url.toString());
+    JSONObject response = new JSONObject(json);
+
+    int totalSize = response.getInt("totalSize");
+    if (totalSize == 0) {
+      return QueryResult.of(ImmutableList.of(), totalSize, query);
+    }
+
+    JSONArray resultArray = response.getJSONArray("items");
+    ImmutableList<T> results = IntStream.range(0, resultArray.length())
+        .mapToObj(x -> convert(c, resultArray.getJSONObject(x).toString()))
+        .collect(toImmutableList());
+
+    return QueryResult.of(results, totalSize, query);
+  }
+
+  @Override
+  public <T extends Searchable> QueryResult<T> search(Class<T> c, Search query) {
+    StringBuilder url =
+        new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/search?searchText=")
+            .append(query.getSearchText());
+    if (!query.getOrderBys().isEmpty()) {
+      url.append("&orderBy=").append(
+          query.getOrderBys().stream()
+              .map(orderBy -> orderBy.getColumn() + (orderBy.getDesc() ? " DESC" : ""))
+              .collect(Collectors.joining(",")));
+    }
+    if (query.getPageSize() != null) {
+      url.append("&pageSize=").append(query.getPageSize());
+    }
+    if (query.getPageToken() > 0) {
+      url.append("pageToken=").append(query.getPageToken());
+    }
+
+    System.out.println(url);
     String json = apiConnector.sendGet(url.toString());
     JSONObject response = new JSONObject(json);
 
@@ -113,7 +150,7 @@ public class DAOApiImpl implements DAO {
       if (updateMask.isEmpty()) {
         System.out.println("Nothing changed, returning");
       } else {
-        String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id + "?updateMask=" + updateMask;
+        String url = apiConnector.formatUrl(getResourceName(c)) + "/update?id=" + id + "&updateMask=" + updateMask;
         return convert(c, apiConnector.send("PUT", url, new JSONObject(updated).toString()));
       }
       return updated;
@@ -127,14 +164,14 @@ public class DAOApiImpl implements DAO {
 
   @Override
   public <T, I> void delete(Class<T> c, I id) {
-    String url = apiConnector.formatUrl(getResourceName(c)) + "/" + id;
+    String url = apiConnector.formatUrl(getResourceName(c)) + "/delete?id=" + id;
     apiConnector.send("DELETE", url, null);
   }
 
   @Override
   public <T, I> void delete(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchDelete";
-    apiConnector.send("POST", url, new JSONArray(ids).toString());
+    apiConnector.send("POST", url, new JSONObject().put("items", ids).toString());
   }
 
   private <T> T convert(Class<T> cls, String content) {

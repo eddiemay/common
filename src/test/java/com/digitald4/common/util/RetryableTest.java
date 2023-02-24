@@ -1,6 +1,6 @@
 package com.digitald4.common.util;
 
-import static org.junit.Assert.assertEquals;
+import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
@@ -18,6 +18,6 @@ public class RetryableTest {
 			return data.toString();
 		});
 
-		assertEquals("done", out);
+		assertThat(out).isEqualTo("done");
 	}
 }

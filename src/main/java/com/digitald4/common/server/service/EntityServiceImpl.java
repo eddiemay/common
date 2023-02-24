@@ -8,6 +8,7 @@ import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class EntityServiceImpl<T,I>
 		implements Createable<T>, Getable<T,I>, Listable<T>, Updateable<T,I>, Deleteable<T,I> {
@@ -42,6 +43,7 @@ public class EntityServiceImpl<T,I>
 			resolveLogin(idToken, "create");
 			return getStore().create(entity);
 		} catch (DD4StorageException e) {
+			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
 		}
 	}
@@ -87,11 +89,23 @@ public class EntityServiceImpl<T,I>
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "delete")
-	public Empty delete(@Named("id") I id, @Nullable @Named("idToken") String idToken) throws ServiceException {
+	public Empty delete(@Named("id") I id, @Nullable @Named("idToken") String idToken)
+			throws ServiceException {
 		try {
-			resolveLogin(idToken,"delete");
+			resolveLogin(idToken, "delete");
 			getStore().delete(id);
 			return Empty.getInstance();
+		} catch (DD4StorageException e) {
+			throw new ServiceException(e.getErrorCode(), e);
+		}
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "migrate")
+	public AtomicInteger migrate(@Named("idToken") String idToken) throws ServiceException {
+		try {
+			resolveLogin(idToken, true);
+			return new AtomicInteger(
+					getStore().create(getStore().list(Query.forList()).getItems()).size());
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}

@@ -54,7 +54,7 @@ public class QueryResult<T> {
 				: query.getOrderBys().stream().map(ob -> ob.getColumn() + (ob.getDesc() ? " DESC" : "")).collect(joining(","));
 	}
 
-	public int getPageSize() {
+	public Integer getPageSize() {
 		return query == null ? 0 : query.getPageSize();
 	}
 

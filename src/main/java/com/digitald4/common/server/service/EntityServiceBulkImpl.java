@@ -1,6 +1,5 @@
 package com.digitald4.common.server.service;
 
-import static com.google.common.collect.Streams.stream;
 import static java.util.function.Function.identity;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
@@ -16,7 +15,6 @@ import com.google.api.server.spi.config.Nullable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-
 public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntityServiceImpl<T, I>
     implements BulkCreateable<T>, BulkGetable<T,I>, BulkUpdateable<T,I>, BulkDeleteable<T,I> {
 
@@ -30,11 +28,11 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchCreate")
-  public ImmutableList<T> batchCreate(Iterable<T> entities, @Nullable @Named("idToken") String idToken)
+  public ImmutableList<T> batchCreate(IterableParam<T> entities, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken,"batchCreate");
-      return getStore().create(entities);
+      return getStore().create(entities.getItems());
     } catch (DD4StorageException e) {
       throw new ServiceException(e.getErrorCode(), e);
     }
@@ -42,11 +40,11 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "batchGet")
-  public ImmutableList<T> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken)
+  public ImmutableList<T> batchGet(IterableParam<I> ids, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
-      resolveLogin(idToken,"batchGet");
-      return getStore().get(ids);
+      resolveLogin(idToken, "batchGet");
+      return getStore().get(ids.getItems());
     } catch (DD4StorageException e) {
       throw new ServiceException(e.getErrorCode(), e);
     }
@@ -55,11 +53,11 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT, path = "batchUpdate")
   public ImmutableList<T> batchUpdate(
-      Iterable<T> entities, @Named("updateMask") String updateMask, @Nullable @Named("idToken") String idToken)
+      IterableParam<T> entities, @Named("updateMask") String updateMask, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken,"batchUpdate");
-      ImmutableMap<I, T> entityMap = stream(entities).collect(toImmutableMap(T::getId, identity()));
+      ImmutableMap<I, T> entityMap = entities.getItems().stream().collect(toImmutableMap(T::getId, identity()));
       return getStore().update(
           entityMap.keySet(), current -> JSONUtil.merge(updateMask, entityMap.get(current.getId()), current));
     } catch (DD4StorageException e) {
@@ -68,11 +66,11 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
   }
 
   @Override
-  @ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "batchDelete")
-  public Empty batchDelete(Iterable<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchDelete")
+  public Empty batchDelete(IterableParam<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
     try {
-      resolveLogin(idToken,"batchDelete");
-      getStore().delete(ids);
+      resolveLogin(idToken, "batchDelete");
+      getStore().delete(ids.getItems());
       return Empty.getInstance();
     } catch (DD4StorageException e) {
       throw new ServiceException(e.getErrorCode(), e);

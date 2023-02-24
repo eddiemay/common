@@ -80,7 +80,8 @@ public class JSONUtil {
       stream(c.getMethods()).forEach(method -> methods.put(method.getName(), method));
 
       return methods.values().stream()
-          .filter(m -> m.getParameters().length == 0 && (m.getName().startsWith("get") || m.getName().startsWith("is")))
+          .filter(m -> m.getParameters().length == 0
+              && (m.getName().startsWith("get") || m.getName().startsWith("is")))
           .map(method -> {
             String name = method.getName().substring(method.getName().startsWith("is") ? 2 : 3);
             Field field = new Field(name, method, methods.get("set" + name));
@@ -90,20 +91,18 @@ public class JSONUtil {
 
             return field;
           })
-          .collect(toImmutableMap(Field::getColName, identity()));
+          .collect(toImmutableMap(Field::getName, identity()));
     });
   }
 
   public static class Field {
     private final String name;
-    private final String colName;
     private final Class<?> type;
     private final Method getMethod;
     private final Method setMethod;
 
     public Field(String name, Method getMethod, Method setMethod) {
       this.name = name.substring(0, 1).toLowerCase() + name.substring(1);
-      this.colName = FormatText.toUnderScoreCase(name);
       this.type = getMethod.getReturnType();
       this.getMethod = getMethod;
       this.setMethod = setMethod;
@@ -111,10 +110,6 @@ public class JSONUtil {
 
     public String getName() {
       return name;
-    }
-
-    public String getColName() {
-      return colName;
     }
 
     public Class<?> getType() {

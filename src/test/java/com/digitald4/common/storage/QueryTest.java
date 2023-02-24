@@ -1,59 +1,59 @@
 package com.digitald4.common.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
 public class QueryTest {
   @Test
   public void forValues_nullsOkay() {
-    Query.List query = Query.forList(null, null, 0, 0);
-    assertTrue(query.getFilters().isEmpty());
-    assertTrue(query.getOrderBys().isEmpty());
-    assertEquals(0, query.getLimit());
-    assertEquals(0, query.getOffset());
+    Query.List query = Query.forList(null, null, null, 0);
+
+    assertThat(query.getFilters()).isEmpty();
+    assertThat(query.getOrderBys()).isEmpty();
+    assertThat(query.getLimit()).isNull();
+    assertThat(query.getOffset()).isEqualTo(0);
   }
 
   @Test
   public void forValues_parsesCorreclty() {
     Query.List query = Query.forList("city=LA,championships>3", "championships DESC", 5, 2);
 
-    assertEquals(2, query.getFilters().size());
+    assertThat(query.getFilters()).hasSize(2);
     Query.Filter filter = query.getFilters().get(0);
-    assertEquals("city", filter.getColumn());
-    assertEquals("=", filter.getOperator());
-    assertEquals("LA", filter.getValue());
+    assertThat(filter.getColumn()).isEqualTo("city");
+    assertThat(filter.getOperator()).isEqualTo("=");
+    assertThat(filter.getValue()).isEqualTo("LA");
     // filter=date=2021-01-18
     filter = query.getFilters().get(1);
-    assertEquals("championships", filter.getColumn());
-    assertEquals(">", filter.getOperator());
-    assertEquals("3", filter.getValue());
+    assertThat(filter.getColumn()).isEqualTo("championships");
+    assertThat(filter.getOperator()).isEqualTo(">");
+    assertThat(filter.getValue()).isEqualTo("3");
 
-    assertEquals(1, query.getOrderBys().size());
+    assertThat(query.getOrderBys()).hasSize(1);
     Query.OrderBy orderBy =  query.getOrderBys().get(0);
-    assertEquals("championships", orderBy.getColumn());
-    assertTrue(orderBy.getDesc());
+    assertThat(orderBy.getColumn()).isEqualTo("championships");
+    assertThat(orderBy.getDesc()).isTrue();
 
-    assertEquals(5, query.getLimit());
-    assertEquals(5, query.getOffset());
+    assertThat(query.getLimit()).isEqualTo(5);
+    assertThat(query.getOffset()).isEqualTo(5);
   }
 
   @Test
   public void forValues_canparseADate() {
     Query.List query = Query.forList("date=2021-01-18", "", 92, 12);
 
-    assertEquals(1, query.getFilters().size());
+    assertThat(query.getFilters()).hasSize(1);
     Query.Filter filter = query.getFilters().get(0);
-    assertEquals("date", filter.getColumn());
-    assertEquals("=", filter.getOperator());
-    assertEquals("2021-01-18", filter.getValue());
+    assertThat(filter.getColumn()).isEqualTo("date");
+    assertThat(filter.getOperator()).isEqualTo("=");
+    assertThat(filter.getValue()).isEqualTo("2021-01-18");
 
-    assertTrue(query.getOrderBys().isEmpty());
+    assertThat(query.getOrderBys()).isEmpty();
 
-    assertEquals(92, query.getPageSize());
-    assertEquals(92, query.getLimit());
-    assertEquals(12, query.getPageToken());
-    assertEquals(11 * 92, query.getOffset());
+    assertThat(query.getPageSize()).isEqualTo(92);
+    assertThat(query.getLimit()).isEqualTo(92);
+    assertThat(query.getPageToken()).isEqualTo(12);
+    assertThat(query.getOffset()).isEqualTo(11 * 92);
   }
 }

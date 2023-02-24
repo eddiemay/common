@@ -5,7 +5,10 @@ import static com.google.common.collect.Streams.stream;
 import static java.util.stream.Collectors.joining;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.jdbc.DBConnector;
+import com.digitald4.common.model.Searchable;
+import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.JSONUtil;
@@ -19,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.UnaryOperator;
@@ -40,22 +42,15 @@ public class DAOSQLImpl implements DAO {
 	private static final String COUNT_SQL = "SELECT COUNT(*) FROM %s%s;";
 
 	private final DBConnector connector;
-	private final Clock clock;
 	private final boolean useViews;
 
-	public DAOSQLImpl(DBConnector connector, Clock clock) {
-		this(connector, clock, false);
+	public DAOSQLImpl(DBConnector connector) {
+		this(connector, false);
 	}
 
-	public DAOSQLImpl(DBConnector connector, Clock clock, boolean useViews) {
+	public DAOSQLImpl(DBConnector connector, boolean useViews) {
 		this.connector = connector;
-		this.clock = clock;
 		this.useViews = useViews;
-	}
-
-	@Override
-	public Clock getClock() {
-		return clock;
 	}
 
 	@Override
@@ -187,6 +182,11 @@ public class DAOSQLImpl implements DAO {
 				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 			}
 		});
+	}
+
+	@Override
+	public <T extends Searchable> QueryResult<T> search(Class<T> c, Search searchQuery) {
+		throw new DD4StorageException("Unimplemented method", ErrorCode.BAD_REQUEST);
 	}
 
 	@Override

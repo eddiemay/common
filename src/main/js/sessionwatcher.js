@@ -20,7 +20,7 @@ com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(glo
           }
         }, function() {
           // If we get an error trying to refresh the session then just logout.
-          userService.logout();
+          userService.logout(function() {console.log('Successfully logged out')});
         });
       }
     }.bind(this), ONE_MINUTE);

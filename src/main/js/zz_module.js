@@ -117,7 +117,21 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
           }
         });
       };
-    });
+    })
+    .component('youtubeVideo', {
+      controller: function() {
+        this.url = 'https://www.youtube.com/embed/' + this.video;
+        this.width = this.width || 420;
+        this.height = this.height || 345;
+      },
+      bindings: {
+        video: '@',
+        width: '@',
+        height: '@'
+      },
+      template: '<iframe ng-src="{{$ctrl.url | trusted}}" ' +
+          'width="{{$ctrl.width}}" height="{{$ctrl.height}}"></iframe>'
+    })
 
 
 com.digitald4.common.module.directive('mapauto', function() {

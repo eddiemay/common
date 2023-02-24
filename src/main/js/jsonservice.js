@@ -115,6 +115,12 @@ com.digitald4.common.JSONService.prototype.batchUpdate = function(entities, prop
 	    onSuccess, onError);
 }
 
+com.digitald4.common.JSONService.prototype.getFileUrl = function(fileRef) {
+  var globalData = this.apiConnector.globalData;
+  var idTokenParam = globalData.activeSession ? '?idToken=' + globalData.activeSession.id : '';
+  return this.apiConnector.baseUrl + 'files/v1/' + fileRef.id + '/' + fileRef.name + idTokenParam;
+}
+
 processPagination = function(response) {
   response.items = response.items || [];
   response.pageToken = response.pageToken || 0;

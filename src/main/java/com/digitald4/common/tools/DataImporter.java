@@ -6,13 +6,12 @@ import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.*;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
-import java.time.Clock;
 
 public class DataImporter {
 	private final DAOApiImpl apiDAO;
-	private final TypedDAO dao;
+	private final DAO dao;
 
-	public DataImporter(DAOApiImpl apiDAO, TypedDAO dao) {
+	public DataImporter(DAOApiImpl apiDAO, DAO dao) {
 		this.apiDAO = apiDAO;
 		this.dao = dao;
 	}
@@ -38,10 +37,10 @@ public class DataImporter {
 
 	public static void main(String[] args) throws IOException {
 		DataImporter dataImporter = new DataImporter(
-				new DAOApiImpl(new APIConnector("\"https://ip360-179401.appspot.com/api\"", null).login(), null),
+				new DAOApiImpl(new APIConnector("\"https://ip360-179401.appspot.com/api\"", null).login()),
 				new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 						"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true",
-						"dd4_user", "getSchooled85"), Clock.systemUTC()));
+						"dd4_user", "getSchooled85")));
 
 		// dataImporter.runFor(GeneralData.class);
 		dataImporter.export(GeneralData.class)

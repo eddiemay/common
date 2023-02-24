@@ -66,9 +66,9 @@ public class JSONServiceHelper<T> implements JSONService {
 			case "batchDelete": {
 				if (entityService instanceof BulkDeleteable) {
 					JSONArray ids = jsonRequest.getJSONArray("ids");
-					return toJSON(
+					/*return toJSON(
 							((BulkDeleteable) entityService).batchDelete(
-									JSONUtil.transform(ids, ids::getLong), jsonRequest.optString("idToken")));
+									JSONUtil.transform(ids, ids::getLong), jsonRequest.optString("idToken")));*/
 				}
 				throw BAD_REQUEST;
 			}

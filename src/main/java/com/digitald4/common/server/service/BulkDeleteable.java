@@ -7,5 +7,5 @@ import com.google.api.server.spi.config.Nullable;
 
 public interface BulkDeleteable<T,I> extends EntityService<T> {
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-  Empty batchDelete(Iterable<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException;
+  Empty batchDelete(IterableParam<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException;
 }

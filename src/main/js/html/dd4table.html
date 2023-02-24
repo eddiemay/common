@@ -9,19 +9,27 @@
     </thead>
     <tbody>
       <tr data-ng-repeat="entity in tableCtrl.entities | orderBy:'name'">
-        <td class="th table-check-cell"><input type="checkbox" data-ng-model="entity.selected"/></td>
+        <td class="th table-check-cell"><input type="checkbox" data-ng-model="entity.selected"></td>
         <td data-ng-repeat="col in tableCtrl.base.columns">
           <input data-ng-if="col.editable" data-ng-model="entity[col.prop]"
                  data-on-change="tableCtrl.update(entity, col.prop)"/>
-          <span data-ng-if="col.getValue">{{col.getValue(entity)}}</span>
-          <span data-ng-if="col.getUrl"><a href="{{col.getUrl(entity)}}">{{entity[col.prop]}}</a></span>
+          <span data-ng-if="col.value">{{col.value(entity)}}</span>
+          <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}</a></span>
+          <span data-ng-if="col.button">
+            <button data-ng-click="col.button.action(entity)"
+                    data-ng-disabled="col.button.disabled(entity)">{{col.button.display}}</button>
+          </span>
           <span data-ng-if="col.type == 'date'">{{entity[col.prop] | date:'MM/dd/yyyy'}}</span>
-          <span data-ng-if="col.type == 'datetime'">{{entity[col.prop] | date:'MM/dd/yyyy hh:mm a'}}</span>
+          <span data-ng-if="col.type == 'datetime'">
+            {{entity[col.prop] | date:'MM/dd/yyyy hh:mm a'}}
+          </span>
           <span data-ng-if="col.type == 'time'">{{entity[col.prop] | date:'shortTime'}}</span>
           <span data-ng-if="col.type == 'currency'">{{(entity[col.prop] || 0) | currency}}</span>
-          <span data-ng-if="!col.type && !col.getUrl && !col.editable && !col.getValue">{{entity[col.prop]}}</span>
+          <span data-ng-if="col.prop && !col.type && !col.url && !col.editable && !col.value">
+            {{entity[col.prop]}}
+          </span>
           <span data-ng-if="col.imageLink">
-            <a href="{{col.imageLink.getUrl(entity)}}"><img ng-src="{{col.imageLink.src}}"></a>
+            <a href="{{col.imageLink.url(entity)}}"><img data-ng-src="{{col.imageLink.src}}"></a>
           </span>
         </td>
       </tr>

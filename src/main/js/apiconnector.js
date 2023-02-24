@@ -3,8 +3,10 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
   this.baseUrl = '_api/';
   this.$http = $http;
   this.$httpParamSerializer = $httpParamSerializer;
+  this.globalData = globalData;
 
   this.sendRequest = function(request, successCallback, errorCallback) {
+    errorCallback = errorCallback || notifyError;
     var url = this.baseUrl + request.url;
     var params = request.params || {};
     params.idToken = globalData.activeSession ? globalData.activeSession.id : params.idToken;

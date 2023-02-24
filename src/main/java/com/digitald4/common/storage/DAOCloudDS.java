@@ -8,6 +8,8 @@ import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
+import com.digitald4.common.model.Searchable;
+import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.JSONUtil;
@@ -20,7 +22,6 @@ import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
@@ -34,53 +35,32 @@ import org.json.JSONObject;
 
 public class DAOCloudDS implements DAO {
 	private final DatastoreService datastoreService;
-	private final Clock clock;
+	private final SearchIndexer searchIndexer;
 
 	@Inject
-	public DAOCloudDS(DatastoreService datastoreService, Clock clock) {
+	public DAOCloudDS(DatastoreService datastoreService, SearchIndexer searchIndexer) {
 		this.datastoreService = datastoreService;
-		this.clock = clock;
-	}
-
-	@Override
-	public Clock getClock() {
-		return clock;
+		this.searchIndexer = searchIndexer;
 	}
 
 	@Override
 	public <T> T create(T t) {
-		return Calculate.executeWithRetries(2, () -> {
-			JSONObject json = new JSONObject(t);
-			Object id = json.opt("id");
-			Entity entity = createEntity(t.getClass().getSimpleName(), id);
-			ImmutableMap<String, Field> fields = JSONUtil.getFields(t.getClass());
-			json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
-
-			Key keyResult = datastoreService.put(entity);
-			if (keyResult.getId() > 0) {
-				return fields.get("id").invokeSet(t, keyResult.getId());
-			//} else if (keyResult.getName() != null) {
-				// return fields.get("id").invokeSet(t, keyResult.getName());
-			}
-
-			return t;
-		});
-	}
-
-	private static Entity createEntity(String kind, Object id) {
-		if (id instanceof Long && (Long) id > 0L) {
-			return new Entity(kind, (Long) id);
-		} else if (id instanceof String) {
-			return new Entity(kind, (String) id);
-		}
-
-		return new Entity(kind);
-
+		return create(ImmutableList.of(t)).get(0);
 	}
 
 	@Override
 	public <T> ImmutableList<T> create(Iterable<T> ts) {
-		return stream(ts).map(this::create).collect(toImmutableList());
+		return Calculate.executeWithRetries(2, () ->
+				stream(ts).map(item -> {
+					JSONObject json = new JSONObject(item);
+					Object id = json.opt("id");
+					Entity entity = createEntity(item.getClass().getSimpleName(), id);
+					ImmutableMap<String, Field> fields = JSONUtil.getFields(item.getClass());
+					json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
+
+					Key key = datastoreService.put(entity);
+					return (key.getId() > 0) ? fields.get("id").invokeSet(item, key.getId()) : item;
+				}).collect(toImmutableList()));
 	}
 
 	@Override
@@ -90,8 +70,9 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
+		final String name = c.getSimpleName();
 		return Calculate.executeWithRetries(2, () ->
-				getEntities(c, stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList()))
+				getEntities(c, stream(ids).map(id -> createFactorKey(name, id)).collect(toImmutableList()))
 						.values()
 						.stream()
 						.map(v -> convert(c, v))
@@ -107,21 +88,28 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
+	public <T extends Searchable> QueryResult<T> search(Class<T> c, Search searchQuery) {
+		return searchIndexer.search(c, searchQuery);
+	}
+
+	@Override
 	public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
 		return update(c, ImmutableList.of(id), updater).get(0);
 	}
 
 	@Override
 	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
-		return Calculate.executeWithRetries(2,
-				() -> getEntities(c, stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList()))
+		String name = c.getSimpleName();
+		return Calculate.executeWithRetries(2, () ->
+				getEntities(c, stream(ids).map(id -> createFactorKey(name, id)).collect(toImmutableList()))
 						.entrySet()
 						.stream()
 						.map(entry -> {
 							Entity entity = entry.getKey().getId() > 0
-									? new Entity(c.getSimpleName(), entry.getKey().getId())
-									: new Entity(c.getSimpleName(), entry.getKey().getName());
+									? new Entity(name, entry.getKey().getId())
+									: new Entity(name, entry.getKey().getName());
 							T t = updater.apply(convert(c, entry.getValue()));
+
 							JSONObject json = new JSONObject(t);
 							ImmutableMap<String, Field> fields = JSONUtil.getFields(t.getClass());
 							json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
@@ -134,23 +122,29 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T, I> void delete(Class<T> c, I id) {
-		Calculate.executeWithRetries(2, () -> {
-			Key key = createFactorKey(c.getSimpleName(), id);
-			get(c, key); // Fetch the entry to make sure it exists.
-			datastoreService.delete(key);
-			return true;
-		});
+		delete(c, ImmutableList.of(id));
 	}
 
 	@Override
 	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
 		Calculate.executeWithRetries(2, () -> {
-			ImmutableList<Key> keys = stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList());
+			ImmutableList<Key> keys =
+					stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList());
 			// getEntities(c, keys); // Get all entries to make sure they all exist.
 			datastoreService.delete(keys);
 
 			return keys.size();
 		});
+	}
+
+	private static Entity createEntity(String kind, Object id) {
+		if (id instanceof Long && (Long) id > 0L) {
+			return new Entity(kind, (Long) id);
+		} else if (id instanceof String) {
+			return new Entity(kind, (String) id);
+		}
+
+		return new Entity(kind);
 	}
 
 	private <T> T get(Class<T> c, Key key) {
@@ -176,7 +170,8 @@ public class DAOCloudDS implements DAO {
 	}
 
 	private QueryResult<Entity> listEntities(Class<?> c, Query.List query) {
-		com.google.appengine.api.datastore.Query eQuery = new com.google.appengine.api.datastore.Query(c.getSimpleName());
+		com.google.appengine.api.datastore.Query eQuery =
+				new com.google.appengine.api.datastore.Query(c.getSimpleName());
 		if (!query.getFilters().isEmpty()) {
 			if (query.getFilters().size() == 1) {
 				eQuery.setFilter(convertToPropertyFilter(c, query.getFilters().get(0)));
@@ -196,7 +191,8 @@ public class DAOCloudDS implements DAO {
 
 		ImmutableList.Builder<Entity> results = ImmutableList.builder();
 		AtomicInteger count = new AtomicInteger();
-		int end = query.getLimit() == 0 ? Integer.MAX_VALUE : query.getOffset() + query.getLimit();
+		int end = query.getLimit() == null || query.getLimit() == 0
+				? Integer.MAX_VALUE : query.getOffset() + query.getLimit();
 		datastoreService.prepare(eQuery).asIterator().forEachRemaining(entity -> {
 			if (count.getAndIncrement() >= query.getOffset() && count.get() <= end) {
 				results.add(entity);
@@ -206,28 +202,35 @@ public class DAOCloudDS implements DAO {
 		return QueryResult.of(results.build(), count.get(), query);
 	}
 
-	private void setObject(Entity entity, JSONObject json, String fieldName, ImmutableMap<String, Field> fields) {
+	private void setObject(
+			Entity entity, JSONObject json, String fieldName, ImmutableMap<String, Field> fields) {
 		if (fieldName.equals("id")) {
 			return;
 		}
 
-		String colName = FormatText.toUnderScoreCase(fieldName);
-
 		Object value = json.get(fieldName);
-		if (value instanceof JSONObject || value instanceof JSONArray) {
-			entity.setProperty(colName, value.toString());
+		if (value instanceof JSONArray
+				&& fields.get(fieldName).getType().getSimpleName().equals("byte[]")) {
+			JSONArray jsonArray = json.getJSONArray(fieldName);
+			byte[] bytes = new byte[jsonArray.length()];
+			for (int b = 0; b < bytes.length; b++) {
+				bytes[b] = (Byte) jsonArray.get(b);
+			}
+			entity.setProperty(fieldName, new Blob(bytes));
+		} else if (value instanceof JSONObject || value instanceof JSONArray) {
+			entity.setProperty(fieldName, value.toString());
 		} else if (value instanceof Enum) {
-			entity.setProperty(colName, value.toString());
+			entity.setProperty(fieldName, value.toString());
 		} else if (value instanceof DateTime) {
-			entity.setProperty(colName, new Date(((DateTime) value).getMillis()));
+			entity.setProperty(fieldName, new Date(((DateTime) value).getMillis()));
 		} else if (value instanceof Instant) {
-			entity.setProperty(colName, new Date(((Instant) value).toEpochMilli()));
-		} else if (value instanceof Long && fields.get(colName).getType() == DateTime.class) {
-			entity.setProperty(colName, new Date((Long) value));
+			entity.setProperty(fieldName, new Date(((Instant) value).toEpochMilli()));
+		} else if (value instanceof Long && fields.get(fieldName).getType() == DateTime.class) {
+			entity.setProperty(fieldName, new Date((Long) value));
 		} else if (value instanceof StringBuilder) {
-			entity.setProperty(colName, new Text(value.toString()));
+			entity.setProperty(fieldName, new Text(value.toString()));
 		} else {
-			entity.setProperty(colName, value);
+			entity.setProperty(fieldName, value);
 		}
 	}
 
@@ -241,13 +244,15 @@ public class DAOCloudDS implements DAO {
 		Field idField = fieldMap.get("id");
 		if (idField != null && idField.getSetMethod() != null) {
 			Class<?> idType = idField.getSetMethod().getParameterTypes()[0];
-			jsonObject.put("id", idType == String.class ? entity.getKey().getName() : entity.getKey().getId());
+			jsonObject.put(
+					"id", idType == String.class ? entity.getKey().getName() : entity.getKey().getId());
 		}
 		entity.getProperties().forEach((colName, value) -> {
 			String javaName = FormatText.toLowerCamel(colName);
-			Field field = fieldMap.get(colName);
+			Field field = fieldMap.get(javaName);
 			if (field == null) {
-				throw new DD4StorageException("Unknown field: " + colName + " for Object: " + c.getSimpleName());
+				throw new DD4StorageException(
+						"Unknown field: " + javaName + " for Object: " + c.getSimpleName());
 			}
 
 			if (field.getSetMethod() == null) {
@@ -258,18 +263,24 @@ public class DAOCloudDS implements DAO {
 				case "ByteArray":
 					jsonObject.put(javaName, value.toString().getBytes());
 					break;
+				case "byte[]":
+				case "Byte[]":
+					jsonObject.put(javaName, ((Blob) value).getBytes());
+					break;
 				case "DateTime":
 					if (value instanceof Date) {
 						jsonObject.put(javaName, ((Date) value).getTime());
 					} else {
-						jsonObject.put(javaName, (value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
+						jsonObject.put(javaName,
+								(value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
 					}
 					break;
 				case "Instant":
 					if (value instanceof Date) {
 						jsonObject.put(javaName, ((Date) value).getTime());
 					} else {
-						jsonObject.put(javaName, (value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
+						jsonObject.put(javaName,
+								(value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
 					}
 					break;
 				case "Integer":
@@ -293,7 +304,8 @@ public class DAOCloudDS implements DAO {
 					if (field.isCollection()) {
 						jsonObject.put(javaName, new JSONArray((String) value));
 					} else if (field.getType().isEnum()) {
-						jsonObject.put(javaName, Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
+						jsonObject.put(javaName,
+								Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
 					} else {
 						jsonObject.put(javaName, field.isObject() ? new JSONObject((String) value) : value);
 					}
@@ -305,10 +317,10 @@ public class DAOCloudDS implements DAO {
 	}
 
 	private FilterPredicate convertToPropertyFilter(Class<?> c, Query.Filter filter) {
-		String colName = FormatText.toUnderScoreCase(filter.getColumn());
-		Field field = JSONUtil.getFields(c).get(colName);
+		String fieldName = FormatText.toLowerCamel(filter.getColumn());
+		Field field = JSONUtil.getFields(c).get(fieldName);
 		if (field == null) {
-			throw new DD4StorageException("Unknown column: " + colName);
+			throw new DD4StorageException("Unknown column: " + fieldName);
 		}
 
 		Object value = filter.getValue();
@@ -341,6 +353,9 @@ public class DAOCloudDS implements DAO {
 			case "float":
 				value = Float.parseFloat(value.toString());
 				break;
+			case "DateTime":
+				value = Long.parseLong(value.toString()) * 1000;
+				break;
 			default:
 				value = value instanceof Collection ?
 						((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList())
@@ -349,18 +364,18 @@ public class DAOCloudDS implements DAO {
 
 		switch (filter.getOperator()) {
 			case "<":
-				return new FilterPredicate(colName, FilterOperator.LESS_THAN, value);
+				return new FilterPredicate(fieldName, FilterOperator.LESS_THAN, value);
 			case "<=":
-				return new FilterPredicate(colName, FilterOperator.LESS_THAN_OR_EQUAL, value);
+				return new FilterPredicate(fieldName, FilterOperator.LESS_THAN_OR_EQUAL, value);
 			case "=":
 			case "":
-				return new FilterPredicate(colName, FilterOperator.EQUAL, value);
+				return new FilterPredicate(fieldName, FilterOperator.EQUAL, value);
 			case ">=":
-				return new FilterPredicate(colName, FilterOperator.GREATER_THAN_OR_EQUAL, value);
+				return new FilterPredicate(fieldName, FilterOperator.GREATER_THAN_OR_EQUAL, value);
 			case ">":
-				return new FilterPredicate(colName, FilterOperator.GREATER_THAN, value);
+				return new FilterPredicate(fieldName, FilterOperator.GREATER_THAN, value);
 			case "IN":
-				return new FilterPredicate(colName, FilterOperator.IN, value);
+				return new FilterPredicate(fieldName, FilterOperator.IN, value);
 			default:
 				throw new IllegalArgumentException("Unknown operator " + filter.getOperator());
 		}

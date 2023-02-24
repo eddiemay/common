@@ -2,16 +2,19 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
+import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Query {
-  private static final Pattern FILTER_PATTERN = Pattern.compile("([A-Za-z_]+)([!=<> IN]+)([A-Za-z0-9-_|]+)");
+  private static final Pattern FILTER_PATTERN =
+      Pattern.compile("([A-Za-z_]+)([!=<> IN]+)([A-Za-z0-9-_|]+)");
 
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();
-  private int pageSize;
+  private Integer pageSize;
   private int pageToken;
 
   private Query() {}
@@ -29,20 +32,23 @@ public class Query {
     return setOrderBys(Arrays.asList(orderBys));
   }
 
-  public Query setPageSize(int pageSize) {
+  public Query setPageSize(Integer pageSize) {
+    if (pageSize != null && pageSize < 0) {
+      throw new DD4StorageException("Pagesize must be zero or greater", ErrorCode.BAD_REQUEST);
+    }
     this.pageSize = pageSize;
     return this;
   }
 
-  public int getPageSize() {
+  public Integer getPageSize() {
     return pageSize;
   }
 
-  public Query setLimit(int limit) {
+  public Query setLimit(Integer limit) {
     return setPageSize(pageSize);
   }
 
-  public int getLimit() {
+  public Integer getLimit() {
     return getPageSize();
   }
 
@@ -56,14 +62,15 @@ public class Query {
   }
 
   public int getOffset() {
-    return getPageSize() * (getPageToken() - 1);
+    Integer pageSize = getPageSize();
+    return (pageSize == null ? 0 : pageSize) * (getPageToken() - 1);
   }
 
   public static Query.List forList() {
     return new Query.List();
   }
 
-  public static Query.List forList(String filters, String orderBys, int pageSize, int pageToken) {
+  public static Query.List forList(String filters, String orderBys, Integer pageSize, int pageToken) {
     Query.List query = new Query.List();
     query.setPageSize(pageSize).setPageToken(pageToken);
     if (filters != null && !filters.isEmpty()) {
@@ -119,8 +126,9 @@ public class Query {
       return this;
     }
 
-    public Query.List setLimit(int limit) {
-      super.setPageToken(limit);
+    @Override
+    public Query.List setLimit(Integer limit) {
+      super.setPageSize(limit);
       return this;
     }
 
@@ -139,6 +147,12 @@ public class Query {
 
     public String getSearchText() {
       return searchText;
+    }
+
+    @Override
+    public Search setPageSize(Integer pageSize) {
+      super.setPageSize(pageSize);
+      return this;
     }
   }
 

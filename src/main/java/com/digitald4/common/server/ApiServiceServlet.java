@@ -9,7 +9,6 @@ import com.digitald4.common.model.*;
 import com.digitald4.common.server.service.*;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.Emailer;
-import com.digitald4.common.util.Encryptor;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -40,9 +39,8 @@ public class ApiServiceServlet extends HttpServlet {
 
 	private final Map<String, JSONService> services = new HashMap<>();
 	private DAO dao;
-	private Clock clock = Clock.systemUTC();
+	private final Clock clock = Clock.systemUTC();
 	private Emailer emailer;
-	private Encryptor encryptor;
 	protected final Provider<DAO> daoProvider = () -> dao;
 	protected final GeneralDataStore generalDataStore;
 	protected final GenericUserStore userStore;
@@ -70,7 +68,9 @@ public class ApiServiceServlet extends HttpServlet {
 						userService = new UserService<BasicUser>(userStore, sessionStore, passwordStore)));
 
 		dataFileStore = new GenericStore<>(DataFile.class, daoProvider);
-		addService("file", new FileService(dataFileStore, sessionStore, requestProvider, responseProvider));
+		addService("file",
+				new JSONServiceHelper<>(
+						new FileService(dataFileStore, sessionStore, requestProvider, responseProvider)));
 	}
 
 	public void init() {
@@ -78,17 +78,22 @@ public class ApiServiceServlet extends HttpServlet {
 		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
 		if (serverType == ServerType.TOMCAT) {
 			// We use MySQL with Tomcat, so if Tomcat, MySQL
-			dao = new DAOSQLImpl(
-					new DBConnectorThreadPoolImpl(
-							sc.getInitParameter("dbdriver"),
-							sc.getInitParameter("dburl"),
-							sc.getInitParameter("dbuser"),
-							sc.getInitParameter("dbpass")),
+			dao = new DAOHelper(
+					new DAOSQLImpl(
+						new DBConnectorThreadPoolImpl(
+								sc.getInitParameter("dbdriver"),
+								sc.getInitParameter("dburl"),
+								sc.getInitParameter("dbuser"),
+								sc.getInitParameter("dbpass")),
+						useViews),
 					clock,
-					useViews);
+					null);
 		} else {
+			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl();
 			// We use CloudDataStore with AppEngine.
-			dao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), clock);
+			dao = new DAOHelper(
+					new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), searchIndexer),
+					clock, searchIndexer);
 		}
 	}
 

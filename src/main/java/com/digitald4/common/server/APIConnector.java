@@ -35,13 +35,16 @@ public class APIConnector {
 		return url;
 	}
 
+	public APIConnector setIdToken(String idToken) {
+		this.idToken = idToken;
+		return this;
+	}
+
 	public APIConnector login() {
-		idToken =
+		return setIdToken(
 				new JSONObject(
 						sendPost(apiUrl + "/users/v1/login",
-								"%7Busername:%22eddiemay%22,password:%226B7DE1B846CC2A047CE71E1214C3B6F7%22%7D"))
-						.getString("idToken");
-		return this;
+								"{'username':'eddiemay','password':'6B7DE1B846CC2A047CE71E1214C3B6F7'")).getString("idToken"));
 	}
 
 	public String sendPost(String url, String payload) {
@@ -63,8 +66,10 @@ public class APIConnector {
 				}
 			}
 			if (idToken != null) {
-				if (payload != null) {
-					payload = "idToken=" + idToken + "&" + payload;
+				// if (payload != null) {
+					// payload = "idToken=" + idToken + "&" + payload;
+				if (url.contains("?")) {
+					url += "&idToken=" + idToken;
 				} else {
 					url += "?idToken=" + idToken;
 				}
@@ -74,6 +79,7 @@ public class APIConnector {
 				payload = null;
 			}
 			url = url.replaceAll(" ", "%20");
+			// System.out.println("Sending request: " + url);
 			HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 			con.setRequestMethod(method);
 			con.setRequestProperty("Accept", "*/*");
@@ -105,6 +111,7 @@ public class APIConnector {
 			Sec-Fetch-Site: same-site
 			User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36*/
 			if (payload != null) {
+				con.setRequestProperty("Content-Length", String.valueOf(payload.length()));
 				con.setDoOutput(true);
 				DataOutputStream dos = new DataOutputStream(con.getOutputStream());
 				dos.writeBytes(payload);

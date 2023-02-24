@@ -23,7 +23,7 @@ public class DAOSQLImplTest {
 
 	@Before
 	public void setUp() throws SQLException {
-		daoSql = new DAOSQLImpl(connector, null);
+		daoSql = new DAOSQLImpl(connector);
 
 		when(connector.getConnection()).thenReturn(connection);
 		when(connection.prepareStatement(anyString())).thenReturn(ps);
@@ -34,7 +34,8 @@ public class DAOSQLImplTest {
 
 	@Test
 	public void create() throws SQLException {
-		when(connection.prepareStatement(anyString(), eq(Statement.RETURN_GENERATED_KEYS))).thenReturn(ps);
+		when(connection.prepareStatement(anyString(), eq(Statement.RETURN_GENERATED_KEYS)))
+				.thenReturn(ps);
 
 		daoSql.create(new BasicUser().setUsername("user@name").setFirstName("FirstName"));
 
@@ -65,7 +66,8 @@ public class DAOSQLImplTest {
 	public void list_withIn() throws SQLException {
 		daoSql.list(BasicUser.class, Query.forList("read_only=true,type_id IN 5|10", null, 0, 0));
 
-		verify(connection).prepareStatement("SELECT * FROM BasicUser WHERE read_only=? AND type_id IN (?);");
+		verify(connection).prepareStatement(
+				"SELECT * FROM BasicUser WHERE read_only=? AND type_id IN (?);");
 		verify(ps).setObject(1, "true");
 		verify(ps).setObject(2, "5,10");
 	}
@@ -74,8 +76,8 @@ public class DAOSQLImplTest {
 	public void list_advanced() throws SQLException {
 		daoSql.list(BasicUser.class, Query.forList("read_only=true,type_id>10", "username", 10, 3));
 
-		verify(connection)
-				.prepareStatement("SELECT * FROM BasicUser WHERE read_only=? AND type_id>? ORDER BY username LIMIT 20,10;");
+		verify(connection).prepareStatement(
+				"SELECT * FROM BasicUser WHERE read_only=? AND type_id>? ORDER BY username LIMIT 20,10;");
 		verify(ps, times(2)).setObject(1, "true");
 		verify(ps, times(2)).setObject(2, "10");
 	}

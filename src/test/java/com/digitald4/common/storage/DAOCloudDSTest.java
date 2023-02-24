@@ -1,22 +1,34 @@
 package com.digitald4.common.storage;
 
-import static junit.framework.TestCase.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.digitald4.common.model.BasicUser;
+import com.digitald4.common.model.DataFile;
 import com.digitald4.common.model.Session;
+import com.digitald4.common.util.JSONUtil;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.collect.ImmutableList;
 
+import java.io.FileInputStream;
 import org.joda.time.DateTime;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class DAOCloudDSTest {
 	private static final Long ID = 123L;
+	private static final String USERNAME = "user1";
+	private static final int TYPE_ID = 10;
+	private static final String EMAIL = "user@company.com";
+	private static final String FIRST_NAME = "Ricky";
+	private static final String LAST_NAME = "Bobby";
+	private static final BasicUser BASIC_USER = new BasicUser().setId(ID).setUsername(USERNAME)
+			.setTypeId(TYPE_ID).setEmail(EMAIL).setFirstName(FIRST_NAME).setLastName(LAST_NAME);
 	private DAOCloudDS dao;
 
 	private final LocalServiceTestHelper helper =
@@ -38,8 +50,8 @@ public class DAOCloudDSTest {
 	public void create() {
 		BasicUser user = dao.create(new BasicUser().setUsername("anotheruser"));
 
-		assertTrue(user.getId() > 0);
-		assertEquals("anotheruser", user.getUsername());
+		assertThat(user.getId()).isGreaterThan(0);
+		assertThat(user.getUsername()).isEqualTo("anotheruser");
 	}
 
 	@Test
@@ -52,18 +64,19 @@ public class DAOCloudDSTest {
 						.setExpTime(new DateTime(10000))
 						.setState(Session.State.ACTIVE));
 
-		assertEquals("4567",session.getId());
-		assertEquals(123, session.getUserId());
-		assertEquals(1000, session.getStartTime().getMillis());
-		assertEquals(10000, session.getExpTime().getMillis());
-		assertEquals(Session.State.ACTIVE, session.getState());
+		assertThat(session.getId()).isEqualTo("4567");
+		assertThat(session.getUserId()).isEqualTo(123);
+		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
+		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
+		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
 
 		session = dao.get(Session.class, session.getId());
-		assertEquals("4567", session.getId());
-		assertEquals(123, session.getUserId());
-		assertEquals(1000, session.getStartTime().getMillis());
-		assertEquals(10000, session.getExpTime().getMillis());
-		assertEquals(Session.State.ACTIVE, session.getState());
+
+		assertThat(session.getId()).isEqualTo("4567");
+		assertThat(session.getUserId()).isEqualTo(123);
+		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
+		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
+		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
 	}
 
 	@Test
@@ -76,18 +89,19 @@ public class DAOCloudDSTest {
 						.setExpTime(new DateTime(10000))
 						.setState(Session.State.ACTIVE));
 
-		assertEquals("4567",session.getId());
-		assertEquals(123, session.getUserId());
-		assertEquals(1000, session.getStartTime().getMillis());
-		assertEquals(10000, session.getExpTime().getMillis());
-		assertEquals(Session.State.ACTIVE, session.getState());
+		assertThat(session.getId()).isEqualTo("4567");
+		assertThat(session.getUserId()).isEqualTo(123);
+		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
+		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
+		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
 
 		session = dao.update(Session.class, "4567", s -> s.setExpTime(new DateTime(20000)));
-		assertEquals("4567", session.getId());
-		assertEquals(123, session.getUserId());
-		assertEquals(1000, session.getStartTime().getMillis());
-		assertEquals(20000, session.getExpTime().getMillis());
-		assertEquals(Session.State.ACTIVE, session.getState());
+
+		assertThat(session.getId()).isEqualTo("4567");
+		assertThat(session.getUserId()).isEqualTo(123);
+		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
+		assertThat(session.getExpTime().getMillis()).isEqualTo(20000);
+		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
 	}
 
 	@Test
@@ -100,13 +114,20 @@ public class DAOCloudDSTest {
 						.setExpTime(new DateTime(10000))
 						.setState(Session.State.ACTIVE));
 
-		assertEquals("4567",session.getId());
-		assertEquals(123, session.getUserId());
-		assertEquals(1000, session.getStartTime().getMillis());
-		assertEquals(10000, session.getExpTime().getMillis());
-		assertEquals(Session.State.ACTIVE, session.getState());
+		assertThat(session.getId()).isEqualTo("4567");
+		assertThat(session.getUserId()).isEqualTo(123);
+		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
+		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
+		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
 
 		dao.delete(Session.class, "4567");
+
+		try {
+			dao.get(Session.class, session.getId());
+			fail("Should not have got here");
+		} catch (Exception e) {
+			// Expected.
+		}
 	}
 
 	@Test
@@ -121,7 +142,7 @@ public class DAOCloudDSTest {
 
 		ComplexObj result = dao.create(complex);
 
-		assertTrue(result.getId() > 0);
+		assertThat(result.getId()).isGreaterThan(0L);
 		assertEquals(complex.getName(), result.getName());
 		assertEquals(complex.getTextData(), result.getTextData());
 		assertEquals(complex.getSubComplexes().size(), result.getSubComplexes().size());
@@ -130,6 +151,19 @@ public class DAOCloudDSTest {
 		assertEquals(complex.getName(), read.getName());
 		assertEquals(complex.getTextData().toString(), read.getTextData().toString());
 		assertEquals(complex.getSubComplexes().size(), read.getSubComplexes().size());
+	}
+
+	@Test
+	public void createDataFile() throws Exception {
+		try(FileInputStream fis = new FileInputStream("pom.xml")) {
+			byte[] data = new byte[2048];
+			int size = fis.read(data);
+			DataFile dataFile = new DataFile().setName("Test File.txt").setSize(size).setData(data);
+			JSONObject json = JSONUtil.toJSON(dataFile);
+			dataFile = dao.create(dataFile);
+
+			assertEquals(data, dataFile.getData());
+		}
 	}
 
 	@Test
@@ -157,7 +191,7 @@ public class DAOCloudDSTest {
 
 		ComplexObj result = dao.get(ComplexObj.class, complex.getId());
 
-		assertTrue(result.getId() > 0);
+		assertThat(result.getId()).isGreaterThan(0L);
 		assertEquals(complex.getName(), result.getName());
 		assertEquals(complex.getSubComplexes().size(), result.getSubComplexes().size());
 
@@ -186,18 +220,18 @@ public class DAOCloudDSTest {
 	@Test
 	public void list_withFilter() {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList("type_id>10", null, 0, 1));
+				dao.list(BasicUser.class, Query.forList("typeId>10", null, null, 1));
 
 		assertEquals(2, queryResult.getTotalSize());
 		assertEquals(2, queryResult.getItems().size());
-		assertTrue(queryResult.getItems().get(0).getTypeId() > 10);
-		assertTrue(queryResult.getItems().get(1).getTypeId() > 10);
+		assertThat(queryResult.getItems().get(0).getTypeId()).isGreaterThan(10);
+		assertThat(queryResult.getItems().get(1).getTypeId()).isGreaterThan(10);
 	}
 
 	@Test
 	public void list_withInFilter() {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList("type_id IN 4|10", null, 0, 1));
+				dao.list(BasicUser.class, Query.forList("typeId IN 4|10", null, 0, 1));
 
 		assertEquals(2, queryResult.getTotalSize());
 		assertEquals(2, queryResult.getItems().size());
@@ -208,14 +242,14 @@ public class DAOCloudDSTest {
 	@Test
 	public void list_withOrderBy() {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList(null, "type_id",0, 0));
+				dao.list(BasicUser.class, Query.forList(null, "typeId", 0, 0));
 
 		assertEquals(5, queryResult.getTotalSize());
 		assertEquals(5, queryResult.getItems().size());
 
 		int prevTypeId = 0;
 		for (BasicUser user : queryResult.getItems()) {
-			assertTrue(prevTypeId < user.getTypeId());
+			assertThat(user.getTypeId()).isGreaterThan(prevTypeId);
 			prevTypeId = user.getTypeId();
 		}
 	}
@@ -241,7 +275,7 @@ public class DAOCloudDSTest {
 	@Test
 	public void list_advanced()  {
 		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList("type_id>=2", "type_id", 2, 2));
+				dao.list(BasicUser.class, Query.forList("typeId>=2", "typeId", 2, 2));
 
 		assertEquals(5, queryResult.getTotalSize());
 		assertEquals(2, queryResult.getItems().size());

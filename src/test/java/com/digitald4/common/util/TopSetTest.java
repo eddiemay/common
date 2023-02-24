@@ -1,6 +1,6 @@
 package com.digitald4.common.util;
 
-import static org.junit.Assert.*;
+import static com.google.common.truth.Truth.assertThat;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -16,12 +16,13 @@ public class TopSetTest {
 		TopSet<String> topSet = new TopSet<>(6, Comparator.<String>naturalOrder());
 		topSet.addAll(SAMPLE_LIST);
 
-		String prev = topSet.first();
+		String prev = "0";
 		for (String s : topSet) {
-			assertTrue(prev.compareTo(s) < 1);
+			assertThat(s).isGreaterThan(prev);
+			prev = s;
 		}
-		assertEquals("1", topSet.first());
-		assertEquals("C", topSet.last());
+		assertThat(topSet.first()).isEqualTo("1");
+		assertThat(topSet.last()).isEqualTo("C");
 	}
 
 	@Test
@@ -29,11 +30,12 @@ public class TopSetTest {
 		TopSet<String> topSet = new TopSet<>(6, Comparator.<String>reverseOrder());
 		topSet.addAll(SAMPLE_LIST);
 
-		String prev = topSet.first();
+		String prev = "zzz";
 		for (String s : topSet) {
-			assertTrue(prev.compareTo(s) >= 0);
+			assertThat(s).isLessThan(prev);
+			prev = s;
 		}
-		assertEquals("t", topSet.first());
-		assertEquals("D", topSet.last());
+		assertThat(topSet.first()).isEqualTo("t");
+		assertThat(topSet.last()).isEqualTo("D");
 	}
 }

@@ -3,15 +3,18 @@ package com.digitald4.common.storage.testing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 
+import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
+import com.digitald4.common.model.Searchable;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
+import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 
-import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -21,19 +24,6 @@ import org.json.JSONObject;
 public class DAOTestingImpl implements DAO {
 	private final AtomicLong idGenerator = new AtomicLong(5000);
 	private final Map<Class<?>, Map<String, JSONObject>> tables = new HashMap<>();
-	private final Clock clock;
-
-	public DAOTestingImpl() {
-		this(null);
-	}
-
-	public DAOTestingImpl(Clock clock) {
-		this.clock = clock;
-	}
-
-	public Clock getClock() {
-		return clock;
-	}
 
 	@Override
 	public <T> T create(T t) {
@@ -91,7 +81,7 @@ public class DAOTestingImpl implements DAO {
 				results = results.subList(query.getOffset(), results.size());
 			}
 
-			if (query.getLimit() > 0 && results.size() > query.getLimit()) {
+			if (query.getLimit() != null && query.getLimit() > 0 && results.size() > query.getLimit()) {
 				results = results.subList(0, query.getLimit());
 			}
 
@@ -100,6 +90,11 @@ public class DAOTestingImpl implements DAO {
 		}
 
 		return QueryResult.of(ImmutableList.of(), 0, query);
+	}
+
+	@Override
+	public <T extends Searchable> QueryResult<T> search(Class<T> c, Search searchQuery) {
+		throw new DD4StorageException("Unimplemented method", ErrorCode.BAD_REQUEST);
 	}
 
 	@Override

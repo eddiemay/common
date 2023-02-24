@@ -1,10 +1,7 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.model.HasModificationTimes;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
-import org.joda.time.DateTime;
 
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
@@ -86,17 +83,6 @@ public class GenericStore<T, I> implements Store<T, I> {
 	}
 
 	protected Iterable<T> preprocess(Iterable<T> entities, boolean isCreate) {
-		T entity = entities.iterator().next();
-		if (entity instanceof HasModificationTimes) {
-			DateTime time = new DateTime(daoProvider.get().getClock().millis());
-			Streams.stream((Iterable<HasModificationTimes>) entities)
-					.forEach(mod -> {
-						if (isCreate) {
-							mod.setCreationTime(time);
-						}
-						mod.setLastModifiedTime(time);
-					});
-		}
 		return entities;
 	}
 

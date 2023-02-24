@@ -53,6 +53,7 @@ public class DataFile {
 
   public DataFile setData(byte[] data) {
     this.data = data;
+    this.size = data.length;
     return this;
   }
 }
