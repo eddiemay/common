@@ -3,8 +3,7 @@ package com.digitald4.common.server.service;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.DataFile;
-import com.digitald4.common.model.User;
-import com.digitald4.common.storage.SessionStore;
+import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
@@ -46,7 +45,7 @@ import javax.servlet.http.Part;
 		}
 		// [END_EXCLUDE]
 )
-public class FileService<U extends User> extends EntityServiceImpl<DataFile, Long> {
+public class FileService extends EntityServiceImpl<DataFile, Long> {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
 	private final Store<DataFile, Long> dataFileStore;
@@ -55,9 +54,9 @@ public class FileService<U extends User> extends EntityServiceImpl<DataFile, Lon
 
 	@Inject
 	public FileService(
-			Store<DataFile, Long> dataFileStore, SessionStore<U> sessionStore,
+			Store<DataFile, Long> dataFileStore, LoginResolver loginResolver,
 			Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider) {
-		super(dataFileStore, sessionStore, true);
+		super(dataFileStore, loginResolver, true);
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;
 		this.responseProvider = responseProvider;

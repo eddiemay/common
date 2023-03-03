@@ -41,7 +41,7 @@ public class SearchIndexerAppEngineImplTest {
         .setId(String.valueOf(ID))
         .addField(Field.newBuilder().setName("username").setAtom(USERNAME))
         .addField(Field.newBuilder().setName("typeId").setNumber(TYPE_ID))
-        .addField(Field.newBuilder().setName("funFact").setHTML("User was born in the Bahams"))
+        .addField(Field.newBuilder().setName("funFact").setHTML("User was born in the Bahamas"))
         .addField(Field.newBuilder().setName("docOnlyData").setAtom("No field for this"))
         .addField(Field.newBuilder().setName("firstName").setAtom(FIRST_NAME))
         .addField(Field.newBuilder().setName("lastName").setAtom(LAST_NAME))
@@ -55,7 +55,8 @@ public class SearchIndexerAppEngineImplTest {
   @Test
   public void reindex() {
     searchIndexer.index(
-        ImmutableList.of(new SearchableUser().setId(123L).setFirstName("First").setLastName("Last")));
+        ImmutableList.of(
+            new SearchableUser().setId(123L).setFirstName("First").setLastName("Last")));
 
     verify(index, times(1)).putAsync(anyListOf(Document.class));
   }

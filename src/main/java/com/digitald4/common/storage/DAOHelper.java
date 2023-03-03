@@ -1,39 +1,50 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.Streams.stream;
-import static java.util.Arrays.stream;
 
+import com.digitald4.common.model.ChangeTrackable;
 import com.digitald4.common.model.HasModificationTimes;
+import com.digitald4.common.model.HasModificationUser;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.model.User;
 import com.digitald4.common.storage.Annotations.DefaultDAO;
 import com.digitald4.common.storage.Query.List;
 import com.digitald4.common.storage.Query.Search;
+import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import org.joda.time.DateTime;
+import org.json.JSONObject;
 
 public class DAOHelper implements DAO {
   private final DAO dao;
   private final Clock clock;
+  private final Provider<User> userProvider;
+  private final ChangeTracker changeTracker;
   private final SearchIndexer searchIndexer;
 
   @Inject
-  public DAOHelper(@DefaultDAO DAO dao, Clock clock, SearchIndexer searchIndexer) {
+  public DAOHelper(@DefaultDAO DAO dao, Clock clock, Provider<User> userProvider,
+      ChangeTracker changeTracker, SearchIndexer searchIndexer) {
     this.dao = dao;
     this.clock = clock;
+    this.userProvider = userProvider;
+    this.changeTracker = changeTracker;
     this.searchIndexer = searchIndexer;
   }
 
   @Override
   public <T> T create(T t) {
-    if (t instanceof HasModificationTimes) {
-      DateTime now = new DateTime(clock.millis());
-      ((HasModificationTimes) t).setCreationTime(now).setLastModifiedTime(now);
-    }
+    maybeSetModificationInfo(t);
 
     t = dao.create(t);
+
+    if (t instanceof ChangeTrackable) {
+      changeTracker.trackCreated((ChangeTrackable<?>) t);
+    }
 
     if (t instanceof Searchable) {
       searchIndexer.index(ImmutableList.of((Searchable) t));
@@ -49,17 +60,14 @@ public class DAOHelper implements DAO {
     }
 
     if (entities.iterator().next() instanceof HasModificationTimes) {
-      DateTime now = new DateTime(clock.millis());
-      stream(entities).map(t -> (HasModificationTimes) t)
-          .forEach(t -> {
-            if (t.getCreationTime() == null) {
-              t.setCreationTime(now);
-            }
-            t.setLastModifiedTime(now);
-          });
+      stream(entities).forEach(this::maybeSetModificationInfo);
     }
 
     ImmutableList<T> created = dao.create(entities);
+
+    if (created.get(0) instanceof ChangeTrackable) {
+      changeTracker.trackCreated((ImmutableList<? extends ChangeTrackable>) created);
+    }
 
     if (created.get(0) instanceof Searchable) {
       searchIndexer.index((ImmutableList<? extends Searchable>) created);
@@ -90,13 +98,7 @@ public class DAOHelper implements DAO {
 
   @Override
   public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
-    T updated = dao.update(c, id, current -> {
-      current = updater.apply(current);
-      if (current instanceof HasModificationTimes) {
-        ((HasModificationTimes) current).setLastModifiedTime(new DateTime(clock.millis()));
-      }
-      return current;
-    });
+    T updated = dao.update(c, id, new TrackingUpdater<>(c, updater));
 
     if (updated instanceof Searchable) {
       searchIndexer.index(ImmutableList.of((Searchable) updated));
@@ -110,18 +112,9 @@ public class DAOHelper implements DAO {
     if (!ids.iterator().hasNext()) {
       return ImmutableList.of();
     }
-    final DateTime now = new DateTime(clock.millis());
 
-    UnaryOperator<T> updater_ =
-        stream(c.getInterfaces()).noneMatch(i -> i.getSimpleName().equals("HasModificationTimes"))
-            ? updater
-            : current -> {
-              current = updater.apply(current);
-              ((HasModificationTimes) current).setLastModifiedTime(now);
-              return current;
-            };
+    ImmutableList<T> updated = dao.update(c, ids, new TrackingUpdater<T>(c, updater));
 
-    ImmutableList<T> updated = dao.update(c, ids, updater_);
     if (updated.get(0) instanceof Searchable) {
       searchIndexer.index((ImmutableList<? extends Searchable>) updated);
     }
@@ -131,17 +124,87 @@ public class DAOHelper implements DAO {
 
   @Override
   public <T, I> void delete(Class<T> c, I id) {
+    T defaultInstance = JSONUtil.getDefaultInstance(c);
+
+    if (defaultInstance instanceof ChangeTrackable) {
+      changeTracker.trackDeleted((ChangeTrackable<?>) get(c, id));
+    }
+
     dao.delete(c, id);
-    if (stream(c.getInterfaces()).anyMatch(i -> i.getSimpleName().equals("Searchable"))) {
+
+    if (defaultInstance instanceof Searchable) {
       searchIndexer.removeIndex((Class<? extends Searchable>) c, ImmutableList.of(id));
     }
   }
 
   @Override
   public <T, I> void delete(Class<T> c, Iterable<I> ids) {
+    T defaultInstance = JSONUtil.getDefaultInstance(c);
+
+    if (defaultInstance instanceof ChangeTrackable) {
+      changeTracker.trackDeleted((ChangeTrackable<?>) get(c, ids));
+    }
+
     dao.delete(c, ids);
-    if (stream(c.getInterfaces()).anyMatch(i -> i.getSimpleName().equals("Searchable"))) {
+
+    if (defaultInstance instanceof Searchable) {
       searchIndexer.removeIndex((Class<? extends Searchable>) c, ids);
+    }
+  }
+
+  private <T> void maybeSetModificationInfo(T t) {
+    if (t instanceof HasModificationTimes) {
+      DateTime now = new DateTime(clock.millis());
+      HasModificationTimes hasModificationTimes = (HasModificationTimes) t;
+      if (hasModificationTimes.getCreationTime() == null) {
+        hasModificationTimes.setCreationTime(now);
+      }
+      hasModificationTimes.setLastModifiedTime(now);
+    }
+
+    if (t instanceof HasModificationUser) {
+      User user = userProvider.get();
+      HasModificationUser hasModificationUser = (HasModificationUser) t;
+      if (hasModificationUser.getCreationUserId() == null) {
+        hasModificationUser.setCreationUserId(user.getId());
+      }
+      hasModificationUser.setLastModifiedUserId(user.getId());
+    }
+  }
+
+  private class TrackingUpdater<T> implements UnaryOperator<T> {
+    private final UnaryOperator<T> updater;
+    private final boolean hasModificationTimes;
+    private final boolean hasModificationUser;
+    private final boolean isChangeTrackable;
+
+    TrackingUpdater(Class<T> c, UnaryOperator<T> updater) {
+      this.updater = updater;
+      T defaultInstance = JSONUtil.getDefaultInstance(c);
+      hasModificationUser = defaultInstance instanceof HasModificationUser;
+      hasModificationTimes = defaultInstance instanceof HasModificationTimes;
+      isChangeTrackable = defaultInstance instanceof ChangeTrackable;
+    }
+
+    @Override
+    public T apply(T current) {
+      JSONObject jsonCurrent = isChangeTrackable ? JSONUtil.toJSON(current) : null;
+
+      T updated = updater.apply(current);
+
+      if (hasModificationTimes) {
+        ((HasModificationTimes) updated).setLastModifiedTime(new DateTime(clock.millis()));
+      }
+
+      if (hasModificationUser) {
+        ((HasModificationUser) updated).setLastModifiedUserId(userProvider.get().getId());
+      }
+
+      if (isChangeTrackable) {
+        changeTracker.trackUpdated((ChangeTrackable<?>) updated, jsonCurrent);
+      }
+
+      return updated;
     }
   }
 }

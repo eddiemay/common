@@ -17,7 +17,8 @@ public class EntityServiceImpl<T,I>
 	private final LoginResolver loginResolver;
 	private final boolean requiresLoginDefault;
 
-	public EntityServiceImpl(Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
+	public EntityServiceImpl(
+			Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
 		this.store = store;
 		this.loginResolver = loginResolver;
 		this.requiresLoginDefault = requiresLoginDefault;
@@ -32,8 +33,8 @@ public class EntityServiceImpl<T,I>
 	}
 
 	@Override
-	public T getType() {
-		return store.getType();
+	public Class<T> getTypeClass() {
+		return store.getTypeClass();
 	}
 
 	@Override
@@ -50,7 +51,8 @@ public class EntityServiceImpl<T,I>
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "get")
-	public T get(@Named("id") I id, @Nullable @Named("idToken") String idToken) throws ServiceException {
+	public T get(@Named("id") I id, @Nullable @Named("idToken") String idToken)
+			throws ServiceException {
 		try {
 			resolveLogin(idToken,"get");
 			return getStore().get(id);
@@ -63,7 +65,8 @@ public class EntityServiceImpl<T,I>
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "list")
 	public QueryResult<T> list(
 			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
+			@Named("pageSize") @DefaultValue("200") int pageSize,
+			@Named("pageToken") @DefaultValue("1") int pageToken,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"list");

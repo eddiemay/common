@@ -15,7 +15,7 @@ public class JSONServiceHelper<T> implements JSONService {
 	private final EntityService<T> entityService;
 
 	public JSONServiceHelper(EntityService<T> entityService) {
-		this.cls = (Class<T>) entityService.getType().getClass();
+		this.cls = entityService.getTypeClass();
 		this.entityService = entityService;
 	}
 

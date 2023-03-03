@@ -1,8 +1,28 @@
 package com.digitald4.common.model;
 
-public interface ModelObject<ID> {
+import com.digitald4.common.util.JSONUtil;
+import java.util.Objects;
 
-  ID getId();
+public class ModelObject<ID> {
 
-  ModelObject<ID> setId(ID id);
+  private ID id;
+
+  public ID getId() {
+    return id;
+  }
+
+  public ModelObject<ID> setId(ID id) {
+    this.id = id;
+    return this;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return Objects.equals(toString(), obj.toString());
+  }
+
+  @Override
+  public String toString() {
+    return JSONUtil.toJSON(this).toString();
+  }
 }

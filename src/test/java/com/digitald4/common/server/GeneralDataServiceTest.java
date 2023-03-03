@@ -26,7 +26,7 @@ public class GeneralDataServiceTest {
 
 	@Test
 	public void testCreate() throws Exception {
-		when(mockStore.getType()).thenReturn(new GeneralData());
+		when(mockStore.getTypeClass()).thenReturn(GeneralData.class);
 		when(mockStore.create(any(GeneralData.class))).thenAnswer(i -> i.getArguments()[0]);
 		GeneralDataService generalDataService = new GeneralDataService(mockStore, sessionStore);
 		JSONServiceHelper<GeneralData> serviceHelper = new JSONServiceHelper<>(generalDataService);
@@ -42,7 +42,8 @@ public class GeneralDataServiceTest {
 	@Ignore
 	public void testUpdate() throws Exception {
 		DAOTestingImpl dao = new DAOTestingImpl();
-		GeneralDataService<BasicUser> generalDataService = new GeneralDataService<>(new GeneralDataStore(() -> dao), sessionStore);
+		GeneralDataService generalDataService =
+				new GeneralDataService(new GeneralDataStore(() -> dao), sessionStore);
 		JSONServiceHelper<GeneralData> serviceHelper = new JSONServiceHelper<>(generalDataService);
 
 		GeneralData gd = generalDataService.create(new GeneralData().setName("Test"), null);
@@ -59,25 +60,31 @@ public class GeneralDataServiceTest {
 
 		gd = JSONUtil.toObject(GeneralData.class,
 				serviceHelper.performAction("update",
-						new JSONObject("{\"id\":" + gd.getId() + ",\"entity\":{\"name\":\"test 3\"},\"updateMask\":\"name\"}}")));
+						new JSONObject("{\"id\":" + gd.getId()
+								+ ",\"entity\":{\"name\":\"test 3\"},\"updateMask\":\"name\"}}")));
 		assertTrue(gd.getId() > 0);
 		assertEquals("test 3", gd.getName());
 	}
 
 	@Test
 	public void testCreateUser() throws Exception {
-		when(mockUserStore.getType()).thenReturn(new BasicUser());
+		when(mockUserStore.getTypeClass()).thenReturn(BasicUser.class);
 		when(mockUserStore.create(any(BasicUser.class))).thenAnswer(i -> i.getArguments()[0]);
 		UserService<BasicUser> userService = new UserService<>(mockUserStore, sessionStore, null);
-		UserService.UserJSONService<BasicUser> userJSONService = new UserService.UserJSONService<>(userService);
+		UserService.UserJSONService<BasicUser> userJSONService =
+				new UserService.UserJSONService<>(userService);
 
-		BasicUser basicUser = userService.create(new BasicUser().setUsername("user@test.com").setId(1L), null);
+		BasicUser basicUser =
+				userService.create(new BasicUser().setUsername("user@test.com").setId(1L), null);
 		assertEquals("user@test.com", basicUser.getUsername());
 
-		userJSONService.performAction("create", new JSONObject("{entity:{\"id\":2,\"username\":\"Test User\"}}"));
+		userJSONService.performAction(
+				"create", new JSONObject("{entity:{\"id\":2,\"username\":\"Test User\"}}"));
 
-		userJSONService.performAction("create", new JSONObject("{entity:{\"id\":3,\"username\":\"test 3\"}}"));
+		userJSONService.performAction(
+				"create", new JSONObject("{entity:{\"id\":3,\"username\":\"test 3\"}}"));
 
-		userJSONService.performAction("create", new JSONObject("{entity:{\"id\":4,\"username\":\"test 4\"}}"));
+		userJSONService.performAction(
+				"create", new JSONObject("{entity:{\"id\":4,\"username\":\"test 4\"}}"));
 	}
 }

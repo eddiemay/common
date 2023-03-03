@@ -17,24 +17,25 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 import org.json.JSONObject;
 
 public class DAOTestingImpl implements DAO {
 	private final AtomicLong idGenerator = new AtomicLong(5000);
-	private final Map<Class<?>, Map<String, JSONObject>> tables = new HashMap<>();
+	private final Map<String, JSONObject> items = new HashMap<>();
 
 	@Override
 	public <T> T create(T t) {
-		Map<String, JSONObject> table = tables.computeIfAbsent(t.getClass(), c -> new HashMap<>());
-		JSONObject jsonObject = JSONUtil.toJSON(t);
-		Object id = jsonObject.opt("id");
+		JSONObject json = JSONUtil.toJSON(t);
+		Object id = json.opt("id");
 		if (id == null || id instanceof Long && (long) id == 0L) {
-			jsonObject.put("id", id = idGenerator.incrementAndGet());
+			json.put("id", id = idGenerator.incrementAndGet());
 		}
-		table.put(id.toString(), jsonObject);
-		return JSONUtil.toObject((Class<T>) t.getClass(), jsonObject);
+		items.put(getIdString(t.getClass(), id), json);
+
+		return JSONUtil.toObject((Class<T>) t.getClass(), json);
 	}
 
 	@Override
@@ -44,12 +45,7 @@ public class DAOTestingImpl implements DAO {
 
 	@Override
 	public <T, I> T get(Class<T> c, I id) {
-		Map<String, JSONObject> table = tables.get(c);
-		if (table == null) {
-			return null;
-		}
-
-		return JSONUtil.toObject(c, table.get(id.toString()));
+		return JSONUtil.toObject(c, items.get(getIdString(c, id)));
 	}
 
 	@Override
@@ -59,37 +55,38 @@ public class DAOTestingImpl implements DAO {
 
 	@Override
 	public <T> QueryResult<T> list(Class<T> c, Query.List query) {
-		Map<String, JSONObject> table = tables.get(c);
-		if (table != null) {
-			ImmutableList<JSONObject> results = ImmutableList.copyOf(table.values());
-			for (Filter filter : query.getFilters()) {
-				String field = filter.getColumn();
-				results = results.parallelStream()
-						.filter(json -> json.opt(field).equals(filter.getValue()))
-						.collect(toImmutableList());
-			}
+		ImmutableList<JSONObject> results = items.entrySet().stream()
+				.filter(entry -> entry.getKey().startsWith(c.getSimpleName()))
+				.map(Entry::getValue)
+				.collect(toImmutableList());
 
-			for (OrderBy orderBy : query.getOrderBys()) {
-				String field = orderBy.getColumn();
-				results = results.stream()
-						.sorted((json1, json2) -> ((Comparable<Object>) json1.get(field)).compareTo(json2.get(field)))
-						.collect(toImmutableList());
-			}
-
-			int totalSize = results.size();
-			if (query.getOffset() > 0) {
-				results = results.subList(query.getOffset(), results.size());
-			}
-
-			if (query.getLimit() != null && query.getLimit() > 0 && results.size() > query.getLimit()) {
-				results = results.subList(0, query.getLimit());
-			}
-
-			return QueryResult.of(
-					results.stream().map(json -> JSONUtil.toObject(c, json)).collect(toImmutableList()), totalSize, query);
+		for (Filter filter : query.getFilters()) {
+			String field = filter.getColumn();
+			results = results.parallelStream()
+					.filter(json -> json.opt(field).equals(filter.getValue()))
+					.collect(toImmutableList());
 		}
 
-		return QueryResult.of(ImmutableList.of(), 0, query);
+		for (OrderBy orderBy : query.getOrderBys()) {
+			String field = orderBy.getColumn();
+			results = results.stream()
+					.sorted(
+							(json1, json2) -> ((Comparable<Object>) json1.get(field)).compareTo(json2.get(field)))
+					.collect(toImmutableList());
+		}
+
+		int totalSize = results.size();
+		if (query.getOffset() > 0) {
+			results = results.subList(query.getOffset(), results.size());
+		}
+
+		if (query.getLimit() != null && query.getLimit() > 0 && results.size() > query.getLimit()) {
+			results = results.subList(0, query.getLimit());
+		}
+
+		return QueryResult.of(
+				results.stream()
+						.map(json -> JSONUtil.toObject(c, json)).collect(toImmutableList()), totalSize, query);
 	}
 
 	@Override
@@ -102,7 +99,7 @@ public class DAOTestingImpl implements DAO {
 		T t = get(c, id);
 		if (t != null) {
 			t = updater.apply(t);
-			tables.get(c).put(id.toString(), JSONUtil.toJSON(t));
+			items.put(getIdString(c, id), JSONUtil.toJSON(t));
 		}
 
 		return t;
@@ -115,17 +112,15 @@ public class DAOTestingImpl implements DAO {
 
 	@Override
 	public <T, I> void delete(Class<T> c, I id) {
-		Map<String, JSONObject> table = tables.get(c);
-		if (table != null) {
-			table.remove(id.toString());
-		}
+		items.remove(getIdString(c, id));
 	}
 
 	@Override
 	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
-		Map<String, JSONObject> table = tables.get(c);
-		if (table != null) {
-			stream(ids).map(Object::toString).forEach(table::remove);
-		}
+		stream(ids).forEach(id -> delete(c, id));
+	}
+
+	private <T> String getIdString(Class<T> c, Object id) {
+		return String.format("%s-%s", c.getSimpleName(), id);
 	}
 }

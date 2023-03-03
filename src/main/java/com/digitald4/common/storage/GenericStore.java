@@ -1,6 +1,5 @@
 package com.digitald4.common.storage;
 
-import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 
 import java.util.function.UnaryOperator;
@@ -11,24 +10,21 @@ public class GenericStore<T, I> implements Store<T, I> {
 
 	private final Class<T> c;
 	private final Provider<DAO> daoProvider;
-	private final T type;
 
 	@Inject
 	public GenericStore(T type, Provider<DAO> daoProvider) {
 		this.c = (Class<T>) type.getClass();
 		this.daoProvider = daoProvider;
-		this.type = type;
 	}
 
 	public GenericStore(Class<T> c, Provider<DAO> daoProvider) {
 		this.c = c;
 		this.daoProvider = daoProvider;
-		this.type = JSONUtil.getDefaultInstance(c);
 	}
 
 	@Override
-	public T getType() {
-		return type;
+	public Class<T> getTypeClass() {
+		return c;
 	}
 
 	@Override

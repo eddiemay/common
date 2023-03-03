@@ -81,10 +81,8 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T> QueryResult<T> list(Class<T> c, Query.List query) {
-		return Calculate.executeWithRetries(2, () -> {
-			QueryResult<Entity> queryResult = listEntities(c, query);
-			return QueryResult.transform(queryResult, entity -> convert(c, entity));
-		});
+		return Calculate.executeWithRetries(2,
+				() -> QueryResult.transform(listEntities(c, query), entity -> convert(c, entity)));
 	}
 
 	@Override
@@ -130,7 +128,6 @@ public class DAOCloudDS implements DAO {
 		Calculate.executeWithRetries(2, () -> {
 			ImmutableList<Key> keys =
 					stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList());
-			// getEntities(c, keys); // Get all entries to make sure they all exist.
 			datastoreService.delete(keys);
 
 			return keys.size();

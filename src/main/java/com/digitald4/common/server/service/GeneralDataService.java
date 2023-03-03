@@ -3,6 +3,7 @@ package com.digitald4.common.server.service;
 import com.digitald4.common.model.GeneralData;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.GeneralDataStore;
+import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.common.storage.SessionStore;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
@@ -13,8 +14,8 @@ import javax.inject.Inject;
 		name = "generalDatas",
 		version = "v1",
 		namespace = @ApiNamespace(
-				ownerDomain = "nbastats.digitald4.com",
-				ownerName = "nbastats.digitald4.com"
+				ownerDomain = "dd4common.digitald4.com",
+				ownerName = "dd4common.digitald4.com"
 		),
 		// [START_EXCLUDE]
 		issuers = {
@@ -28,10 +29,10 @@ import javax.inject.Inject;
 		}
 		// [END_EXCLUDE]
 )
-public class GeneralDataService<U extends User> extends EntityServiceImpl<GeneralData, Long> {
+public class GeneralDataService extends EntityServiceImpl<GeneralData, Long> {
 
 	@Inject
-	public GeneralDataService(GeneralDataStore generalDataStore, SessionStore<U> sessionStore) {
-		super(generalDataStore, sessionStore, false);
+	public GeneralDataService(GeneralDataStore generalDataStore, LoginResolver loginResolver) {
+		super(generalDataStore, loginResolver, false);
 	}
 }

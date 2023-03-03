@@ -15,9 +15,10 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 
-public class SessionStore<U extends User> extends GenericStore<Session, String> implements LoginResolver {
+public class SessionStore<U extends User> extends GenericStore<Session, String>
+    implements LoginResolver {
   private static final DD4StorageException NOT_AUTHENICATED =
-      new DD4StorageException("Not authenicated", ErrorCode.NOT_AUTHENTICATED);
+      new DD4StorageException("Not Authenticated", ErrorCode.NOT_AUTHENTICATED);
 
   private final UserStore<U> userStore;
   private final PasswordStore passwordStore;
@@ -35,7 +36,7 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
     super(Session.class, daoProvider);
     this.userStore = userStore;
     this.passwordStore = passwordStore;
-    this.userProvider = userProvider;
+    this.userProvider  = userProvider;
     this.sessionDuration = sessionDuration;
     this.sessionCacheEnabled = sessionCacheEnabled;
     this.activeSessions = sessionCacheEnabled ? new HashMap<>() : null;
@@ -111,9 +112,11 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
     long duration = sessionDuration.toMillis();
     // Extend the session if it is more than halfway over.
     if (session.getState() == Session.State.ACTIVE && session.getExpTime().isBefore(now.plus(duration / 2))) {
-      session = cachePut(update(session.getId(), as -> as.setExpTime(now.plus(duration))).user(session.user()));
+      session = cachePut(
+          update(session.getId(), as -> as.setExpTime(now.plus(duration))).user(session.user()));
     }
 
+    // baseUserProvider.set(session.user());
     userProvider.set(session.user());
     return session;
   }
@@ -128,7 +131,8 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
     }
 
     return update(
-        cacheRemove(session).getId(), s -> s.setEndTime(new DateTime(clock.millis())).setState(Session.State.CLOSED));
+        cacheRemove(session).getId(), s -> s.setEndTime(new DateTime(clock.millis()))
+            .setState(Session.State.CLOSED));
   }
 
 

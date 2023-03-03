@@ -1,7 +1,6 @@
 package com.digitald4.common.storage.testing;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static com.google.common.truth.Truth.assertThat;
 
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.storage.*;
@@ -14,34 +13,27 @@ public class DAOTestingImplTest {
 	@Test
 	public void testCreate() {
 		BasicUser user = userStore.create(new BasicUser().setUsername("eddiemay@gmail.com").setTypeId(56));
-		assertTrue(user.getId() > 0);
-		assertEquals("eddiemay@gmail.com", user.getUsername());
-		assertEquals(56, user.getTypeId());
+		assertThat(user.getId()).isGreaterThan(0);
+		assertThat(user.getUsername()).isEqualTo("eddiemay@gmail.com");
+		assertThat(user.getTypeId()).isEqualTo(56);
 
-		assertEquals(user, userStore.get(user.getId()));
+		assertThat(userStore.get(user.getId())).isEqualTo(user);
 
 		QueryResult<BasicUser> users = userStore.list(Query.forList());
-		assertEquals(1, users.getTotalSize());
-		assertEquals(1, users.getItems().size());
-		assertEquals(user, users.getItems().get(0));
+		assertThat(users.getItems()).containsExactly(user);
 
 		user = userStore.update(user.getId(), user_ -> user_.setUsername("eddiemay1999@yahoo.com"));
-		assertEquals("eddiemay1999@yahoo.com", user.getUsername());
+		assertThat(user.getUsername()).isEqualTo("eddiemay1999@yahoo.com");
 
 		BasicUser user2 = userStore.create(new BasicUser().setUsername("benfrank@gmail.com").setTypeId(34));
-		assertTrue(user2.getId() > 0);
-		assertEquals("benfrank@gmail.com", user2.getUsername());
-		assertEquals(34, user2.getTypeId());
+		assertThat(user2.getId()).isGreaterThan(0);
+		assertThat(user2.getUsername()).isEqualTo("benfrank@gmail.com");
+		assertThat(user2.getTypeId()).isEqualTo(34);
 
 		users = userStore.list(Query.forList());
-		assertEquals(2, users.getTotalSize());
-		assertEquals(2, users.getItems().size());
-		assertEquals(user, users.getItems().get(0));
-		assertEquals(user2, users.getItems().get(1));
+		assertThat(users.getItems()).containsExactly(user, user2);
 
 		users = userStore.list(Query.forList().setFilters(Query.Filter.of("typeId", 34)));
-		assertEquals(1, users.getTotalSize());
-		assertEquals(1, users.getItems().size());
-		assertEquals(user2, users.getItems().get(0));
+		assertThat(users.getItems()).containsExactly(user2);
 	}
 }

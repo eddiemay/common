@@ -6,14 +6,8 @@ import org.junit.Test;
 
 public class GenericStoreTest {
   @Test
-  public void testClassConstuctor() {
+  public void testClassConstructor() {
     DAOTestingImpl dao = new DAOTestingImpl();
     GenericStore<Password, Long> passwordStore = new GenericStore<>(Password.class, () -> dao);
-  }
-
-  @Test
-  public void testInstanceConstuctor() {
-    DAOTestingImpl dao = new DAOTestingImpl();
-    GenericStore<Password, Long> passwordStore = new GenericStore<>(new Password(), () -> dao);
   }
 }

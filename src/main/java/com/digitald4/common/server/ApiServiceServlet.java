@@ -48,9 +48,11 @@ public class ApiServiceServlet extends HttpServlet {
 	protected final SessionStore sessionStore;
 	protected final PasswordStore passwordStore;
 	protected final Store<DataFile, Long> dataFileStore;
-	protected final ProviderThreadLocalImpl<BasicUser> userProvider = new ProviderThreadLocalImpl<>();
-	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider = new ProviderThreadLocalImpl<>();
-	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider = new ProviderThreadLocalImpl<>();
+	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
+	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider =
+			new ProviderThreadLocalImpl<>();
+	protected final ProviderThreadLocalImpl<HttpServletResponse> responseProvider =
+			new ProviderThreadLocalImpl<>();
 	protected boolean useViews;
 
 	public ApiServiceServlet() {
@@ -61,7 +63,8 @@ public class ApiServiceServlet extends HttpServlet {
 				daoProvider, userStore, passwordStore, userProvider, Duration.ofMinutes(30), true, clock);
 
 		generalDataStore = new GeneralDataStore(daoProvider);
-		addService("generalData", new JSONServiceHelper<>(new GeneralDataService(generalDataStore, sessionStore)));
+		addService("generalData",
+				new JSONServiceHelper<>(new GeneralDataService(generalDataStore, sessionStore)));
 		addService(
 				"user",
 				new UserService.UserJSONService<>(
@@ -87,13 +90,15 @@ public class ApiServiceServlet extends HttpServlet {
 								sc.getInitParameter("dbpass")),
 						useViews),
 					clock,
+					null,
+					null,
 					null);
 		} else {
 			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl();
+			DAO actualDao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), searchIndexer);
+			ChangeTracker changeTracker = new ChangeTracker(actualDao, userProvider, clock);
 			// We use CloudDataStore with AppEngine.
-			dao = new DAOHelper(
-					new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), searchIndexer),
-					clock, searchIndexer);
+			dao = new DAOHelper(actualDao, clock, userProvider, changeTracker, searchIndexer);
 		}
 	}
 
@@ -114,9 +119,8 @@ public class ApiServiceServlet extends HttpServlet {
 		return services.containsKey(entity.toLowerCase());
 	}
 
-	protected void processRequest(
-			String entity, String action, JSONObject jsonRequest, HttpServletRequest request, HttpServletResponse response)
-			throws ServletException {
+	protected void processRequest(String entity, String action, JSONObject jsonRequest,
+			HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		requestProvider.set(request);
 		responseProvider.set(response);
 		try {
@@ -146,23 +150,28 @@ public class ApiServiceServlet extends HttpServlet {
 	}
 
 	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException {
 		Pair<EntityKey, JSONObject> pair = parseRequest(request);
 		EntityKey entityKey = pair.getLeft();
-		String action = entityKey.action != null ? entityKey.action : entityKey.key == null ? "create" : "update";
+		String action =
+				entityKey.action != null ? entityKey.action : entityKey.key == null ? "create" : "update";
 		processRequest(entityKey.entity, action, pair.getRight(), request, response);
 	}
 
 	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException {
 		Pair<EntityKey, JSONObject> pair = parseRequest(request);
 		EntityKey entityKey = pair.getLeft();
-		String action = entityKey.action != null ? entityKey.action : entityKey.key == null ? "list" : "get";
+		String action =
+				entityKey.action != null ? entityKey.action : entityKey.key == null ? "list" : "get";
 		processRequest(entityKey.entity, action, pair.getRight(), request, response);
 	}
 
 	@Override
-	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	protected void doPut(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException {
 		Pair<EntityKey, JSONObject> pair = parseRequest(request);
 		EntityKey entityKey = pair.getLeft();
 		String action = entityKey.action != null ? entityKey.action : "update";
@@ -170,7 +179,8 @@ public class ApiServiceServlet extends HttpServlet {
 	}
 
 	@Override
-	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException {
 		Pair<EntityKey, JSONObject> pair = parseRequest(request);
 		EntityKey entityKey = pair.getLeft();
 		String action = entityKey.action != null ? entityKey.action : "delete";
@@ -280,7 +290,8 @@ public class ApiServiceServlet extends HttpServlet {
 	public static String getFullURL(HttpServletRequest request) {
     StringBuffer requestURL = request.getRequestURL();
     String queryString = request.getQueryString();
-    return (queryString == null) ? requestURL.toString() : requestURL.append('?').append(queryString).toString();
+    return (queryString == null) ?
+				requestURL.toString() : requestURL.append('?').append(queryString).toString();
 	}
 	
 	public void checkLogin(HttpServletRequest request, HttpServletResponse response, int level) {

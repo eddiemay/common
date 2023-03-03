@@ -1,6 +1,7 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.server.service.LoginRequest;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -41,10 +42,10 @@ public class APIConnector {
 	}
 
 	public APIConnector login() {
+		JSONObject loginRequest = new JSONObject(
+				new LoginRequest().setUsername("eddiemay").setPassword("6B7DE1B846CC2A047CE71E1214C3B6F7"));
 		return setIdToken(
-				new JSONObject(
-						sendPost(apiUrl + "/users/v1/login",
-								"{'username':'eddiemay','password':'6B7DE1B846CC2A047CE71E1214C3B6F7'")).getString("idToken"));
+				new JSONObject(sendPost(apiUrl + "/users/v1/login", "" + loginRequest)).getString("id"));
 	}
 
 	public String sendPost(String url, String payload) {
@@ -79,7 +80,7 @@ public class APIConnector {
 				payload = null;
 			}
 			url = url.replaceAll(" ", "%20");
-			// System.out.println("Sending request: " + url);
+			// System.out.println("Sending request: " + url + " with payload: " + payload);
 			HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 			con.setRequestMethod(method);
 			con.setRequestProperty("Accept", "*/*");

@@ -27,8 +27,8 @@ public class SessionStoreTest {
   @Mock private final ProviderThreadLocalImpl mockUserProvider = mock(ProviderThreadLocalImpl.class);
   @Mock private final Clock clock = mock(Clock.class);
 
-  private SessionStore<BasicUser> sessionStore = new SessionStore<>(
-      () -> dao, mockUserStore, mockPasswordStore, mockUserProvider, Duration.ofSeconds(10), true, clock);
+  private SessionStore<BasicUser> sessionStore = new SessionStore<>(() -> dao, mockUserStore,
+      mockPasswordStore, mockUserProvider, Duration.ofSeconds(10), true, clock);
 
   @Test
   public void create_usernameRequired() {

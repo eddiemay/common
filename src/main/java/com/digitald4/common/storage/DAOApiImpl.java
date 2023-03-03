@@ -78,7 +78,6 @@ public class DAOApiImpl implements DAO {
     if (!parameters.isEmpty()) {
       url.append(parameters.stream().collect(Collectors.joining("&", "?", "")));
     }
-    System.out.println(url);
     String json = apiConnector.sendGet(url.toString());
     JSONObject response = new JSONObject(json);
 
@@ -113,7 +112,6 @@ public class DAOApiImpl implements DAO {
       url.append("pageToken=").append(query.getPageToken());
     }
 
-    System.out.println(url);
     String json = apiConnector.sendGet(url.toString());
     JSONObject response = new JSONObject(json);
 

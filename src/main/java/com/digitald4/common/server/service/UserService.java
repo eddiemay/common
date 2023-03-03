@@ -33,7 +33,8 @@ public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 	private final PasswordStore passwordStore;
 
 	@Inject
-	public UserService(UserStore<U> userStore, SessionStore<U> sessionStore, PasswordStore passwordStore) {
+	public UserService(
+			UserStore<U> userStore, SessionStore<U> sessionStore, PasswordStore passwordStore) {
 		super(userStore, sessionStore, true);
 		this.userStore = userStore;
 		this.sessionStore = sessionStore;
@@ -49,6 +50,7 @@ public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 		}
 	}
 
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
 	public Session login(LoginRequest loginRequest) throws ServiceException {
 		try {
 			return sessionStore.create(loginRequest.getUsername(), loginRequest.getPassword());
@@ -68,7 +70,8 @@ public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "updatePassword")
 	public Empty updatePassword(
-			PasswordUpdateRequest updatePaswordRequest, @Named("idToken") String idToken) throws ServiceException {
+			PasswordUpdateRequest updatePaswordRequest, @Named("idToken") String idToken)
+			throws ServiceException {
 		sessionStore.resolve(idToken, true);
 		long userId = updatePaswordRequest.getUserId();
 		String password = updatePaswordRequest.getPassword();

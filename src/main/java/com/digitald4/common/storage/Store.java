@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.function.UnaryOperator;
 
 public interface Store<T, I> {
-	T getType();
+	Class<T> getTypeClass();
 
 	T create(T t);
 

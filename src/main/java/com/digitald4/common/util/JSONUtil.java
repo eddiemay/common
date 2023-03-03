@@ -84,12 +84,7 @@ public class JSONUtil {
               && (m.getName().startsWith("get") || m.getName().startsWith("is")))
           .map(method -> {
             String name = method.getName().substring(method.getName().startsWith("is") ? 2 : 3);
-            Field field = new Field(name, method, methods.get("set" + name));
-            /* if (field.isCollection()) {
-              field.verifyCollectionTypeSet();
-            } */
-
-            return field;
+            return new Field(name, method, methods.get("set" + name));
           })
           .collect(toImmutableMap(Field::getName, identity()));
     });
@@ -134,7 +129,8 @@ public class JSONUtil {
     }
 
     public boolean isObject() {
-      return !getType().isPrimitive() && getType() != String.class && !getType().isEnum();
+      return !getType().isPrimitive() && getType() != String.class && !getType().isEnum()
+          && getType() != Object.class;
     }
 
     public boolean isCollection() {
