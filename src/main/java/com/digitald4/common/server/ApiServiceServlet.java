@@ -81,24 +81,21 @@ public class ApiServiceServlet extends HttpServlet {
 		serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
 		if (serverType == ServerType.TOMCAT) {
 			// We use MySQL with Tomcat, so if Tomcat, MySQL
-			dao = new DAOHelper(
-					new DAOSQLImpl(
-						new DBConnectorThreadPoolImpl(
-								sc.getInitParameter("dbdriver"),
-								sc.getInitParameter("dburl"),
-								sc.getInitParameter("dbuser"),
-								sc.getInitParameter("dbpass")),
-						useViews),
-					clock,
-					null,
-					null,
-					null);
+			dao = new DAOSQLImpl(
+					new DBConnectorThreadPoolImpl(
+							sc.getInitParameter("dbdriver"),
+							sc.getInitParameter("dburl"),
+							sc.getInitParameter("dbuser"),
+							sc.getInitParameter("dbpass")),
+					new ChangeTracker(daoProvider, userProvider, null, clock),
+					useViews);
 		} else {
-			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl();
-			DAO actualDao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), searchIndexer);
-			ChangeTracker changeTracker = new ChangeTracker(actualDao, userProvider, clock);
 			// We use CloudDataStore with AppEngine.
-			dao = new DAOHelper(actualDao, clock, userProvider, changeTracker, searchIndexer);
+			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl();
+			ChangeTracker changeTracker =
+					new ChangeTracker(daoProvider, userProvider, searchIndexer, clock);
+			dao = new DAOCloudDS(
+					DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer);
 		}
 	}
 

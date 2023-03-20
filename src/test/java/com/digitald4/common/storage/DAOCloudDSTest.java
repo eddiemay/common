@@ -3,10 +3,12 @@ package com.digitald4.common.storage;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.DataFile;
 import com.digitald4.common.model.Session;
+import com.digitald4.common.model.User;
 import com.digitald4.common.util.JSONUtil;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
@@ -14,6 +16,8 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.collect.ImmutableList;
 
 import java.io.FileInputStream;
+import java.time.Clock;
+import javax.inject.Provider;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
 import org.junit.After;
@@ -21,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class DAOCloudDSTest {
+	private static final User ACTIVE_USER = new BasicUser().setId(1001L).setUsername("user1");
 	private static final Long ID = 123L;
 	private static final String USERNAME = "user1";
 	private static final int TYPE_ID = 10;
@@ -30,6 +35,9 @@ public class DAOCloudDSTest {
 	private static final BasicUser BASIC_USER = new BasicUser().setId(ID).setUsername(USERNAME)
 			.setTypeId(TYPE_ID).setEmail(EMAIL).setFirstName(FIRST_NAME).setLastName(LAST_NAME);
 	private DAOCloudDS dao;
+	private ChangeTracker changeTracker;
+	private final SearchIndexer searchIndexer = mock(SearchIndexer.class);
+	private final Clock clock = mock(Clock.class);
 
 	private final LocalServiceTestHelper helper =
 			new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
@@ -37,7 +45,9 @@ public class DAOCloudDSTest {
 	@Before
 	public void setUp() {
 		helper.setUp();
-		dao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), null);
+		changeTracker = new ChangeTracker(() -> dao, () -> ACTIVE_USER, searchIndexer, clock);
+		dao = new DAOCloudDS(
+				DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer);
 		fillDatabase();
 	}
 

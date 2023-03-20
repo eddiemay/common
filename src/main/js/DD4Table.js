@@ -25,3 +25,11 @@ com.digitald4.common.TableController.prototype.update = function(entity, prop) {
     this.loading = this.scope.loading = false;
   }.bind(this));
 }
+
+com.digitald4.common.TableController.prototype.getDate = function(value) {
+  if (value && value.millis) {
+    return value.millis;
+  }
+
+  return value;
+}

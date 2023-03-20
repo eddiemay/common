@@ -5,7 +5,9 @@ import static org.mockito.Mockito.*;
 
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.model.BasicUser;
+import com.digitald4.common.model.User;
 import com.google.common.collect.ImmutableList;
+import java.time.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -13,6 +15,7 @@ import org.mockito.Mock;
 import java.sql.*;
 
 public class DAOSQLImplTest {
+	private static final User ACTIVE_USER = new BasicUser().setId(1001L).setUsername("user1");
 	@Mock private final DBConnector connector = mock(DBConnector.class);
 	@Mock private final Connection connection = mock(Connection.class);
 	@Mock private final PreparedStatement ps = mock(PreparedStatement.class);
@@ -20,10 +23,14 @@ public class DAOSQLImplTest {
 	@Mock private final ResultSetMetaData rsmd = mock(ResultSetMetaData.class);
 
 	private DAOSQLImpl daoSql;
+	private ChangeTracker changeTracker;
+	private final SearchIndexer searchIndexer = mock(SearchIndexer.class);
+	private final Clock clock = mock(Clock.class);
 
 	@Before
 	public void setUp() throws SQLException {
-		daoSql = new DAOSQLImpl(connector);
+		changeTracker = new ChangeTracker(() -> daoSql, () -> ACTIVE_USER, searchIndexer, clock);
+		daoSql = new DAOSQLImpl(connector, changeTracker);
 
 		when(connector.getConnection()).thenReturn(connection);
 		when(connection.prepareStatement(anyString())).thenReturn(ps);
@@ -101,8 +108,7 @@ public class DAOSQLImplTest {
 		when(ps.executeUpdate()).thenReturn(1);
 		daoSql.delete(BasicUser.class, 123);
 
-		verify(connection).prepareStatement("DELETE FROM BasicUser WHERE id=?;");
-		verify(ps).setObject(1, 123);
+		verify(connection).prepareStatement("DELETE FROM BasicUser WHERE id IN (123);");
 	}
 
 	@Test

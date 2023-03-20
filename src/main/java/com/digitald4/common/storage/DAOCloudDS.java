@@ -35,11 +35,14 @@ import org.json.JSONObject;
 
 public class DAOCloudDS implements DAO {
 	private final DatastoreService datastoreService;
+	private final ChangeTracker changeTracker;
 	private final SearchIndexer searchIndexer;
 
 	@Inject
-	public DAOCloudDS(DatastoreService datastoreService, SearchIndexer searchIndexer) {
+	public DAOCloudDS(DatastoreService datastoreService,
+			ChangeTracker changeTracker, SearchIndexer searchIndexer) {
 		this.datastoreService = datastoreService;
+		this.changeTracker = changeTracker;
 		this.searchIndexer = searchIndexer;
 	}
 
@@ -51,16 +54,17 @@ public class DAOCloudDS implements DAO {
 	@Override
 	public <T> ImmutableList<T> create(Iterable<T> ts) {
 		return Calculate.executeWithRetries(2, () ->
-				stream(ts).map(item -> {
-					JSONObject json = new JSONObject(item);
-					Object id = json.opt("id");
-					Entity entity = createEntity(item.getClass().getSimpleName(), id);
-					ImmutableMap<String, Field> fields = JSONUtil.getFields(item.getClass());
-					json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
+				changeTracker.postPersist(
+						stream(changeTracker.prePersist(ts)).map(item -> {
+							JSONObject json = new JSONObject(item);
+							Object id = json.opt("id");
+							Entity entity = createEntity(item.getClass().getSimpleName(), id);
+							ImmutableMap<String, Field> fields = JSONUtil.getFields(item.getClass());
+							json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
 
-					Key key = datastoreService.put(entity);
-					return (key.getId() > 0) ? fields.get("id").invokeSet(item, key.getId()) : item;
-				}).collect(toImmutableList()));
+							Key key = datastoreService.put(entity);
+							return (key.getId() > 0) ? fields.get("id").invokeSet(item, key.getId()) : item;
+						}).collect(toImmutableList())));
 	}
 
 	@Override
@@ -99,23 +103,24 @@ public class DAOCloudDS implements DAO {
 	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
 		String name = c.getSimpleName();
 		return Calculate.executeWithRetries(2, () ->
-				getEntities(c, stream(ids).map(id -> createFactorKey(name, id)).collect(toImmutableList()))
-						.entrySet()
-						.stream()
-						.map(entry -> {
-							Entity entity = entry.getKey().getId() > 0
-									? new Entity(name, entry.getKey().getId())
-									: new Entity(name, entry.getKey().getName());
-							T t = updater.apply(convert(c, entry.getValue()));
-
-							JSONObject json = new JSONObject(t);
-							ImmutableMap<String, Field> fields = JSONUtil.getFields(t.getClass());
-							json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
-							datastoreService.put(entity);
-
-							return t;
-						})
-						.collect(toImmutableList()));
+				changeTracker.postPersist(
+						stream(
+								changeTracker.prePersist(
+										getEntities(c, stream(ids).map(id -> createFactorKey(name, id)).collect(toImmutableList()))
+												.values()
+												.stream()
+												.map(entity -> updater.apply(convert(c, entity)))
+												.collect(toImmutableList())))
+								.peek(t -> {
+									JSONObject json = new JSONObject(t);
+									ImmutableMap<String, Field> fields = JSONUtil.getFields(t.getClass());
+									Object id = json.get("id");
+									Entity entity =
+											(id instanceof Long) ? new Entity(name, (Long) id) : new Entity(name, (String) id);
+									json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
+									datastoreService.put(entity);
+								})
+								.collect(toImmutableList())));
 	}
 
 	@Override
@@ -126,10 +131,13 @@ public class DAOCloudDS implements DAO {
 	@Override
 	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
 		Calculate.executeWithRetries(2, () -> {
+			changeTracker.preDelete(c, ids);
+
 			ImmutableList<Key> keys =
 					stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList());
 			datastoreService.delete(keys);
 
+			changeTracker.postDelete(c, ids);
 			return keys.size();
 		});
 	}
@@ -324,19 +332,21 @@ public class DAOCloudDS implements DAO {
 		switch (field.getType().getSimpleName()) {
 			case "Long":
 			case "long":
-				value = value instanceof Collection ?
-						((Collection<?>) value).stream()
+				value = value instanceof Collection
+						? ((Collection<?>) value).stream()
 								.map(Object::toString)
 								.map(Long::parseLong)
-								.collect(toImmutableList()) : Long.parseLong(value.toString());
+								.collect(toImmutableList())
+						: Long.parseLong(value.toString());
 				break;
 			case "Integer":
 			case "int":
-				value = value instanceof Collection ?
-						((Collection<?>) value).stream()
+				value = value instanceof Collection
+						? ((Collection<?>) value).stream()
 								.map(Object::toString)
 								.map(Integer::parseInt)
-								.collect(toImmutableList()) : Integer.parseInt(value.toString());
+								.collect(toImmutableList())
+						: Integer.parseInt(value.toString());
 				break;
 			case "Boolean":
 			case "boolean":
@@ -356,7 +366,7 @@ public class DAOCloudDS implements DAO {
 			default:
 				value = value instanceof Collection ?
 						((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList())
-						: value.toString();
+						: value;
 		}
 
 		switch (filter.getOperator()) {

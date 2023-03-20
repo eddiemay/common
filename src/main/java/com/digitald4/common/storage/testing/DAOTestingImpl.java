@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 import org.json.JSONObject;
@@ -50,7 +51,7 @@ public class DAOTestingImpl implements DAO {
 
 	@Override
 	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
-		return stream(ids).map(id -> get(c, id)).collect(toImmutableList());
+		return stream(ids).map(id -> get(c, id)).filter(Objects::nonNull).collect(toImmutableList());
 	}
 
 	@Override

@@ -36,26 +36,28 @@ public class DAOSQLImpl implements DAO {
 	private static final String BATCH_SELECT_SQL = "SELECT * FROM %s WHERE id IN (%s);";
 	private static final String SEARCH_SQL = "SELECT * FROM %s%s%s%s;";
 	private static final String UPDATE_SQL = "UPDATE %s SET %s%s%s WHERE id=?;";
-	private static final String DELETE_SQL = "DELETE FROM %s%s;";
 	private static final String BATCH_DELETE_SQL = "DELETE FROM %s WHERE id IN (%s);";
 	private static final String LIMIT_SQL = " LIMIT %s%d";
 	private static final String COUNT_SQL = "SELECT COUNT(*) FROM %s%s;";
 
 	private final DBConnector connector;
+	private final ChangeTracker changeTracker;
 	private final boolean useViews;
 
-	public DAOSQLImpl(DBConnector connector) {
-		this(connector, false);
+	public DAOSQLImpl(DBConnector connector, ChangeTracker changeTracker) {
+		this(connector, changeTracker, false);
 	}
 
-	public DAOSQLImpl(DBConnector connector, boolean useViews) {
+	public DAOSQLImpl(DBConnector connector, ChangeTracker changeTracker, boolean useViews) {
 		this.connector = connector;
+		this.changeTracker = changeTracker;
 		this.useViews = useViews;
 	}
 
 	@Override
 	public <T> T create(T t) {
 		return Calculate.executeWithRetries(2, () -> {
+			changeTracker.prePersist(ImmutableList.of(t));
 			JSONObject json = JSONUtil.toJSON(t);
 			ImmutableList<String> keys = stream(json.keys())
 					.filter(key -> {
@@ -77,6 +79,7 @@ public class DAOSQLImpl implements DAO {
 				if (rs.next()) {
 					return get((Class<T>) t.getClass(), rs.getObject(1));
 				}
+				changeTracker.postPersist(ImmutableList.of(t));
 				return t;
 			} catch (SQLException e) {
 				throw new RuntimeException("Error creating record: " + e.getMessage(), e);
@@ -194,7 +197,8 @@ public class DAOSQLImpl implements DAO {
 		return Calculate.executeWithRetries(2, () -> {
 			T orig = get(c, id);
 			JSONObject origJson = JSONUtil.toJSON(orig);
-			JSONObject updated = JSONUtil.toJSON(updater.apply(orig));
+			JSONObject updated = JSONUtil.toJSON(
+					changeTracker.prePersist(ImmutableList.of(updater.apply(orig))).iterator().next());
 
 			// Find all the fields that were modified in the updated object.
 			ImmutableList<String> modified = updated.keySet().stream()
@@ -225,7 +229,7 @@ public class DAOSQLImpl implements DAO {
 					throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
 				}
 			}
-			return get(c, id);
+			return changeTracker.postPersist(ImmutableList.of(get(c, id))).get(0);
 		});
 	}
 
@@ -236,28 +240,20 @@ public class DAOSQLImpl implements DAO {
 
 	@Override
 	public <T, I> void delete(Class<T> c, I id) {
-		if (!Calculate.executeWithRetries(2, () -> {
-			String sql = String.format(DELETE_SQL, getTable(c),  " WHERE id=?");
-			try (Connection con = connector.getConnection();
-					 PreparedStatement ps = con.prepareStatement(sql)) {
-				ps.setObject(1, id);
-
-				return ps.executeUpdate() > 0;
-			} catch (SQLException e) {
-				throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
-			}
-		})) {
-			throw new RuntimeException("Error deleting record: " + c.getSimpleName() + " " + id);
-		}
+		delete(c, ImmutableList.of(id));
 	}
 
 	@Override
 	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
 		Calculate.executeWithRetries(2, () -> {
-			String sql = String.format(BATCH_DELETE_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
+			changeTracker.preDelete(c, ids);
+			String sql = String.format(
+					BATCH_DELETE_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
 			try (Connection con = connector.getConnection();
 					 PreparedStatement ps = con.prepareStatement(sql)) {
-				return ps.executeUpdate();
+				int deleted = ps.executeUpdate();
+				changeTracker.postDelete(c, ids);
+				return deleted;
 			} catch (SQLException e) {
 				throw new RuntimeException("Error deleting record: " + e.getMessage(), e);
 			}

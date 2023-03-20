@@ -1,17 +1,18 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.google.common.collect.ImmutableList;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Query {
   private static final Pattern FILTER_PATTERN =
-      Pattern.compile("([A-Za-z_]+)([!=<> IN]+)([A-Za-z0-9-_|]+)");
+      Pattern.compile("([A-Za-z_]+)\\s*([!=<>IN]+)\\s*([A-Za-z0-9-_|]+)");
 
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();
   private Integer pageSize;
@@ -29,7 +30,7 @@ public class Query {
   }
 
   public Query setOrderBys(OrderBy... orderBys) {
-    return setOrderBys(Arrays.asList(orderBys));
+    return setOrderBys(asList(orderBys));
   }
 
   public Query setPageSize(Integer pageSize) {
@@ -74,11 +75,10 @@ public class Query {
     Query.List query = new Query.List();
     query.setPageSize(pageSize).setPageToken(pageToken);
     if (filters != null && !filters.isEmpty()) {
-      query.setFilters(
-          Arrays.stream(filters.split(",")).map(Filter::parse).collect(toImmutableList()));
+      query.setFilters(stream(filters.split(",")).map(Filter::parse).collect(toImmutableList()));
     }
     if (orderBys != null && !orderBys.isEmpty()) {
-      query.setOrderBys(Arrays.stream(orderBys.split(","))
+      query.setOrderBys(stream(orderBys.split(","))
           .map(orderBy -> OrderBy.of(orderBy.split(" ")[0], orderBy.endsWith("DESC")))
           .collect(toImmutableList()));
     }
@@ -94,7 +94,7 @@ public class Query {
     Query.Search query = new Query.Search(searchText);
     query.setPageSize(pageSize).setPageToken(pageToken);
     if (orderBys != null && !orderBys.isEmpty()) {
-      query.setOrderBys(Arrays.stream(orderBys.split(","))
+      query.setOrderBys(stream(orderBys.split(","))
           .map(orderBy -> OrderBy.of(orderBy.split(" ")[0], orderBy.endsWith("DESC")))
           .collect(toImmutableList()));
     }
@@ -117,7 +117,7 @@ public class Query {
     }
 
     public Query.List setFilters(Filter... filters) {
-      return setFilters(Arrays.asList(filters));
+      return setFilters(asList(filters));
     }
 
     @Override
@@ -184,7 +184,7 @@ public class Query {
       String operator = matcher.group(2).trim();
       Object value = matcher.group(3).trim();
       if (operator.equals("IN")) {
-        value = Arrays.asList(value.toString().split("\\|"));
+        value = asList(value.toString().split("\\|"));
       }
 
       return new Filter(matcher.group(1).trim(), operator, value);

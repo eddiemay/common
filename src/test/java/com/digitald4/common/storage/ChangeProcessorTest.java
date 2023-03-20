@@ -6,9 +6,9 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static java.util.function.UnaryOperator.identity;
 
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.ChangeTrackable;
@@ -19,83 +19,61 @@ import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
-import java.util.function.UnaryOperator;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
-public class DAOHelperTest {
-  private final DAO dao = mock(DAO.class);
+public class ChangeProcessorTest {
   private final User user = new BasicUser().setId(1001L).setUsername("username");
+  private final DAO dao = mock(DAO.class);
   private final Provider<User> userProvider = mock(Provider.class);
-  private final Clock clock = mock(Clock.class);
-  private final ChangeTracker changeTracker = mock(ChangeTracker.class);
   private final SearchIndexer searchIndexer = mock(SearchIndexer.class);
-  private DAOHelper daoHelper;
+  private final Clock clock = mock(Clock.class);
+  private ChangeTracker changeTracker;
 
   @Before
   public void setup() {
     when(clock.millis()).thenReturn(1000L);
     when(userProvider.get()).thenReturn(user);
-    when(dao.create(any(Object.class))).then(i -> i.getArgumentAt(0, Object.class));
-    when(dao.create(anyList())).then(i -> i.getArgumentAt(0, ImmutableList.class));
-    daoHelper = new DAOHelper(dao, clock, userProvider, changeTracker, searchIndexer);
+    when(dao.get(any(), eq(ImmutableList.of()))).thenReturn(ImmutableList.of());
+    changeTracker = new ChangeTracker(() -> dao, userProvider, searchIndexer, clock);
   }
 
   @Test
   public void createPojo() {
-    Pojo pojo = daoHelper.create(new Pojo());
-
-    verify(dao).create(pojo);
-
-    // Pojo does not implement any interfaces so should invoke no mocks.
-    verify(clock, never()).millis();
-    verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackCreated(any(ChangeTrackable.class));
-    verify(searchIndexer, never()).index(any());
-  }
-
-  @Test
-  public void updatePojo() {
-    when(dao.update(eq(Pojo.class), eq(75L), any()))
-        .then(i -> i.getArgumentAt(2, UnaryOperator.class).apply(new Pojo()));
-
-    Pojo pojo = daoHelper.update(Pojo.class, 75L, identity());
-
-    assertThat(pojo).isNotNull();
-    verify(dao).update(eq(Pojo.class), eq(75L), any());
+    changeTracker.prePersist(ImmutableList.of(new Pojo()));
+    changeTracker.postPersist(ImmutableList.of(new Pojo()));
 
     // Pojo does not implement any interfaces so should invoke no mocks.
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackUpdated(any(), any());
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void deletePojo() {
-    daoHelper.delete(Pojo.class, 75L);
-
-    verify(dao).delete(Pojo.class, 75L);
+    changeTracker.preDelete(Pojo.class, ImmutableList.of(75L));
+    changeTracker.postDelete(Pojo.class, ImmutableList.of(75L));
 
     // Pojo does not implement any interfaces so should invoke no mocks.
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackDeleted(any(ChangeTrackable.class));
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void createModTimes() {
-    ModTimes modTimes = daoHelper.create(new ModTimes());
-
-    verify(dao).create(modTimes);
+    ModTimes modTimes = new ModTimes();
+    changeTracker.prePersist(ImmutableList.of(modTimes));
+    changeTracker.postPersist(ImmutableList.of(modTimes));
 
     // ModTimes only uses clock.
     verify(clock).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackCreated(any(ChangeTrackable.class));
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modTimes.getCreationTime().getMillis()).isEqualTo(1000L);
@@ -105,18 +83,16 @@ public class DAOHelperTest {
 
   @Test
   public void updateModTimes() {
-    when(dao.update(eq(ModTimes.class), eq(75L), any())).then(i ->
-        i.getArgumentAt(2, UnaryOperator.class).apply(
-            new ModTimes().setCreationTime(new DateTime(500L))));
+    ModTimes modTimes =
+        new ModTimes().setCreationTime(new DateTime(500L)).setLastModifiedTime(new DateTime(500L));
 
-    ModTimes modTimes = daoHelper.update(ModTimes.class, 75L, identity());
+    changeTracker.prePersist(ImmutableList.of(modTimes));
+    changeTracker.postPersist(ImmutableList.of(modTimes));
 
-    verify(dao).update(eq(ModTimes.class), eq(75L), any());
-
-    // Pojo does not implement any interfaces so should invoke no mocks.
+    // ModTimes only uses clock.
     verify(clock).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackUpdated(any(), any());
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modTimes.getCreationTime().getMillis()).isEqualTo(500L);
@@ -126,27 +102,27 @@ public class DAOHelperTest {
 
   @Test
   public void deleteModTimes() {
-    daoHelper.delete(ModTimes.class, 75L);
-
-    verify(dao).delete(ModTimes.class, 75L);
+    changeTracker.preDelete(ModTimes.class, ImmutableList.of(75L));
+    changeTracker.postDelete(ModTimes.class, ImmutableList.of(75L));
 
     // Modtimes actually does not support deletiontime
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackDeleted(any(ChangeTrackable.class));
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void createModUser() {
-    ModUser modUser = daoHelper.create(new ModUser());
+    ModUser modUser = new ModUser();
 
-    verify(dao).create(modUser);
+    changeTracker.prePersist(ImmutableList.of(modUser));
+    changeTracker.postPersist(ImmutableList.of(modUser));
 
-    // Moduser uses clock and userProvider.
+    // ModUser uses clock and userProvider.
     verify(clock).millis();
     verify(userProvider).get();
-    verify(changeTracker, never()).trackCreated(any(ChangeTrackable.class));
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modUser.getCreationTime().getMillis()).isEqualTo(1000L);
@@ -160,18 +136,16 @@ public class DAOHelperTest {
 
   @Test
   public void updateModUser() {
-    when(dao.update(eq(ModUser.class), eq(75L), any())).then(i ->
-        i.getArgumentAt(2, UnaryOperator.class).apply(
-            new ModUser().setCreationUserId(501L).setCreationTime(new DateTime(500L))));
+    ModUser modUser =
+        (ModUser) new ModUser().setCreationUserId(501L).setCreationTime(new DateTime(500L));
 
-    ModUser modUser = daoHelper.update(ModUser.class, 75L, identity());
-
-    verify(dao).update(eq(ModUser.class), eq(75L), any());
+    changeTracker.prePersist(ImmutableList.of(modUser));
+    changeTracker.postPersist(ImmutableList.of(modUser));
 
     // Moduser uses clock and userProvider.
     verify(clock).millis();
     verify(userProvider).get();
-    verify(changeTracker, never()).trackUpdated(any(), any());
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modUser.getCreationTime().getMillis()).isEqualTo(500L);
@@ -185,110 +159,104 @@ public class DAOHelperTest {
 
   @Test
   public void deleteModUser() {
-    daoHelper.delete(ModUser.class, 75L);
-
-    verify(dao).delete(ModUser.class, 75L);
+    changeTracker.preDelete(ModUser.class, ImmutableList.of(75L));
+    changeTracker.postDelete(ModUser.class, ImmutableList.of(75L));
 
     // Moduser actually does not support deletion.
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackDeleted(any(ChangeTrackable.class));
+    verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void createTrackable() {
-    Trackable trackable = daoHelper.create(new Trackable());
+    Trackable trackable = new Trackable();
 
-    verify(dao).create(trackable);
+    changeTracker.prePersist(ImmutableList.of(trackable));
+    changeTracker.postPersist(ImmutableList.of(trackable));
 
-    verify(clock, never()).millis();
-    verify(userProvider, never()).get();
-    verify(changeTracker).trackCreated(trackable);
+    verify(clock).millis();
+    verify(userProvider).get();
+    verify(dao).create(anyList());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void updateTrackable() {
-    when(dao.update(eq(Trackable.class), eq(75L), any()))
-        .then(i -> i.getArgumentAt(2, UnaryOperator.class).apply(new Trackable()));
+    Trackable trackable = new Trackable().setId(75L);
+    when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(trackable));
 
-    Trackable trackable = daoHelper.update(Trackable.class, 75L, identity());
+    changeTracker.prePersist(ImmutableList.of(trackable));
+    changeTracker.postPersist(ImmutableList.of(trackable));
 
-    verify(dao).update(eq(Trackable.class), eq(75L), any());
-
-    verify(clock, never()).millis();
-    verify(userProvider, never()).get();
-    verify(changeTracker).trackUpdated(eq(trackable), any());
+    verify(clock).millis();
+    verify(userProvider).get();
+    verify(dao).create(anyList());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void deleteTrackable() {
     Trackable trackable = new Trackable();
-    when(dao.get(Trackable.class, 75L)).thenReturn(trackable);
+    when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(trackable));
 
-    daoHelper.delete(Trackable.class, 75L);
+    changeTracker.preDelete(Trackable.class, ImmutableList.of(75L));
+    changeTracker.postDelete(Trackable.class, ImmutableList.of(75L));
 
-    verify(dao).delete(Trackable.class, 75L);
-
-    verify(clock, never()).millis();
-    verify(userProvider, never()).get();
-    verify(changeTracker).trackDeleted(trackable);
-    verify(searchIndexer, never()).index(any());
+    verify(clock).millis();
+    verify(userProvider).get();
+    verify(dao).create(anyList());
+    verify(searchIndexer, never()).removeIndex(any(), any());
   }
 
   @Test
   public void createSearchable() {
-    SearchableObj searchable = daoHelper.create(new SearchableObj());
+    SearchableObj searchable = new SearchableObj();
 
-    verify(dao).create(searchable);
+    changeTracker.prePersist(ImmutableList.of(searchable));
+    changeTracker.postPersist(ImmutableList.of(searchable));
 
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackCreated(any(ChangeTrackable.class));
+    verify(dao, never()).create(anyList());
     verify(searchIndexer).index(ImmutableList.of(searchable));
   }
 
   @Test
   public void updateSearchable() {
-    when(dao.update(eq(SearchableObj.class), eq(75L), any()))
-        .then(i -> i.getArgumentAt(2, UnaryOperator.class).apply(new SearchableObj()));
+    SearchableObj searchableObj = new SearchableObj();
 
-    SearchableObj searchable = daoHelper.update(SearchableObj.class, 75L, identity());
-
-    verify(dao).update(eq(SearchableObj.class), eq(75L), any());
+    changeTracker.prePersist(ImmutableList.of(searchableObj));
+    changeTracker.postPersist(ImmutableList.of(searchableObj));
 
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackUpdated(any(), any());
-    verify(searchIndexer).index(ImmutableList.of(searchable));
+    verify(dao, never()).create(anyList());
+    verify(searchIndexer).index(ImmutableList.of(searchableObj));
   }
 
   @Test
-  public void deleteSearhable() {
-    SearchableObj searchable = new SearchableObj();
-    when(dao.get(SearchableObj.class, 75L)).thenReturn(searchable);
-
-    daoHelper.delete(SearchableObj.class, 75L);
-
-    verify(dao).delete(SearchableObj.class, 75L);
+  public void deleteSearchable() {
+    changeTracker.preDelete(SearchableObj.class, ImmutableList.of(75L));
+    changeTracker.postDelete(SearchableObj.class, ImmutableList.of(75L));
 
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
-    verify(changeTracker, never()).trackDeleted(any(ChangeTrackable.class));
+    verify(dao, never()).create(anyList());
     verify(searchIndexer).removeIndex(SearchableObj.class, ImmutableList.of(75L));
   }
 
   @Test
   public void createSubClassAll() {
-    SubAll subAll = daoHelper.create(new SubAll());
+    SubAll subAll = new SubAll();
 
-    verify(dao).create(subAll);
+    changeTracker.prePersist(ImmutableList.of(subAll));
+    changeTracker.postPersist(ImmutableList.of(subAll));
 
-    verify(clock).millis();
-    verify(userProvider).get();
-    verify(changeTracker).trackCreated(subAll);
+    verify(clock, times(2)).millis();
+    verify(userProvider, times(2)).get();
+    verify(dao).create(anyList());
     verify(searchIndexer).index(ImmutableList.of(subAll));
 
     assertThat(subAll.getCreationTime().getMillis()).isEqualTo(1000L);
@@ -302,17 +270,17 @@ public class DAOHelperTest {
 
   @Test
   public void updateSubAll() {
-    when(dao.update(eq(SubAll.class), eq(75L), any())).then(i ->
-        i.getArgumentAt(2, UnaryOperator.class).apply(
-            new SubAll().setCreationUserId(501L).setCreationTime(new DateTime(500L))));
+    SubAll subAll = (SubAll)
+        new SubAll().setId(75L).setCreationUserId(501L).setCreationTime(new DateTime(500L));
 
-    SubAll subAll = daoHelper.update(SubAll.class, 75L, identity());
+    when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
 
-    verify(dao).update(eq(SubAll.class), eq(75L), any());
+    changeTracker.prePersist(ImmutableList.of(subAll));
+    changeTracker.postPersist(ImmutableList.of(subAll));
 
-    verify(clock).millis();
-    verify(userProvider).get();
-    verify(changeTracker).trackUpdated(eq(subAll), any());
+    verify(clock, times(2)).millis();
+    verify(userProvider, times(2)).get();
+    verify(dao).create(anyList());
     verify(searchIndexer).index(ImmutableList.of(subAll));
 
     assertThat(subAll.getCreationTime().getMillis()).isEqualTo(500L);
@@ -326,15 +294,15 @@ public class DAOHelperTest {
 
   @Test
   public void deleteSubAll() {
-    SubAll subAll = new SubAll();
-    when(dao.get(SubAll.class, 75L)).thenReturn(subAll);
-    daoHelper.delete(SubAll.class, 75L);
+    SubAll subAll = (SubAll) new SubAll().setId(75L);
+    when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
 
-    verify(dao).delete(SubAll.class, 75L);
+    changeTracker.preDelete(SubAll.class, ImmutableList.of(75L));
+    changeTracker.postDelete(SubAll.class, ImmutableList.of(75L));
 
-    verify(clock, never()).millis();
-    verify(userProvider, never()).get();
-    verify(changeTracker).trackDeleted(subAll);
+    verify(clock).millis();
+    verify(userProvider).get();
+    verify(dao).create(anyList());
     verify(searchIndexer).removeIndex(SubAll.class, ImmutableList.of(75L));
   }
 
@@ -419,18 +387,32 @@ public class DAOHelperTest {
   }
 
   public static class Trackable extends ModelObject<Long> implements ChangeTrackable<Long> {
+    private Long id;
+
     @Override
     public Long getId() {
-      return 75L;
+      return id;
+    }
+
+    public Trackable setId(Long id) {
+      this.id = id;
+      return this;
     }
   }
   
   public static class SearchableObj extends ModelObject<Long> implements Searchable {}
 
   public static class ImplAll extends ModUser implements ChangeTrackable<Long>, Searchable {
+    private Long id;
+
+    public ImplAll setId(Long id) {
+      this.id = id;
+      return this;
+    }
+
     @Override
     public Long getId() {
-      return 75L;
+      return id;
     }
   }
 

@@ -11,13 +11,11 @@ import com.digitald4.common.model.ChangeTrackable;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.ChangeTracker.Change;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory;
-import com.digitald4.common.storage.ChangeTracker.ChangeHistory.ChangeType;
+import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.storage.testing.DAOTestingImpl;
-import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import java.util.LinkedHashMap;
-import javax.inject.Provider;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,7 +23,7 @@ public class ChangeTrackerTest {
 
   private final DAO dao = mock(DAO.class);
   private final User user = new BasicUser().setId(1001L).setUsername("user1");
-  private final Provider<User> userProvider = () -> user;
+  private final SearchIndexer searchIndexer = mock(SearchIndexer.class);
   private final Clock clock = mock(Clock.class);
   private ChangeTracker changeTracker;
 
@@ -34,19 +32,22 @@ public class ChangeTrackerTest {
     when(clock.millis()).thenReturn(1000L);
     when(dao.create(any(Object.class))).then(i -> i.getArgumentAt(0, ChangeTrackable.class));
     when(dao.create(anyList())).then(i -> i.getArgumentAt(0, ImmutableList.class));
-    changeTracker = new ChangeTracker(dao, userProvider, clock);
+    changeTracker = new ChangeTracker(() -> dao, () -> user, searchIndexer, clock);
   }
 
   @Test
   public void trackCreated() {
+    when(dao.get(ChangeTrackableUser.class, ImmutableList.of(1002L)))
+        .thenReturn(ImmutableList.of());
+
     ChangeTrackableUser trackable =
         new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
 
-    ChangeHistory changeHistory = changeTracker.trackCreated(trackable);
+    ChangeHistory changeHistory = changeTracker.trackChanged(ImmutableList.of(trackable)).get(0);
 
-    assertThat(changeHistory.getChangeType()).isEqualTo(ChangeType.CREATED);
+    assertThat(changeHistory.getAction()).isEqualTo(Action.CREATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
-    assertThat(changeHistory.<Long>getEntityId()).isEqualTo(1002L);
+    assertThat(changeHistory.getEntityId()).isEqualTo("1002");
     assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity()).isEqualTo(trackable);
@@ -55,16 +56,18 @@ public class ChangeTrackerTest {
 
   @Test
   public void trackUpdated() {
-    ChangeTrackableUser original =
-        new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
+    when(dao.get(ChangeTrackableUser.class, ImmutableList.of(1002L))).thenReturn(
+        ImmutableList.of(
+            new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First")));
+
     ChangeTrackableUser updated = new ChangeTrackableUser().setId(1002L)
         .setUsername(null).setFirstName("FirstName").setLastName("LastName");
 
-    ChangeHistory changeHistory = changeTracker.trackUpdated(updated, JSONUtil.toJSON(original));
+    ChangeHistory changeHistory = changeTracker.trackChanged(ImmutableList.of(updated)).get(0);
 
-    assertThat(changeHistory.getChangeType()).isEqualTo(ChangeType.UPDATED);
+    assertThat(changeHistory.getAction()).isEqualTo(Action.UPDATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
-    assertThat(changeHistory.<Long>getEntityId()).isEqualTo(1002L);
+    assertThat(changeHistory.getEntityId()).isEqualTo("1002");
     assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity()).isEqualTo(updated);
@@ -79,12 +82,15 @@ public class ChangeTrackerTest {
   public void trackDeleted() {
     ChangeTrackableUser trackable =
         new ChangeTrackableUser().setUsername("user2").setId(1002L).setFirstName("First");
+    when(dao.get(ChangeTrackableUser.class, ImmutableList.of(1002L)))
+        .thenReturn(ImmutableList.of(trackable));
 
-    ChangeHistory changeHistory = changeTracker.trackDeleted(trackable);
+    ChangeHistory changeHistory =
+        changeTracker.trackDeleted(ChangeTrackableUser.class, ImmutableList.of(1002L)).get(0);
 
-    assertThat(changeHistory.getChangeType()).isEqualTo(ChangeType.DELETED);
+    assertThat(changeHistory.getAction()).isEqualTo(Action.DELETED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
-    assertThat(changeHistory.<Long>getEntityId()).isEqualTo(1002L);
+    assertThat(changeHistory.getEntityId()).isEqualTo("1002");
     assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity()).isEqualTo(trackable);
@@ -95,18 +101,18 @@ public class ChangeTrackerTest {
   @Test
   public void withTestDao() throws Exception {
     DAOTestingImpl dao = new DAOTestingImpl();
-    changeTracker = new ChangeTracker(dao, userProvider, clock);
+    changeTracker = new ChangeTracker(() -> dao, () -> user, searchIndexer, clock);
 
     ChangeTrackableUser trackable =
         new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
 
-    ChangeHistory changeHistory = changeTracker.trackCreated(trackable);
+    ChangeHistory changeHistory = changeTracker.trackChanged(ImmutableList.of(trackable)).get(0);
 
     changeHistory = dao.get(ChangeHistory.class, changeHistory.getId());
 
-    assertThat(changeHistory.getChangeType()).isEqualTo(ChangeType.CREATED);
+    assertThat(changeHistory.getAction()).isEqualTo(Action.CREATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
-    assertThat(changeHistory.<Integer>getEntityId()).isEqualTo(1002L);
+    assertThat(changeHistory.getEntityId()).isEqualTo("1002");
     assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity().getClass()).isEqualTo(LinkedHashMap.class);
