@@ -8,7 +8,6 @@ import com.google.common.collect.ImmutableList;
 
 public interface BulkUpdateable<T,I> extends EntityService<T> {
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.PUT)
-  ImmutableList<T> batchUpdate(
-      IterableParam<T> entities, @Named("updateMask") String updateMask, @Nullable @Named("idToken") String idToken)
-      throws ServiceException;
+  ImmutableList<T> batchUpdate(IterableParam<T> entities, @Named("updateMask") String updateMask,
+      @Nullable @Named("idToken") String idToken) throws ServiceException;
 }

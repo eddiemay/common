@@ -13,6 +13,7 @@ import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.util.JSONUtil;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -69,18 +70,22 @@ public class ChangeTracker {
           });
     }
 
+    if (first instanceof ChangeTrackable) {
+      trackUpdated((Iterable<? extends ChangeTrackable>) entities);
+    }
+
     return entities;
   }
 
-  public <T> ImmutableList<T> postPersist(ImmutableList<T> entities) {
+  public <T> ImmutableList<T> postPersist(ImmutableList<T> entities, boolean isCreate) {
     if (entities.isEmpty()) {
       return entities;
     }
 
     T first = entities.get(0);
 
-    if (first instanceof ChangeTrackable) {
-      trackChanged((Iterable<? extends ChangeTrackable>) entities);
+    if (isCreate && first instanceof ChangeTrackable) {
+      trackCreated((Iterable<? extends ChangeTrackable>) entities);
     }
 
     if (first instanceof Searchable) {
@@ -106,35 +111,45 @@ public class ChangeTracker {
     }
   }
 
-  public <ID, T extends ChangeTrackable<ID>> ImmutableList<ChangeHistory> trackChanged(
-      Iterable<T> changed) {
+  @VisibleForTesting
+  <T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackCreated(Iterable<T> created) {
+    return daoProvider.get().create(
+        stream(created)
+            .map(item -> createChangeHistory(Action.CREATED, item))
+            .collect(toImmutableList()));
+  }
+
+  @VisibleForTesting
+  <I, T extends ChangeTrackable<I>> ImmutableList<ChangeHistory> trackUpdated(Iterable<T> changed) {
     if (!changed.iterator().hasNext()) {
       return ImmutableList.of();
     }
 
     T t = changed.iterator().next();
 
-    ImmutableMap<ID, T> currentItems = daoProvider.get()
+    ImmutableMap<I, T> currentItems = daoProvider.get()
         .get(t.getClass(),
-            stream(changed).map(ChangeTrackable::getId).filter(Objects::nonNull)
+            stream(changed)
+                .map(ChangeTrackable::getId)
+                .filter(Objects::nonNull)
                 .collect(toImmutableList()))
         .stream()
         .map(item -> (T) item)
         .collect(toImmutableMap(ChangeTrackable::getId, identity()));
 
+    if (currentItems.isEmpty()) {
+      return ImmutableList.of();
+    }
+
     return daoProvider.get().create(
         stream(changed)
-            .map(
-                item -> !currentItems.containsKey(item.getId())
-                    ? trackCreated(item) : trackUpdated(item, currentItems.get(item.getId())))
+            .filter(item -> item.getId() != null)
+            .filter(item -> currentItems.containsKey(item.getId()))
+            .map(item -> createUpdated(item, currentItems.get(item.getId())))
             .collect(toImmutableList()));
   }
 
-  private <T extends ChangeTrackable<?>> ChangeHistory trackCreated(T created) {
-    return createChangeHistory(Action.CREATED, created);
-  }
-
-  private <T extends ChangeTrackable<?>> ChangeHistory trackUpdated(T updated, T original) {
+  private <T extends ChangeTrackable<?>> ChangeHistory createUpdated(T updated, T original) {
     JSONObject originalJson = JSONUtil.toJSON(original);
     JSONObject updatedJson = JSONUtil.toJSON(updated);
     ImmutableSet<String> allFields = ImmutableSet.<String>builder()

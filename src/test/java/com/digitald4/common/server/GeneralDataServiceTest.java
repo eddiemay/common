@@ -41,7 +41,7 @@ public class GeneralDataServiceTest {
 	@Test
 	@Ignore
 	public void testUpdate() throws Exception {
-		DAOTestingImpl dao = new DAOTestingImpl();
+		DAOTestingImpl dao = new DAOTestingImpl(new ChangeTracker(null, null, null, null));
 		GeneralDataService generalDataService =
 				new GeneralDataService(new GeneralDataStore(() -> dao), sessionStore);
 		JSONServiceHelper<GeneralData> serviceHelper = new JSONServiceHelper<>(generalDataService);

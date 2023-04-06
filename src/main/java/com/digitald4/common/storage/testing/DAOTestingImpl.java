@@ -6,6 +6,7 @@ import static com.google.common.collect.Streams.stream;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.storage.ChangeTracker;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.Query.Filter;
@@ -27,8 +28,15 @@ public class DAOTestingImpl implements DAO {
 	private final AtomicLong idGenerator = new AtomicLong(5000);
 	private final Map<String, JSONObject> items = new HashMap<>();
 
+	private final ChangeTracker changeTracker;
+
+	public DAOTestingImpl(ChangeTracker changeTracker) {
+		this.changeTracker = changeTracker;
+	}
+
 	@Override
 	public <T> T create(T t) {
+		changeTracker.prePersist(ImmutableList.of(t));
 		JSONObject json = JSONUtil.toJSON(t);
 		Object id = json.opt("id");
 		if (id == null || id instanceof Long && (long) id == 0L) {
@@ -36,7 +44,8 @@ public class DAOTestingImpl implements DAO {
 		}
 		items.put(getIdString(t.getClass(), id), json);
 
-		return JSONUtil.toObject((Class<T>) t.getClass(), json);
+		return changeTracker.postPersist(
+				ImmutableList.of(JSONUtil.toObject((Class<T>) t.getClass(), json)), true).get(0);
 	}
 
 	@Override
@@ -100,10 +109,11 @@ public class DAOTestingImpl implements DAO {
 		T t = get(c, id);
 		if (t != null) {
 			t = updater.apply(t);
+			changeTracker.prePersist(ImmutableList.of(t));
 			items.put(getIdString(c, id), JSONUtil.toJSON(t));
 		}
 
-		return t;
+		return changeTracker.postPersist(ImmutableList.of(t), false).get(0);
 	}
 
 	@Override

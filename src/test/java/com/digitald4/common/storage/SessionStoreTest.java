@@ -21,7 +21,7 @@ import java.time.Clock;
 import java.time.Duration;
 
 public class SessionStoreTest {
-  private final DAOTestingImpl dao = new DAOTestingImpl();
+  private final DAOTestingImpl dao = new DAOTestingImpl(new ChangeTracker(null, null, null, null));
   @Mock private final UserStore mockUserStore = mock(UserStore.class);
   @Mock private final PasswordStore mockPasswordStore = mock(PasswordStore.class);
   @Mock private final ProviderThreadLocalImpl mockUserProvider = mock(ProviderThreadLocalImpl.class);

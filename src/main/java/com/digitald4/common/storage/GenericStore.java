@@ -54,12 +54,14 @@ public class GenericStore<T, I> implements Store<T, I> {
 
 	@Override
 	public T update(I id, UnaryOperator<T> updater) {
-		return postprocess(daoProvider.get().update(c, id, current -> preprocess(updater.apply(current), false)));
+		return postprocess(
+				daoProvider.get().update(c, id, current -> preprocess(updater.apply(current), false)));
 	}
 
 	@Override
 	public ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater) {
-		return postprocess(daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current), false)));
+		return postprocess(
+				daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current), false)));
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package com.digitald4.common.model;
 
+import com.digitald4.common.util.JSONUtil;
+
 public class Address {
   private String address;
   private String unit;
@@ -40,5 +42,15 @@ public class Address {
   public Address setLongitude(double longitude) {
     this.longitude = longitude;
     return this;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof Address && toString().equals(obj.toString());
+  }
+
+  @Override
+  public String toString() {
+    return JSONUtil.toJSON(this).toString();
   }
 }

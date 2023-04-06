@@ -107,8 +107,7 @@ public class EntityServiceImpl<T,I>
 	public AtomicInteger migrate(@Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken, true);
-			return new AtomicInteger(
-					getStore().create(getStore().list(Query.forList()).getItems()).size());
+			return new AtomicInteger(getStore().create(store.list(Query.forList()).getItems()).size());
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}

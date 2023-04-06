@@ -79,7 +79,7 @@ public class DAOSQLImpl implements DAO {
 				if (rs.next()) {
 					return get((Class<T>) t.getClass(), rs.getObject(1));
 				}
-				changeTracker.postPersist(ImmutableList.of(t));
+				changeTracker.postPersist(ImmutableList.of(t), true);
 				return t;
 			} catch (SQLException e) {
 				throw new RuntimeException("Error creating record: " + e.getMessage(), e);
@@ -229,7 +229,7 @@ public class DAOSQLImpl implements DAO {
 					throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
 				}
 			}
-			return changeTracker.postPersist(ImmutableList.of(get(c, id))).get(0);
+			return changeTracker.postPersist(ImmutableList.of(get(c, id)), false).get(0);
 		});
 	}
 

@@ -43,7 +43,7 @@ public class ChangeProcessorTest {
   @Test
   public void createPojo() {
     changeTracker.prePersist(ImmutableList.of(new Pojo()));
-    changeTracker.postPersist(ImmutableList.of(new Pojo()));
+    changeTracker.postPersist(ImmutableList.of(new Pojo()), true);
 
     // Pojo does not implement any interfaces so should invoke no mocks.
     verify(clock, never()).millis();
@@ -68,7 +68,7 @@ public class ChangeProcessorTest {
   public void createModTimes() {
     ModTimes modTimes = new ModTimes();
     changeTracker.prePersist(ImmutableList.of(modTimes));
-    changeTracker.postPersist(ImmutableList.of(modTimes));
+    changeTracker.postPersist(ImmutableList.of(modTimes), true);
 
     // ModTimes only uses clock.
     verify(clock).millis();
@@ -87,7 +87,7 @@ public class ChangeProcessorTest {
         new ModTimes().setCreationTime(new DateTime(500L)).setLastModifiedTime(new DateTime(500L));
 
     changeTracker.prePersist(ImmutableList.of(modTimes));
-    changeTracker.postPersist(ImmutableList.of(modTimes));
+    changeTracker.postPersist(ImmutableList.of(modTimes), false);
 
     // ModTimes only uses clock.
     verify(clock).millis();
@@ -117,7 +117,7 @@ public class ChangeProcessorTest {
     ModUser modUser = new ModUser();
 
     changeTracker.prePersist(ImmutableList.of(modUser));
-    changeTracker.postPersist(ImmutableList.of(modUser));
+    changeTracker.postPersist(ImmutableList.of(modUser), true);
 
     // ModUser uses clock and userProvider.
     verify(clock).millis();
@@ -140,7 +140,7 @@ public class ChangeProcessorTest {
         (ModUser) new ModUser().setCreationUserId(501L).setCreationTime(new DateTime(500L));
 
     changeTracker.prePersist(ImmutableList.of(modUser));
-    changeTracker.postPersist(ImmutableList.of(modUser));
+    changeTracker.postPersist(ImmutableList.of(modUser), false);
 
     // Moduser uses clock and userProvider.
     verify(clock).millis();
@@ -174,7 +174,7 @@ public class ChangeProcessorTest {
     Trackable trackable = new Trackable();
 
     changeTracker.prePersist(ImmutableList.of(trackable));
-    changeTracker.postPersist(ImmutableList.of(trackable));
+    changeTracker.postPersist(ImmutableList.of(trackable), true);
 
     verify(clock).millis();
     verify(userProvider).get();
@@ -188,7 +188,7 @@ public class ChangeProcessorTest {
     when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(trackable));
 
     changeTracker.prePersist(ImmutableList.of(trackable));
-    changeTracker.postPersist(ImmutableList.of(trackable));
+    changeTracker.postPersist(ImmutableList.of(trackable), false);
 
     verify(clock).millis();
     verify(userProvider).get();
@@ -215,7 +215,7 @@ public class ChangeProcessorTest {
     SearchableObj searchable = new SearchableObj();
 
     changeTracker.prePersist(ImmutableList.of(searchable));
-    changeTracker.postPersist(ImmutableList.of(searchable));
+    changeTracker.postPersist(ImmutableList.of(searchable), true);
 
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
@@ -228,7 +228,7 @@ public class ChangeProcessorTest {
     SearchableObj searchableObj = new SearchableObj();
 
     changeTracker.prePersist(ImmutableList.of(searchableObj));
-    changeTracker.postPersist(ImmutableList.of(searchableObj));
+    changeTracker.postPersist(ImmutableList.of(searchableObj), false);
 
     verify(clock, never()).millis();
     verify(userProvider, never()).get();
@@ -252,7 +252,7 @@ public class ChangeProcessorTest {
     SubAll subAll = new SubAll();
 
     changeTracker.prePersist(ImmutableList.of(subAll));
-    changeTracker.postPersist(ImmutableList.of(subAll));
+    changeTracker.postPersist(ImmutableList.of(subAll), true);
 
     verify(clock, times(2)).millis();
     verify(userProvider, times(2)).get();
@@ -276,7 +276,7 @@ public class ChangeProcessorTest {
     when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
 
     changeTracker.prePersist(ImmutableList.of(subAll));
-    changeTracker.postPersist(ImmutableList.of(subAll));
+    changeTracker.postPersist(ImmutableList.of(subAll), false);
 
     verify(clock, times(2)).millis();
     verify(userProvider, times(2)).get();

@@ -163,7 +163,7 @@ com.digitald4.common.module.directive('dd4Address', ['$compile', function($compi
       if (typeof(google) != 'undefined') {
         google.maps.event.addDomListener(window, 'load', addMapAutoComplete(textField[0], function(place) {
           if (typeof(gpsAddress) == 'undefined') {
-            scope.$parent.$eval(attrs.ngModel + ' = {}');
+            // scope.$parent.$eval(attrs.ngModel + ' = {}');
             gpsAddress = scope.$parent.$eval(attrs.ngModel);
           }
           gpsAddress.address = place.formatted_address;

@@ -64,7 +64,7 @@ public class DAOCloudDS implements DAO {
 
 							Key key = datastoreService.put(entity);
 							return (key.getId() > 0) ? fields.get("id").invokeSet(item, key.getId()) : item;
-						}).collect(toImmutableList())));
+						}).collect(toImmutableList()), true));
 	}
 
 	@Override
@@ -120,7 +120,7 @@ public class DAOCloudDS implements DAO {
 									json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
 									datastoreService.put(entity);
 								})
-								.collect(toImmutableList())));
+								.collect(toImmutableList()), false));
 	}
 
 	@Override

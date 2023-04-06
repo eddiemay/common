@@ -19,6 +19,9 @@
             <button data-ng-click="col.button.action(entity)"
                     data-ng-disabled="col.button.disabled(entity)">{{col.button.display}}</button>
           </span>
+          <span data-ng-if="col.type == 'address'">
+            {{entity[col.prop].address}}
+          </span>
           <span data-ng-if="col.type == 'date'">
             {{tableCtrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy'}}
           </span>
