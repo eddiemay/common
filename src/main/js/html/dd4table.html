@@ -1,16 +1,16 @@
 <div class="block-border">
-  <h1>{{tableCtrl.base.title}}</h1>
+  <h1>{{tableCtrl.title}}</h1>
   <table class="table sortable no-margin" cellspacing="0" width="100%" data-page-length="25">
     <thead>
       <tr>
         <th class="black-cell"><span data-ng-class="{loading: tableCtrl.loading}"></span></th>
-        <th data-ng-repeat="col in tableCtrl.base.columns" scope="col">{{col.title}}</th>
+        <th data-ng-repeat="col in tableCtrl.columns" scope="col">{{col.title}}</th>
       </tr>
     </thead>
     <tbody>
       <tr data-ng-repeat="entity in tableCtrl.entities | orderBy:'name'">
         <td class="th table-check-cell"><input type="checkbox" data-ng-model="entity.selected"></td>
-        <td data-ng-repeat="col in tableCtrl.base.columns">
+        <td data-ng-repeat="col in tableCtrl.columns">
           <input data-ng-if="col.editable" data-ng-model="entity[col.prop]"
                  data-on-change="tableCtrl.update(entity, col.prop)"/>
           <span data-ng-if="col.value">{{col.value(entity)}}</span>

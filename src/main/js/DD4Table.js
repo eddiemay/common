@@ -1,9 +1,14 @@
 com.digitald4.common.TableController = function($scope, apiConnector) {
   this.scope = $scope;
-	this.metadata = $scope.metadata;
-	this.base = this.metadata.base;
-	this.jsonService = new com.digitald4.common.JSONService(this.base.entity, apiConnector);
-	this.metadata.refresh = this.refresh.bind(this);
+	var metadata = $scope.metadata;
+	var base = metadata.base || {};
+	this.title = metadata.title || base.title;
+	this.columns = metadata.columns || base.columns;
+	this.filter = metadata.filter || base.filter;
+	this.orderBy = metadata.orderBy || base.orderBy;
+	this.jsonService = new com.digitald4.common.JSONService(
+	    metadata.entity || base.entity, apiConnector);
+	metadata.refresh = this.refresh.bind(this);
 	this.refresh();
 }
 
@@ -11,7 +16,7 @@ com.digitald4.common.TableCtrl = ['$scope', 'apiConnector', com.digitald4.common
 
 com.digitald4.common.TableController.prototype.refresh = function() {
   this.loading = this.scope.loading = true;
-  var request = {filter: this.metadata.filter, orderBy: this.metadata.orderBy};
+  var request = {filter: this.filter, orderBy: this.orderBy};
   this.jsonService.list(request, function(response) {
     this.entities = response.items;
     this.loading = this.scope.loading = false;
@@ -28,9 +33,5 @@ com.digitald4.common.TableController.prototype.update = function(entity, prop) {
 }
 
 com.digitald4.common.TableController.prototype.getDate = function(value) {
-  if (value && value.millis) {
-    return value.millis;
-  }
-
-  return value;
+  return (value && value.millis) ? value.millis : value;
 }
