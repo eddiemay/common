@@ -18,7 +18,8 @@ var createUserService = function($cookies, apiConnector, globalData) {
   }
 
   userService.getActiveSession = function(idToken, success, error) {
-    this.sendRequest({action: 'activeSession', params: {idToken: idToken}}, success, error);
+    this.sendRequest(
+        {action: 'activeSession', params: {idToken: idToken}}, success, error);
   }
 
   return userService;

@@ -4,6 +4,7 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
     .service('userService', com.digitald4.common.UserService)
+    .service('userPreferences', com.digitald4.common.UserPreferences)
     .controller('DD4AppCtrl', ['$cookies', 'globalData', 'userService', 'sessionWatcher', function($cookies, globalData, userService, sessionWatcher) {
       this.globalData = globalData;
       globalData.activeSession = $cookies.getObject('activeSession');
