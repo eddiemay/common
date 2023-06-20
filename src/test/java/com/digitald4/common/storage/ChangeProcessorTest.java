@@ -19,8 +19,8 @@ import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
-import javax.inject.Provider;
-import org.joda.time.DateTime;
+import java.time.Instant;
+import javax.inject.Provider;;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -76,15 +76,14 @@ public class ChangeProcessorTest {
     verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
-    assertThat(modTimes.getCreationTime().getMillis()).isEqualTo(1000L);
-    assertThat(modTimes.getLastModifiedTime().getMillis()).isEqualTo(1000L);
+    assertThat(modTimes.getCreationTime().toEpochMilli()).isEqualTo(1000L);
+    assertThat(modTimes.getLastModifiedTime().toEpochMilli()).isEqualTo(1000L);
     assertThat(modTimes.getDeletionTime()).isNull();
   }
 
   @Test
   public void updateModTimes() {
-    ModTimes modTimes =
-        new ModTimes().setCreationTime(new DateTime(500L)).setLastModifiedTime(new DateTime(500L));
+    ModTimes modTimes = new ModTimes().setCreationTime(500L).setLastModifiedTime(500L);
 
     changeTracker.prePersist(ImmutableList.of(modTimes));
     changeTracker.postPersist(ImmutableList.of(modTimes), false);
@@ -95,8 +94,8 @@ public class ChangeProcessorTest {
     verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
-    assertThat(modTimes.getCreationTime().getMillis()).isEqualTo(500L);
-    assertThat(modTimes.getLastModifiedTime().getMillis()).isEqualTo(1000L);
+    assertThat(modTimes.getCreationTime().toEpochMilli()).isEqualTo(500L);
+    assertThat(modTimes.getLastModifiedTime().toEpochMilli()).isEqualTo(1000L);
     assertThat(modTimes.getDeletionTime()).isNull();
   }
 
@@ -125,8 +124,8 @@ public class ChangeProcessorTest {
     verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
-    assertThat(modUser.getCreationTime().getMillis()).isEqualTo(1000L);
-    assertThat(modUser.getLastModifiedTime().getMillis()).isEqualTo(1000L);
+    assertThat(modUser.getCreationTime().toEpochMilli()).isEqualTo(1000L);
+    assertThat(modUser.getLastModifiedTime().toEpochMilli()).isEqualTo(1000L);
     assertThat(modUser.getDeletionTime()).isNull();
 
     assertThat(modUser.getCreationUserId()).isEqualTo(1001L);
@@ -137,7 +136,7 @@ public class ChangeProcessorTest {
   @Test
   public void updateModUser() {
     ModUser modUser =
-        (ModUser) new ModUser().setCreationUserId(501L).setCreationTime(new DateTime(500L));
+        (ModUser) new ModUser().setCreationUserId(501L).setCreationTime(Instant.ofEpochMilli(500L));
 
     changeTracker.prePersist(ImmutableList.of(modUser));
     changeTracker.postPersist(ImmutableList.of(modUser), false);
@@ -148,8 +147,8 @@ public class ChangeProcessorTest {
     verify(dao, never()).create(anyList());
     verify(searchIndexer, never()).index(any());
 
-    assertThat(modUser.getCreationTime().getMillis()).isEqualTo(500L);
-    assertThat(modUser.getLastModifiedTime().getMillis()).isEqualTo(1000L);
+    assertThat(modUser.getCreationTime().toEpochMilli()).isEqualTo(500L);
+    assertThat(modUser.getLastModifiedTime().toEpochMilli()).isEqualTo(1000L);
     assertThat(modUser.getDeletionTime()).isNull();
 
     assertThat(modUser.getCreationUserId()).isEqualTo(501L);
@@ -259,8 +258,8 @@ public class ChangeProcessorTest {
     verify(dao).create(anyList());
     verify(searchIndexer).index(ImmutableList.of(subAll));
 
-    assertThat(subAll.getCreationTime().getMillis()).isEqualTo(1000L);
-    assertThat(subAll.getLastModifiedTime().getMillis()).isEqualTo(1000L);
+    assertThat(subAll.getCreationTime().toEpochMilli()).isEqualTo(1000L);
+    assertThat(subAll.getLastModifiedTime().toEpochMilli()).isEqualTo(1000L);
     assertThat(subAll.getDeletionTime()).isNull();
 
     assertThat(subAll.getCreationUserId()).isEqualTo(1001L);
@@ -271,7 +270,7 @@ public class ChangeProcessorTest {
   @Test
   public void updateSubAll() {
     SubAll subAll = (SubAll)
-        new SubAll().setId(75L).setCreationUserId(501L).setCreationTime(new DateTime(500L));
+        new SubAll().setId(75L).setCreationUserId(501L).setCreationTime(Instant.ofEpochMilli(500L));
 
     when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
 
@@ -283,8 +282,8 @@ public class ChangeProcessorTest {
     verify(dao).create(anyList());
     verify(searchIndexer).index(ImmutableList.of(subAll));
 
-    assertThat(subAll.getCreationTime().getMillis()).isEqualTo(500L);
-    assertThat(subAll.getLastModifiedTime().getMillis()).isEqualTo(1000L);
+    assertThat(subAll.getCreationTime().toEpochMilli()).isEqualTo(500L);
+    assertThat(subAll.getLastModifiedTime().toEpochMilli()).isEqualTo(1000L);
     assertThat(subAll.getDeletionTime()).isNull();
 
     assertThat(subAll.getCreationUserId()).isEqualTo(501L);
@@ -309,40 +308,40 @@ public class ChangeProcessorTest {
   public static class Pojo {}
 
   public static class ModTimes extends ModelObject<Long> implements HasModificationTimes {
-    private DateTime creationTime;
-    private DateTime lastModifiedTime;
-    private DateTime deletedTime;
+    private Instant creationTime;
+    private Instant lastModifiedTime;
+    private Instant deletedTime;
 
     @Override
-    public DateTime getCreationTime() {
+    public Instant getCreationTime() {
       return creationTime;
     }
 
     @Override
-    public ModTimes setCreationTime(DateTime time) {
-      this.creationTime = time;
+    public ModTimes setCreationTime(long millis) {
+      this.creationTime = Instant.ofEpochMilli(millis);
       return this;
     }
 
     @Override
-    public DateTime getLastModifiedTime() {
+    public Instant getLastModifiedTime() {
       return lastModifiedTime;
     }
 
     @Override
-    public ModTimes setLastModifiedTime(DateTime time) {
-      this.lastModifiedTime = time;
+    public ModTimes setLastModifiedTime(long millis) {
+      this.lastModifiedTime = Instant.ofEpochMilli(millis);;
       return this;
     }
 
     @Override
-    public DateTime getDeletionTime() {
+    public Instant getDeletionTime() {
       return deletedTime;
     }
 
     @Override
-    public ModTimes setDeletionTime(DateTime time) {
-      this.deletedTime = time;
+    public ModTimes setDeletionTime(long millis) {
+      this.deletedTime = Instant.ofEpochMilli(millis);;
       return this;
     }
   }

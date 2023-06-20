@@ -16,8 +16,8 @@ import com.digitald4.common.storage.testing.DAOTestingImpl;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import java.util.LinkedHashMap;
+import javax.inject.Provider;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class ChangeTrackerTest {
@@ -28,11 +28,14 @@ public class ChangeTrackerTest {
   private final Clock clock = mock(Clock.class);
   private ChangeTracker changeTracker;
 
+  private DAOTestingImpl testingDao;
+  private Provider<DAO> testDaoProvider = () -> testingDao;
+
   @Before
   public void setup() {
     when(clock.millis()).thenReturn(1000L);
-    when(dao.create(any(Object.class))).then(i -> i.getArgumentAt(0, ChangeTrackable.class));
-    when(dao.create(anyList())).then(i -> i.getArgumentAt(0, ImmutableList.class));
+    when(dao.create(any(Object.class))).then(i -> i.getArgument(0));
+    when(dao.create(anyList())).then(i -> i.getArgument(0));
     changeTracker = new ChangeTracker(() -> dao, () -> user, searchIndexer, clock);
   }
 
@@ -99,17 +102,17 @@ public class ChangeTrackerTest {
 
   }
 
-  @Test @Ignore
+  @Test
   public void withTestDao() {
-    DAOTestingImpl dao = new DAOTestingImpl(null);
-    changeTracker = new ChangeTracker(() -> dao, () -> user, searchIndexer, clock);
+    changeTracker = new ChangeTracker(testDaoProvider, () -> user, searchIndexer, clock);
+    testingDao = new DAOTestingImpl(changeTracker);
 
     ChangeTrackableUser trackable =
         new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
 
     ChangeHistory changeHistory = changeTracker.trackCreated(ImmutableList.of(trackable)).get(0);
 
-    changeHistory = dao.get(ChangeHistory.class, changeHistory.getId());
+    changeHistory = testingDao.get(ChangeHistory.class, changeHistory.getId());
 
     assertThat(changeHistory.getAction()).isEqualTo(Action.CREATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");

@@ -18,10 +18,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 public class ChangeTracker {
@@ -47,7 +47,7 @@ public class ChangeTracker {
     T first = entities.iterator().next();
 
     if (first instanceof HasModificationTimes) {
-      DateTime now = new DateTime(clock.millis());
+      Instant now = Instant.ofEpochMilli(clock.millis());
       stream(entities)
           .map(t -> (HasModificationTimes) t)
           .forEach(hasModificationTimes -> {
@@ -172,14 +172,13 @@ public class ChangeTracker {
         .collect(toImmutableList()));
   }
 
-  private <T extends ChangeTrackable<?>> ChangeHistory createChangeHistory(
-      Action action, T entity) {
+  private <T extends ChangeTrackable<?>> ChangeHistory createChangeHistory(Action action, T entity) {
     User user = userProvider.get();
     return new ChangeHistory()
         .setEntityType(entity.getClass().getSimpleName())
         .setEntityId(String.valueOf(entity.getId()))
         .setAction(action)
-        .setTimeStamp(new DateTime(clock.millis()))
+        .setTimeStamp(clock.millis())
         .setUserId(user.getId())
         .setUsername(user.getUsername())
         .setEntity(entity);
@@ -190,7 +189,7 @@ public class ChangeTracker {
     private String entityId;
     enum Action {CREATED, UPDATED, DELETED}
     private Action action;
-    private DateTime timeStamp;
+    private Instant timeStamp;
     private Long userId;
     private String username;
     private Object entity;
@@ -239,12 +238,12 @@ public class ChangeTracker {
       return this;
     }
 
-    public DateTime getTimeStamp() {
+    public Instant getTimeStamp() {
       return timeStamp;
     }
 
-    public ChangeHistory setTimeStamp(DateTime timeStamp) {
-      this.timeStamp = timeStamp;
+    public ChangeHistory setTimeStamp(long millis) {
+      this.timeStamp = Instant.ofEpochMilli(millis);
       return this;
     }
 

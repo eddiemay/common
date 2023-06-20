@@ -86,7 +86,7 @@ public class ApiServletTest {
 				.addService("player", playerService);
 
 		when(teamService.performAction(eq("get"), any(JSONObject.class))).then(invocation -> {
-			switch (invocation.getArgumentAt(1, JSONObject.class).getInt("id")) {
+			switch (invocation.<JSONObject>getArgument(1).getInt("id")) {
 				case 1:
 					return lakers;
 				case 2:
@@ -101,7 +101,7 @@ public class ApiServletTest {
 		});
 
 		when(teamService.performAction(eq("list"), any(JSONObject.class))).then(invocation -> {
-			JSONObject request = invocation.getArgumentAt(1, JSONObject.class);
+			JSONObject request = invocation.getArgument(1);
 			if (request.has("conf")) {
 				return (request.getString("conf").equals("east")) ? eastTeams : westTeams;
 			}
@@ -109,7 +109,7 @@ public class ApiServletTest {
 		});
 
 		when(teamService.performAction(eq("update"), any(JSONObject.class))).then(invocation -> {
-			JSONObject updateRequest = invocation.getArgumentAt(1, JSONObject.class);
+			JSONObject updateRequest = invocation.getArgument(1);
 			JSONObject update = updateRequest.getJSONArray("update").getJSONObject(0);
 			switch (updateRequest.getInt("id")) {
 				case 1:
@@ -126,7 +126,7 @@ public class ApiServletTest {
 		});
 
 		Answer<JSONObject> voteAnswer = invocation -> {
-			switch (invocation.getArgumentAt(1, JSONObject.class).getInt("id")) {
+			switch (invocation.<JSONObject>getArgument(1).getInt("id")) {
 				case 1:
 					return lakerVote.put("vote", lakerVote.getInt("vote") + 1);
 				case 2:
@@ -139,7 +139,7 @@ public class ApiServletTest {
 		when(teamService.performAction(eq("upvote"), any(JSONObject.class))).then(voteAnswer);
 		when(teamService.performAction(eq("downvote"), any(JSONObject.class))).then(voteAnswer);
 		when(playerService.performAction(eq("get"), any(JSONObject.class))).then(invocation -> {
-			JSONObject request = invocation.getArgumentAt(1, JSONObject.class);
+			JSONObject request = invocation.getArgument(1);
 			int teamId = request.getInt("team_id");
 			int playerId = request.getInt("id");
 			if (teamId == lakers.getInt("id")) {
@@ -155,7 +155,7 @@ public class ApiServletTest {
 		});
 
 		when(playerService.performAction(eq("list"), any(JSONObject.class))).then(invocation -> {
-			JSONObject request = invocation.getArgumentAt(1, JSONObject.class);
+			JSONObject request = invocation.getArgument(1);
 			int teamId = request.getInt("team_id");
 			if (teamId == lakers.getInt("id")) {
 				return lakerPlayers;

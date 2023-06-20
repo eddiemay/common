@@ -33,14 +33,14 @@ public class DAOApiImplTest {
     dao = new DAOApiImpl(connector);
 
     when(connector.formatUrl(anyString()))
-        .thenAnswer(i -> String.format(BASE_API_URL, i.getArgumentAt(0, String.class)));
+        .thenAnswer(i -> String.format(BASE_API_URL, i.<String>getArgument(0)));
     when(connector.sendGet(anyString())).thenReturn(BASIC_USER_JSON);
   }
 
   @Test
   public void create() {
     when(connector.sendPost(anyString(), anyString())).thenAnswer(
-        i -> new JSONObject(i.getArgumentAt(1, String.class)).put("id", USER_ID).toString());
+        i -> new JSONObject(i.<String>getArgument(1)).put("id", USER_ID).toString());
 
     BasicUser user = dao.create(new BasicUser().setUsername("user@name").setTypeId(10));
 
@@ -136,8 +136,7 @@ public class DAOApiImplTest {
 
   @Test
   public void update() {
-    when(connector.send(anyString(), anyString(), anyString()))
-        .thenAnswer(i -> i.getArgumentAt(2, String.class));
+    when(connector.send(anyString(), anyString(), anyString())).thenAnswer(i -> i.getArgument(2));
 
     BasicUser user = dao.update(BasicUser.class, USER_ID, current -> current.setTypeId(14));
 
