@@ -47,7 +47,7 @@ public class ChangeTrackerTest {
     ChangeTrackableUser trackable =
         new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
 
-    ChangeHistory changeHistory = changeTracker.trackCreated(ImmutableList.of(trackable)).get(0);
+    ChangeHistory changeHistory = changeTracker.trackRevised(ImmutableList.of(trackable), true).get(0);
 
     assertThat(changeHistory.getAction()).isEqualTo(Action.CREATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
@@ -67,7 +67,7 @@ public class ChangeTrackerTest {
     ChangeTrackableUser updated = new ChangeTrackableUser().setId(1002L)
         .setUsername(null).setFirstName("FirstName").setLastName("LastName");
 
-    ChangeHistory changeHistory = changeTracker.trackUpdated(ImmutableList.of(updated)).get(0);
+    ChangeHistory changeHistory = changeTracker.trackRevised(ImmutableList.of(updated), false).get(0);
 
     assertThat(changeHistory.getAction()).isEqualTo(Action.UPDATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
@@ -75,11 +75,6 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity()).isEqualTo(updated);
-    assertThat(changeHistory.getChanges()).containsExactly(
-        Change.create("username", "user2"),
-        Change.create("firstName", "First"),
-        Change.create("lastName", null));
-
   }
 
   @Test
@@ -99,7 +94,6 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity()).isEqualTo(trackable);
     assertThat(changeHistory.getChanges()).isNull();
-
   }
 
   @Test
@@ -110,7 +104,7 @@ public class ChangeTrackerTest {
     ChangeTrackableUser trackable =
         new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
 
-    ChangeHistory changeHistory = changeTracker.trackCreated(ImmutableList.of(trackable)).get(0);
+    ChangeHistory changeHistory = changeTracker.trackRevised(ImmutableList.of(trackable), true).get(0);
 
     changeHistory = testingDao.get(ChangeHistory.class, changeHistory.getId());
 

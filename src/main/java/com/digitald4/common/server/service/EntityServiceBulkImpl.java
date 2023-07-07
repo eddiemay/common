@@ -14,6 +14,7 @@ import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntityServiceImpl<T, I>
     implements BulkCreateable<T>, BulkGetable<T,I>, BulkUpdateable<T,I>, BulkDeleteable<T,I> {
@@ -67,11 +68,10 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchDelete")
-  public Empty batchDelete(IterableParam<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
+  public AtomicInteger batchDelete(IterableParam<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
     try {
       resolveLogin(idToken, "batchDelete");
-      getStore().delete(ids.getItems());
-      return Empty.getInstance();
+      return new AtomicInteger(getStore().delete(ids.getItems()));
     } catch (DD4StorageException e) {
       throw new ServiceException(e.getErrorCode(), e);
     }

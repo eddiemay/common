@@ -13,6 +13,8 @@ import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.util.JSONUtil;
+import com.google.api.server.spi.config.AnnotationBoolean;
+import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -70,10 +72,6 @@ public class ChangeTracker {
           });
     }
 
-    if (first instanceof ChangeTrackable) {
-      trackUpdated((Iterable<? extends ChangeTrackable>) entities);
-    }
-
     return entities;
   }
 
@@ -84,8 +82,8 @@ public class ChangeTracker {
 
     T first = entities.get(0);
 
-    if (isCreate && first instanceof ChangeTrackable) {
-      trackCreated((Iterable<? extends ChangeTrackable>) entities);
+    if (first instanceof ChangeTrackable) {
+      trackRevised((Iterable<? extends ChangeTrackable>) entities, isCreate);
     }
 
     if (first instanceof Searchable) {
@@ -112,55 +110,11 @@ public class ChangeTracker {
   }
 
   @VisibleForTesting
-  <T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackCreated(Iterable<T> created) {
+  <T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackRevised(
+      Iterable<T> items, boolean isCreate) {
     return daoProvider.get().create(
-        stream(created)
-            .map(item -> createChangeHistory(Action.CREATED, item))
-            .collect(toImmutableList()));
-  }
-
-  @VisibleForTesting
-  <I, T extends ChangeTrackable<I>> ImmutableList<ChangeHistory> trackUpdated(Iterable<T> changed) {
-    if (!changed.iterator().hasNext()) {
-      return ImmutableList.of();
-    }
-
-    T t = changed.iterator().next();
-
-    ImmutableMap<I, T> currentItems = daoProvider.get()
-        .get(t.getClass(),
-            stream(changed)
-                .map(ChangeTrackable::getId)
-                .filter(Objects::nonNull)
-                .collect(toImmutableList()))
-        .stream()
-        .map(item -> (T) item)
-        .collect(toImmutableMap(ChangeTrackable::getId, identity()));
-
-    if (currentItems.isEmpty()) {
-      return ImmutableList.of();
-    }
-
-    return daoProvider.get().create(
-        stream(changed)
-            .filter(item -> item.getId() != null)
-            .filter(item -> currentItems.containsKey(item.getId()))
-            .map(item -> createUpdated(item, currentItems.get(item.getId())))
-            .collect(toImmutableList()));
-  }
-
-  private <T extends ChangeTrackable<?>> ChangeHistory createUpdated(T updated, T original) {
-    JSONObject originalJson = JSONUtil.toJSON(original);
-    JSONObject updatedJson = JSONUtil.toJSON(updated);
-    ImmutableSet<String> allFields = ImmutableSet.<String>builder()
-        .addAll(originalJson.keySet())
-        .addAll(updatedJson.keySet())
-        .build();
-
-    return createChangeHistory(Action.UPDATED, updated).setChanges(
-        allFields.stream()
-            .filter(field -> !Objects.equals(originalJson.opt(field), updatedJson.opt(field)))
-            .map(field -> Change.create(field, originalJson.opt(field)))
+        stream(items)
+            .map(item -> createChangeHistory(isCreate ? Action.CREATED : Action.UPDATED, item))
             .collect(toImmutableList()));
   }
 
@@ -193,7 +147,6 @@ public class ChangeTracker {
     private Long userId;
     private String username;
     private Object entity;
-    private ImmutableList<Change> changes;
 
     public ChangeHistory setId(Long id) {
       super.setId(id);
@@ -238,8 +191,14 @@ public class ChangeTracker {
       return this;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Instant getTimeStamp() {
       return timeStamp;
+    }
+
+    @ApiResourceProperty
+    public long timeStamp() {
+      return timeStamp.toEpochMilli();
     }
 
     public ChangeHistory setTimeStamp(long millis) {
@@ -274,12 +233,13 @@ public class ChangeTracker {
       return this;
     }
 
+    @Deprecated
     public ImmutableList<Change> getChanges() {
-      return changes;
+      return null;
     }
 
+    @Deprecated
     public ChangeHistory setChanges(Iterable<Change> changes) {
-      this.changes = ImmutableList.copyOf(changes);
       return this;
     }
   }

@@ -1,25 +1,22 @@
 package com.digitald4.common.model;
 
 public class FileReference {
-  private long id;
   private String name;
   private String type;
   private int size;
 
   public static FileReference of(DataFile dataFile) {
     return new FileReference()
-        .setId(dataFile.getId())
         .setName(dataFile.getName())
         .setType(dataFile.getType())
         .setSize(dataFile.getSize());
   }
 
-  public long getId() {
-    return id;
+  public Long getId() {
+    return null;
   }
 
   public FileReference setId(long id) {
-    this.id = id;
     return this;
   }
 

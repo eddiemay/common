@@ -124,13 +124,13 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T, I> void delete(Class<T> c, I id) {
-		delete(c, ImmutableList.of(id));
+	public <T, I> boolean delete(Class<T> c, I id) {
+		return delete(c, ImmutableList.of(id)) == 1;
 	}
 
 	@Override
-	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
-		Calculate.executeWithRetries(2, () -> {
+	public <T, I> int delete(Class<T> c, Iterable<I> ids) {
+		return Calculate.executeWithRetries(2, () -> {
 			changeTracker.preDelete(c, ids);
 
 			ImmutableList<Key> keys =
@@ -168,7 +168,10 @@ public class DAOCloudDS implements DAO {
 	private <T> ImmutableMap<Key, Entity> getEntities(Class<T> c, Iterable<Key> keys) {
 		ImmutableMap<Key, Entity> results = ImmutableMap.copyOf(datastoreService.get(keys));
 		if (results.size() != Iterables.size(keys)) {
-			throw new DD4StorageException("One of more items not found", ErrorCode.NOT_FOUND);
+			throw new DD4StorageException(
+					String.format("One or more items not found while fetching: %s. Requested: %d, found: %d",
+							c.getSimpleName(), Iterables.size(keys), results.size()),
+					ErrorCode.NOT_FOUND);
 		}
 
 		return results;

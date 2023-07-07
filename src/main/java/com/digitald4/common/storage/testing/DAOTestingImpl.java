@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import org.json.JSONObject;
 
 public class DAOTestingImpl implements DAO {
@@ -122,13 +123,13 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T, I> void delete(Class<T> c, I id) {
-		items.remove(getIdString(c, id));
+	public <T, I> boolean delete(Class<T> c, I id) {
+		return items.remove(getIdString(c, id)) != null;
 	}
 
 	@Override
-	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
-		stream(ids).forEach(id -> delete(c, id));
+	public <T, I> int delete(Class<T> c, Iterable<I> ids) {
+		return (int) stream(ids).map(id -> delete(c, id)).filter(Boolean::booleanValue).count();
 	}
 
 	private <T> String getIdString(Class<T> c, Object id) {

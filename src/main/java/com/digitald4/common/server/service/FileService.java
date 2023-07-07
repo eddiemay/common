@@ -8,6 +8,7 @@ import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
 import com.google.api.server.spi.config.ApiMethod;
+import com.google.api.server.spi.config.ApiMethod.HttpMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
@@ -20,6 +21,7 @@ import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -45,16 +47,18 @@ import javax.servlet.http.Part;
 		}
 		// [END_EXCLUDE]
 )
-public class FileService extends EntityServiceImpl<DataFile, Long> {
+@MultipartConfig(
+		fileSizeThreshold=1024*1024*10, maxFileSize=1024*1024*32, maxRequestSize=1024*1024*32)
+public class FileService extends EntityServiceImpl<DataFile, String> {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
-	private final Store<DataFile, Long> dataFileStore;
+	private final Store<DataFile, String> dataFileStore;
 	private final Provider<HttpServletRequest> requestProvider;
 	private final Provider<HttpServletResponse> responseProvider;
 
 	@Inject
 	public FileService(
-			Store<DataFile, Long> dataFileStore, LoginResolver loginResolver,
+			Store<DataFile, String> dataFileStore, LoginResolver loginResolver,
 			Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider) {
 		super(dataFileStore, loginResolver, true);
 		this.dataFileStore = dataFileStore;
@@ -62,20 +66,22 @@ public class FileService extends EntityServiceImpl<DataFile, Long> {
 		this.responseProvider = responseProvider;
 	}
 
-	/* public DataFile create() {
+	@ApiMethod(httpMethod = HttpMethod.POST, path = "upload")
+	public DataFile upload() {
 		try {
-			return dataFileStore.create(converter.apply(requestProvider.get().getPart("file")));
+			HttpServletRequest request = requestProvider.get();
+			return dataFileStore.create(converter.apply(request.getPart("file")));
 		} catch (ServletException | IOException e) {
 			throw new RuntimeException(e);
 		}
-	} */
+	}
 
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "{id}/{fileName}")
-	public Empty getFileContents(@Named("id") Long id,
+	@ApiMethod(httpMethod = HttpMethod.GET, path = "{fileName}")
+	public Empty getFileContents(
 			@Named("fileName") String fileName, @Nullable @Named("idToken") String idToken) {
 		try {
 			resolveLogin(idToken, "getFileContents");
-			DataFile df = dataFileStore.get(id);
+			DataFile df = dataFileStore.get(fileName);
 			HttpServletResponse response = responseProvider.get();
 			byte[] bytes = df.getData();
 			response.setContentType("application/" + (!df.getType().isEmpty() ? df.getType() : "pdf"));
@@ -134,9 +140,8 @@ public class FileService extends EntityServiceImpl<DataFile, Long> {
 		} catch (IOException e) {
 			e.printStackTrace();
 			LOGGER.log(Level.SEVERE, "Problems during file upload. Error: {0}", e.getMessage());
-			throw new RuntimeException("You either did not specify a file to upload or are "
-					+ "trying to upload a file to a protected or nonexistent "
-					+ "location. " + e.getMessage(), e);
+			throw new RuntimeException("You either did not specify a file to upload or are trying to "
+					+ "upload a file to a protected or nonexistent location. " + e.getMessage(), e);
 		}
 	};
 }

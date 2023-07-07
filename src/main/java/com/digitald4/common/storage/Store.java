@@ -21,7 +21,7 @@ public interface Store<T, I> {
 
 	ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater);
 
-	void delete(I id);
+	boolean delete(I id);
 
-	void delete(Iterable<I> ids);
+	int delete(Iterable<I> ids);
 }

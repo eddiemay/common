@@ -22,7 +22,7 @@ public interface TypedDAO<R> {
 
 	<T extends R, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater);
 
-	<T extends R, I> void delete(Class<T> c, I id);
+	<T extends R, I> boolean delete(Class<T> c, I id);
 
-	<T extends R, I> void delete(Class<T> c, Iterable<I> ids);
+	<T extends R, I> int delete(Class<T> c, Iterable<I> ids);
 }

@@ -77,7 +77,7 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onError) {
-  this.sendRequest({action: 'delete', method: 'DELETE', params: id}, onSuccess, onError);
+  this.sendRequest({action: 'delete', method: 'DELETE', params: {id: id}}, onSuccess, onError);
 }
 
 /**
@@ -116,9 +116,13 @@ com.digitald4.common.JSONService.prototype.batchUpdate = function(entities, prop
 }
 
 com.digitald4.common.JSONService.prototype.getFileUrl = function(fileRef) {
-  var globalData = this.apiConnector.globalData;
+  if (!fileRef) {
+    return undefined;
+  }
+  var apiConnector = this.apiConnector;
+  var globalData = apiConnector.globalData;
   var idTokenParam = globalData.activeSession ? '?idToken=' + globalData.activeSession.id : '';
-  return this.apiConnector.baseUrl + 'files/v1/' + fileRef.id + '/' + fileRef.name + idTokenParam;
+  return apiConnector.baseUrl + apiConnector.apiUrl + 'files/v1/' + fileRef.name + idTokenParam;
 }
 
 processPagination = function(response) {

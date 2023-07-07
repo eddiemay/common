@@ -161,15 +161,16 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T, I> void delete(Class<T> c, I id) {
+  public <T, I> boolean delete(Class<T> c, I id) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/delete?id=" + id;
-    apiConnector.send("DELETE", url, null);
+    return Boolean.parseBoolean(apiConnector.send("DELETE", url, null));
   }
 
   @Override
-  public <T, I> void delete(Class<T> c, Iterable<I> ids) {
+  public <T, I> int delete(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchDelete";
-    apiConnector.send("POST", url, new JSONObject().put("items", ids).toString());
+    return Integer.parseInt(
+        apiConnector.send("POST", url, new JSONObject().put("items", ids).toString()));
   }
 
   private <T> T convert(Class<T> cls, String content) {

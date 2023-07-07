@@ -8,17 +8,17 @@ import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
+import com.google.common.collect.ImmutableList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class EntityServiceImpl<T,I>
-		implements Createable<T>, Getable<T,I>, Listable<T>, Updateable<T,I>, Deleteable<T,I> {
+public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, Listable<T>, Updateable<T,I>, Deleteable<T,I> {
 
 	private final Store<T,I> store;
 	private final LoginResolver loginResolver;
 	private final boolean requiresLoginDefault;
 
-	public EntityServiceImpl(
-			Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
+	public EntityServiceImpl(Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
 		this.store = store;
 		this.loginResolver = loginResolver;
 		this.requiresLoginDefault = requiresLoginDefault;
@@ -42,7 +42,7 @@ public class EntityServiceImpl<T,I>
 	public T create(T entity, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken, "create");
-			return getStore().create(entity);
+			return transform(getStore().create(entity));
 		} catch (DD4StorageException e) {
 			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
@@ -55,7 +55,7 @@ public class EntityServiceImpl<T,I>
 			throws ServiceException {
 		try {
 			resolveLogin(idToken,"get");
-			return getStore().get(id);
+			return transform(getStore().get(id));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
@@ -70,7 +70,7 @@ public class EntityServiceImpl<T,I>
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"list");
-			return getStore().list(Query.forList(filter, orderBy, pageSize, pageToken));
+			return transform(getStore().list(Query.forList(filter, orderBy, pageSize, pageToken)));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
@@ -83,7 +83,7 @@ public class EntityServiceImpl<T,I>
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken,"update");
-			return getStore().update(id, current -> JSONUtil.merge(updateMask, entity, current));
+			return transform(getStore().update(id, current -> JSONUtil.merge(updateMask, entity, current)));
 		} catch (DD4StorageException e) {
 			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
@@ -92,12 +92,11 @@ public class EntityServiceImpl<T,I>
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.DELETE, path = "delete")
-	public Empty delete(@Named("id") I id, @Nullable @Named("idToken") String idToken)
+	public AtomicBoolean delete(@Named("id") I id, @Nullable @Named("idToken") String idToken)
 			throws ServiceException {
 		try {
 			resolveLogin(idToken, "delete");
-			getStore().delete(id);
-			return Empty.getInstance();
+			return new AtomicBoolean(getStore().delete(id));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
@@ -111,6 +110,19 @@ public class EntityServiceImpl<T,I>
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		}
+	}
+
+	private T transform(T t) {
+		return transform(ImmutableList.of(t)).iterator().next();
+	}
+
+	private QueryResult<T> transform(QueryResult<T> queryResult) {
+		transform(queryResult.getItems());
+		return queryResult;
+	}
+
+	protected Iterable<T> transform(Iterable<T> entities) {
+		return entities;
 	}
 
 	protected boolean requiresLogin(String method) {

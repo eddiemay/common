@@ -38,16 +38,16 @@ public class ApiServiceServlet extends HttpServlet {
 			ImmutableList.of("json", "idToken", "orderBy", "pageSize", "pageToken");
 
 	private final Map<String, JSONService> services = new HashMap<>();
-	private DAO dao;
-	private final Clock clock = Clock.systemUTC();
+	protected final Clock clock = Clock.systemUTC();
 	private Emailer emailer;
+	private DAO dao;
 	protected final Provider<DAO> daoProvider = () -> dao;
 	protected final GeneralDataStore generalDataStore;
 	protected final GenericUserStore userStore;
 	protected final UserService userService;
 	protected final SessionStore sessionStore;
 	protected final PasswordStore passwordStore;
-	protected final Store<DataFile, Long> dataFileStore;
+	protected final Store<DataFile, String> dataFileStore;
 	protected final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
 	protected final ProviderThreadLocalImpl<HttpServletRequest> requestProvider =
 			new ProviderThreadLocalImpl<>();

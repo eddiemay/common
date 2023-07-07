@@ -239,13 +239,13 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
-	public <T, I> void delete(Class<T> c, I id) {
-		delete(c, ImmutableList.of(id));
+	public <T, I> boolean delete(Class<T> c, I id) {
+		return delete(c, ImmutableList.of(id)) == 1;
 	}
 
 	@Override
-	public <T, I> void delete(Class<T> c, Iterable<I> ids) {
-		Calculate.executeWithRetries(2, () -> {
+	public <T, I> int delete(Class<T> c, Iterable<I> ids) {
+		return Calculate.executeWithRetries(2, () -> {
 			changeTracker.preDelete(c, ids);
 			String sql = String.format(
 					BATCH_DELETE_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));

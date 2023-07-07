@@ -29,54 +29,58 @@ public class GenericStore<T, I> implements Store<T, I> {
 
 	@Override
 	public T create(T t) {
-		return postprocess(daoProvider.get().create(preprocess(t, true)));
+		return transform(postprocess(daoProvider.get().create(preprocess(t, true))));
 	}
 
 	@Override
 	public ImmutableList<T> create(Iterable<T> entities) {
-		return postprocess(daoProvider.get().create(preprocess(entities, true)));
+		return ImmutableList.copyOf(transform(postprocess(daoProvider.get().create(preprocess(entities, true)))));
 	}
 
 	@Override
 	public T get(I id) {
-		return daoProvider.get().get(c, id);
+		return transform(daoProvider.get().get(c, id));
 	}
 
 	@Override
 	public ImmutableList<T> get(Iterable<I> ids) {
-		return daoProvider.get().get(c, ids);
+		return ImmutableList.copyOf(transform(daoProvider.get().get(c, ids)));
 	}
 
 	@Override
 	public QueryResult<T> list(Query.List query) {
-		return daoProvider.get().list(c, query);
+		QueryResult<T> result = daoProvider.get().list(c, query);
+		transform(result.getItems());
+		return result;
 	}
 
 	@Override
 	public T update(I id, UnaryOperator<T> updater) {
-		return postprocess(
-				daoProvider.get().update(c, id, current -> preprocess(updater.apply(current), false)));
+		return transform(postprocess(
+				daoProvider.get().update(c, id, current -> preprocess(updater.apply(current), false))));
 	}
 
 	@Override
 	public ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater) {
-		return postprocess(
-				daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current), false)));
+		return ImmutableList.copyOf(transform(postprocess(
+				daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current), false)))));
 	}
 
 	@Override
-	public void delete(I id) {
-		daoProvider.get().delete(c, id);
+	public boolean delete(I id) {
+		boolean result = daoProvider.get().delete(c, id);
 		postdelete(ImmutableList.of(id));
+		return result;
 	}
 
 	@Override
-	public void delete(Iterable<I> ids) {
-		daoProvider.get().delete(c, ids);
+	public int delete(Iterable<I> ids) {
+		int result = daoProvider.get().delete(c, ids);
 		postdelete(ids);
+		return result;
 	}
 
-	private T preprocess(T t, boolean isCreate) {
+	protected T preprocess(T t, boolean isCreate) {
 		return preprocess(ImmutableList.of(t), isCreate).iterator().next();
 	}
 
@@ -84,11 +88,19 @@ public class GenericStore<T, I> implements Store<T, I> {
 		return entities;
 	}
 
-	private T postprocess(T t) {
-		return postprocess(ImmutableList.of(t)).get(0);
+	private T transform(T t) {
+		return transform(ImmutableList.of(t)).iterator().next();
 	}
 
-	protected ImmutableList<T> postprocess(ImmutableList<T> entities) {
+	protected Iterable<T> transform(Iterable<T> entities) {
+		return entities;
+	}
+
+	private T postprocess(T t) {
+		return postprocess(ImmutableList.of(t)).iterator().next();
+	}
+
+	protected Iterable<T> postprocess(Iterable<T> entities) {
 		return entities;
 	}
 

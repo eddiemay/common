@@ -1,10 +1,11 @@
 com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
     .factory('globalData', function() { return new com.digitald4.common.GlobalData(); })
     .service('apiConnector', com.digitald4.common.ApiConnector)
+    .service('fileService', com.digitald4.common.FileService)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
-    .service('userService', com.digitald4.common.UserService)
     .service('userPreferences', com.digitald4.common.UserPreferences)
+    .service('userService', com.digitald4.common.UserService)
     .controller('DD4AppCtrl', ['$cookies', 'globalData', 'userService', 'sessionWatcher', function($cookies, globalData, userService, sessionWatcher) {
       this.globalData = globalData;
       globalData.activeSession = $cookies.getObject('activeSession');
@@ -14,6 +15,9 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
       }
       this.logout = function() {
         userService.logout();
+      }
+      this.getFileUrl = function(fileReference) {
+        return userService.getFileUrl(fileReference);
       }
     }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)

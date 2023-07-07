@@ -4,18 +4,16 @@ import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 
 public class DataFile {
-  private long id;
   private String name;
   private String type;
   private int size;
   private byte[] data;
 
-  public long getId() {
-    return id;
+  public String getId() {
+    return getName();
   }
 
   public DataFile setId(long id) {
-    this.id = id;
     return this;
   }
 

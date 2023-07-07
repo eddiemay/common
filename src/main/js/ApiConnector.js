@@ -1,13 +1,14 @@
 com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalData',
     function($http, $httpParamSerializer, globalData) {
-  this.baseUrl = '_api/';
+  this.baseUrl = '';
+  this.apiUrl = '_api/';
   this.$http = $http;
   this.$httpParamSerializer = $httpParamSerializer;
   this.globalData = globalData;
 
   this.sendRequest = function(request, successCallback, errorCallback) {
     errorCallback = errorCallback || notifyError;
-    var url = this.baseUrl + request.url;
+    var url = this.baseUrl + this.apiUrl + request.url;
     var params = request.params || {};
     params.idToken = globalData.activeSession ? globalData.activeSession.id : params.idToken;
     var serializedParams = this.$httpParamSerializer(params);
@@ -27,7 +28,7 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
       console.log('Status code: ' + response.status);
       if (response.status == 401) {
         globalData.activeSession = undefined;
-      } else if (response.data){
+      } else if (response.data) {
         console.log('message: ' + response.data.error.message);
         errorCallback(response.data.error);
       } else {

@@ -162,7 +162,7 @@ public class DAOApiImplTest {
 
   @Test
   public void batchDelete() {
-    when(connector.send(anyString(), anyString(), anyString())).thenReturn("{deleted: 3}");
+    when(connector.send(anyString(), anyString(), anyString())).thenReturn("3");
     dao.delete(BasicUser.class, ImmutableList.of(123L, 456L, 789L));
     verify(connector).send("POST",
         "http://test.server.net/api/basicUsers/v1/batchDelete", "{\"items\":[123,456,789]}");

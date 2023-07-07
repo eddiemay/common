@@ -120,6 +120,10 @@ public class Query {
       return setFilters(asList(filters));
     }
 
+    public Query.List addFilter(Filter filter) {
+      return setFilters(ImmutableList.<Filter>builder().addAll(filters).add(filter).build());
+    }
+
     @Override
     public Query.List setOrderBys(OrderBy... orderBys) {
       super.setOrderBys(orderBys);

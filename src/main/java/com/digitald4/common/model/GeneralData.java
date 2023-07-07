@@ -1,85 +1,85 @@
 package com.digitald4.common.model;
 
 public class GeneralData {
-    private long id;
-    private long groupId;
-    private int inGroupId;
 
-    public long getId() {
-        return id;
-    }
+  private long id;
+  private long groupId;
+  private int inGroupId;
+  private String name;
+  private double rank;
+  private boolean active;
+  private String description;
+  private String data;
 
-    public GeneralData setId(long id) {
-        this.id = id;
-        return this;
-    }
+  public long getId() {
+    return id;
+  }
 
-    public long getGroupId() {
-        return groupId;
-    }
+  public GeneralData setId(long id) {
+    this.id = id;
+    return this;
+  }
 
-    public GeneralData setGroupId(long groupId) {
-        this.groupId = groupId;
-        return this;
-    }
+  public long getGroupId() {
+    return groupId;
+  }
 
-    public int getInGroupId() {
-        return inGroupId;
-    }
+  public GeneralData setGroupId(long groupId) {
+    this.groupId = groupId;
+    return this;
+  }
 
-    public GeneralData setInGroupId(int inGroupId) {
-        this.inGroupId = inGroupId;
-        return this;
-    }
+  public int getInGroupId() {
+    return inGroupId;
+  }
 
-    public String getName() {
-        return name;
-    }
+  public GeneralData setInGroupId(int inGroupId) {
+    this.inGroupId = inGroupId;
+    return this;
+  }
 
-    public GeneralData setName(String name) {
-        this.name = name;
-        return this;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public double getRank() {
-        return rank;
-    }
+  public GeneralData setName(String name) {
+    this.name = name;
+    return this;
+  }
 
-    public GeneralData setRank(double rank) {
-        this.rank = rank;
-        return this;
-    }
+  public double getRank() {
+    return rank;
+  }
 
-    public boolean isActive() {
-        return active;
-    }
+  public GeneralData setRank(double rank) {
+    this.rank = rank;
+    return this;
+  }
 
-    public GeneralData setActive(boolean active) {
-        this.active = active;
-        return this;
-    }
+  public boolean isActive() {
+    return active;
+  }
 
-    public String getDescription() {
-        return description;
-    }
+  public GeneralData setActive(boolean active) {
+    this.active = active;
+    return this;
+  }
 
-    public GeneralData setDescription(String description) {
-        this.description = description;
-        return this;
-    }
+  public String getDescription() {
+    return description;
+  }
 
-    public String getData() {
-        return data;
-    }
+  public GeneralData setDescription(String description) {
+    this.description = description;
+    return this;
+  }
 
-    public GeneralData setData(String data) {
-        this.data = data;
-        return this;
-    }
+  public String getData() {
+    return data;
+  }
 
-    private String name;
-    private double rank;
-    private boolean active;
-    private String description;
-    private String data;
+  public GeneralData setData(String data) {
+    this.data = data;
+    return this;
+  }
 }
