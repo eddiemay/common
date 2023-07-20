@@ -22,10 +22,10 @@ import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
 
@@ -190,24 +190,19 @@ public class DAOCloudDS implements DAO {
 								.collect(toImmutableList())));
 			}
 		}
-		/* Rather than use limit, loop over all items and add until limit to get a total count.
-		if (request.getLimit() > 0) {
-			query.setLimit(request.getLimit());
-		}*/
 		query.getOrderBys().forEach(
 				orderBy -> eQuery.addSort(orderBy.getColumn(), orderBy.getDesc() ? DESCENDING : ASCENDING));
 
-		ImmutableList.Builder<Entity> results = ImmutableList.builder();
-		AtomicInteger count = new AtomicInteger();
-		int end = query.getLimit() == null || query.getLimit() == 0
-				? Integer.MAX_VALUE : query.getOffset() + query.getLimit();
-		datastoreService.prepare(eQuery).asIterator().forEachRemaining(entity -> {
-			if (count.getAndIncrement() >= query.getOffset() && count.get() <= end) {
-				results.add(entity);
-			}
-		});
+		Iterable<Entity> allResults = datastoreService.prepare(eQuery).asIterable();
 
-		return QueryResult.of(results.build(), count.get(), query);
+		Integer limit = query.getLimit();
+
+		return QueryResult.of(
+				Streams.stream(allResults)
+						.skip(query.getOffset())
+						.limit(limit == null || limit == 0 ? Integer.MAX_VALUE : limit)
+						.collect(toImmutableList()),
+				Iterables.size(allResults), query);
 	}
 
 	private void setObject(
@@ -332,44 +327,46 @@ public class DAOCloudDS implements DAO {
 		}
 
 		Object value = filter.getValue();
-		switch (field.getType().getSimpleName()) {
-			case "Long":
-			case "long":
-				value = value instanceof Collection
-						? ((Collection<?>) value).stream()
-								.map(Object::toString)
-								.map(Long::parseLong)
-								.collect(toImmutableList())
-						: Long.parseLong(value.toString());
-				break;
-			case "Integer":
-			case "int":
-				value = value instanceof Collection
-						? ((Collection<?>) value).stream()
-								.map(Object::toString)
-								.map(Integer::parseInt)
-								.collect(toImmutableList())
-						: Integer.parseInt(value.toString());
-				break;
-			case "Boolean":
-			case "boolean":
-				value = Boolean.parseBoolean(value.toString());
-				break;
-			case "Double":
-			case "double":
-				value = Double.parseDouble(value.toString());
-				break;
-			case "Float":
-			case "float":
-				value = Float.parseFloat(value.toString());
-				break;
-			case "DateTime":
-				value = Long.parseLong(value.toString()) * 1000;
-				break;
-			default:
-				value = value instanceof Collection ?
-						((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList())
-						: value;
+		if (value != null) {
+			switch (field.getType().getSimpleName()) {
+				case "Long":
+				case "long":
+					value = value instanceof Collection
+							? ((Collection<?>) value).stream()
+							.map(Object::toString)
+							.map(Long::parseLong)
+							.collect(toImmutableList())
+							: Long.parseLong(value.toString());
+					break;
+				case "Integer":
+				case "int":
+					value = value instanceof Collection
+							? ((Collection<?>) value).stream()
+							.map(Object::toString)
+							.map(Integer::parseInt)
+							.collect(toImmutableList())
+							: Integer.parseInt(value.toString());
+					break;
+				case "Boolean":
+				case "boolean":
+					value = Boolean.parseBoolean(value.toString());
+					break;
+				case "Double":
+				case "double":
+					value = Double.parseDouble(value.toString());
+					break;
+				case "Float":
+				case "float":
+					value = Float.parseFloat(value.toString());
+					break;
+				case "DateTime":
+					value = Long.parseLong(value.toString()) * 1000;
+					break;
+				default:
+					value = value instanceof Collection ?
+							((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList())
+							: value;
+			}
 		}
 
 		switch (filter.getOperator()) {

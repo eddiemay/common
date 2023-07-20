@@ -81,6 +81,7 @@ public class APIConnector {
 			}
 			url = url.replaceAll(" ", "%20");
 			// System.out.println("Sending request: " + url + " with payload: " + payload);
+
 			HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 			con.setRequestMethod(method);
 			con.setRequestProperty("Accept", "*/*");

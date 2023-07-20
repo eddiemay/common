@@ -4,6 +4,7 @@ import static java.util.function.Function.identity;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.ModelObject;
 import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.common.storage.Store;
@@ -74,6 +75,8 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
       return new AtomicInteger(getStore().delete(ids.getItems()));
     } catch (DD4StorageException e) {
       throw new ServiceException(e.getErrorCode(), e);
+    } catch (Exception e) {
+      throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
     }
   }
 }

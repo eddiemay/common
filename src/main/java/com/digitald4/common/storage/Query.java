@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class Query {
   private static final Pattern FILTER_PATTERN =
-      Pattern.compile("([A-Za-z_]+)\\s*([!=<>IN]+)\\s*([A-Za-z0-9-_|]+)");
+      Pattern.compile("([A-Za-z_]+)\\s*([!=<>IN]+)\\s*([A-Za-z0-9-_|\\. ]+)");
 
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();
   private Integer pageSize;
@@ -168,7 +168,7 @@ public class Query {
     private Filter(String column, String operator, Object value) {
       this.column = column;
       this.operator = operator;
-      this.value = value;
+      this.value = "null".equalsIgnoreCase(String.valueOf(value)) ? null : value;
     }
 
     public static Filter of(String column, String operator, Object value) {

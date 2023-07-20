@@ -11,7 +11,6 @@ import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -57,7 +56,7 @@ public class DAOApiImpl implements DAO {
   public <T> QueryResult<T> list(Class<T> c, Query.List query) {
     StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/list");
 
-    ArrayList<String> parameters = new ArrayList<>();
+    ImmutableList.Builder<String> parameters = ImmutableList.builder();
     if (!query.getFilters().isEmpty()) {
       parameters.add("filter=" + query.getFilters().stream()
           .map(filter -> filter.getColumn() + filter.getOperator() + filter.getValue())
@@ -75,8 +74,8 @@ public class DAOApiImpl implements DAO {
       parameters.add("pageToken=" + query.getPageToken());
     }
 
-    if (!parameters.isEmpty()) {
-      url.append(parameters.stream().collect(Collectors.joining("&", "?", "")));
+    if (!parameters.build().isEmpty()) {
+      url.append(parameters.build().stream().collect(Collectors.joining("&", "?", "")));
     }
     String json = apiConnector.sendGet(url.toString());
     JSONObject response = new JSONObject(json);
@@ -170,7 +169,7 @@ public class DAOApiImpl implements DAO {
   public <T, I> int delete(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchDelete";
     return Integer.parseInt(
-        apiConnector.send("POST", url, new JSONObject().put("items", ids).toString()));
+        apiConnector.send("POST", url, new JSONObject().put("items", ids).toString()).trim());
   }
 
   private <T> T convert(Class<T> cls, String content) {
