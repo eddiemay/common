@@ -164,6 +164,11 @@ public class DAOCloudDSTest {
 	}
 
 	@Test
+	public void createEmptyList() {
+		dao.create(ImmutableList.of());
+	}
+
+	@Test
 	public void createDataFile() throws Exception {
 		try(FileInputStream fis = new FileInputStream("pom.xml")) {
 			byte[] data = new byte[2048];

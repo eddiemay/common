@@ -263,6 +263,10 @@ public class DAOCloudDS implements DAO {
 			}
 
 			switch (field.getType().getSimpleName()) {
+				case "Boolean":
+				case "boolean":
+					jsonObject.put(javaName, ((Boolean) value).booleanValue());
+					break;
 				case "ByteArray":
 					jsonObject.put(javaName, value.toString().getBytes());
 					break;
