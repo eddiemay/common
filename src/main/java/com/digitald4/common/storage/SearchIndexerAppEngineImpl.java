@@ -69,7 +69,7 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
         .map(document -> fromDocument(c, document))
         .collect(toImmutableList());
 
-    return QueryResult.of(ts, (int) results.getNumberFound(), searchQuery);
+    return QueryResult.of(ts, (int) Math.min(results.getNumberFound(), 1000), searchQuery);
   }
 
   @Override

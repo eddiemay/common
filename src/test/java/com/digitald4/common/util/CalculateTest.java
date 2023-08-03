@@ -1,8 +1,12 @@
 package com.digitald4.common.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Operation.DELETE;
+import static org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Operation.EQUAL;
+import static org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Operation.INSERT;
 import static org.junit.Assert.*;
 
+import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Diff;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
@@ -141,5 +145,39 @@ public class CalculateTest {
 				new byte[]{
 						(byte) 0x2C, (byte) 0x3A, (byte) 0x6F, (byte) 0x2C, (byte) 0xF3, (byte) 0x5E, (byte) 0xC2, (byte) 0xA0,
 						(byte) 0x59, (byte) 0x5B, (byte) 0xBE, (byte) 0x86, (byte) 0xC6, (byte) 0x9C, (byte) 0xDA, (byte) 0x76});
+	}
+
+	@Test
+	public void testLD() {
+		assertThat(Calculate.LD("ABCDELMN", "ABCFGLMN")).isEqualTo(2);
+		assertThat(Calculate.LD("SATAN", "SANTA")).isEqualTo(2);
+	}
+
+	@Test
+	public void testDiff() {
+		assertThat(Calculate.getDiff("ABCDELMN", "ABCFGLMN")).containsExactly(new Diff(EQUAL, "ABC"),
+				new Diff(DELETE, "DE"), new Diff(INSERT, "FG"), new Diff(EQUAL, "LMN"));
+	}
+
+	@Test
+	public void testDiff_hebrew() {
+		assertThat(Calculate.getDiff("כי ילד יולד לנו בן נתן לנו", "כי־ילד ילד־לנו בן נתן־לנו"))
+				.containsExactly(new Diff(EQUAL, "כי"),
+						new Diff(DELETE, " "), new Diff(INSERT, "־"), new Diff(EQUAL, "ילד י"),
+						new Diff(DELETE, "ו"), new Diff(EQUAL,"לד"),
+						new Diff(DELETE," "), new Diff(INSERT,"־"), new Diff(EQUAL,"לנו בן נתן"),
+						new Diff(DELETE," "), new Diff(INSERT,"־"), new Diff(EQUAL,"לנו"));
+	}
+
+	@Test
+	public void testDiffHtml() {
+		assertThat(Calculate.getDiffHtml("ABCDELMN", "ABCFGLMN"))
+				.isEqualTo("ABC<span class=\"diff-delete\">DE</span><span class=\"diff-insert\">FG</span>LMN");
+	}
+
+	@Test
+	public void testDiffHtml_hebrew() {
+		assertThat(Calculate.getDiffHtml("כי ילד יולד לנו בן נתן לנו", "כי־ילד ילד־לנו בן נתן־לנו"))
+				.isEqualTo("כי<span class=\"diff-delete\"> </span><span class=\"diff-insert\">־</span>ילד י<span class=\"diff-delete\">ו</span>לד<span class=\"diff-delete\"> </span><span class=\"diff-insert\">־</span>לנו בן נתן<span class=\"diff-delete\"> </span><span class=\"diff-insert\">־</span>לנו");
 	}
 }

@@ -37,7 +37,7 @@ public class DataImporter {
 
 	public static void main(String[] args) throws IOException {
 		DataImporter dataImporter = new DataImporter(
-				new DAOApiImpl(new APIConnector("\"https://ip360-179401.appspot.com/api\"", null).login()),
+				new DAOApiImpl(new APIConnector("\"https://ip360-179401.appspot.com/api\"", null)),
 				new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 						"jdbc:mysql://localhost/iisosnet_main?autoReconnect=true",
 						"dd4_user", "getSchooled85"), null));

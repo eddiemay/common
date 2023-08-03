@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class Query {
   private static final Pattern FILTER_PATTERN =
-      Pattern.compile("([A-Za-z_]+)\\s*([!=<>IN]+)\\s*([A-Za-z0-9-_|\\. ]+)");
+      Pattern.compile("([A-Za-z_]+)\\s*([!=<>]+|IN)\\s*([A-Za-z0-9-_|\\. ]+)");
 
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();
   private Integer pageSize;

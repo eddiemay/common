@@ -22,6 +22,9 @@
  */
 package com.digitald4.common.util;
 
+import static java.util.stream.Collectors.joining;
+
+import com.google.common.collect.ImmutableList;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -33,6 +36,8 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
+import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Diff;
 import org.joda.time.DateTime;
 
 import static java.lang.Thread.sleep;
@@ -477,6 +482,22 @@ public class Calculate {
 		}
 		// Step 7
 		return d[n][m];
+	}
+
+	public static ImmutableList<Diff> getDiff(String original, String revised) {
+		return ImmutableList.copyOf(new DiffMatchPatch().diffMain(original, revised));
+	}
+
+	public static String getDiffHtml(String original, String revised) {
+		return Calculate.getDiff(original, revised).stream()
+				.map(diff -> {
+					switch (diff.operation) {
+						case DELETE: return String.format("<span class=\"diff-delete\">%s</span>", diff.text);
+						case INSERT: return String.format("<span class=\"diff-insert\">%s</span>", diff.text);
+					}
+					return diff.text;
+				})
+				.collect(joining());
 	}
 
 	public static double getNPV(int baseYear, double rate, int cost, int year) {
