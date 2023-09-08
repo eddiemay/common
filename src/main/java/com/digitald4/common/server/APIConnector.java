@@ -74,6 +74,7 @@ public class APIConnector {
 			// System.out.println("Sending request: " + url + " with payload: " + payload);
 
 			HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
+			con.setConnectTimeout(10000);
 			con.setRequestMethod(method);
 			con.setRequestProperty("Accept", "*/*");
 			// con.setRequestProperty("Accept-Encoding", "zip, deflate, br");
@@ -107,7 +108,7 @@ public class APIConnector {
 				con.setRequestProperty("Content-Length", String.valueOf(payload.length()));
 				con.setDoOutput(true);
 				DataOutputStream dos = new DataOutputStream(con.getOutputStream());
-				dos.writeBytes(payload);
+				dos.writeChars(payload);
 				dos.flush();
 				dos.close();
 			}

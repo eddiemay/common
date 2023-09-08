@@ -26,6 +26,8 @@ import com.google.common.collect.Streams;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
 
@@ -53,18 +55,32 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T> ImmutableList<T> create(Iterable<T> ts) {
-		return Calculate.executeWithRetries(2, () ->
-				changeTracker.postPersist(
-						stream(changeTracker.prePersist(ts)).map(item -> {
-							JSONObject json = new JSONObject(item);
-							Object id = json.opt("id");
-							Entity entity = createEntity(item.getClass().getSimpleName(), id);
-							ImmutableMap<String, Field> fields = JSONUtil.getFields(item.getClass());
-							json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
+		ImmutableList<T> items = ImmutableList.copyOf(ts);
+		if (items.isEmpty()) {
+			return items;
+		}
 
-							Key key = datastoreService.put(entity);
-							return (key.getId() > 0) ? fields.get("id").invokeSet(item, key.getId()) : item;
-						}).collect(toImmutableList()), true));
+		ImmutableMap<String, Field> fields = JSONUtil.getFields(ts.iterator().next().getClass());
+		return Calculate.executeWithRetries(2, () -> {
+			changeTracker.prePersist(ts);
+			List<Key> keys = datastoreService.put(
+					items.stream()
+							.map(item -> {
+								JSONObject json = new JSONObject(item);
+								Object id = json.opt("id");
+								Entity entity = createEntity(item.getClass().getSimpleName(), id);
+								json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
+								return entity;
+							})
+							.collect(toImmutableList()));
+			for (int k = 0; k < keys.size(); k++) {
+				Key key = keys.get(k);
+				if (key.getId() > 0) {
+					fields.get("id").invokeSet(items.get(k), key.getId());
+				}
+			}
+			return changeTracker.postPersist(items, true);
+		});
 	}
 
 	@Override
@@ -74,13 +90,9 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
-		final String name = c.getSimpleName();
-		return Calculate.executeWithRetries(2, () ->
-				getEntities(c, stream(ids).map(id -> createFactorKey(name, id)).collect(toImmutableList()))
-						.values()
-						.stream()
-						.map(v -> convert(c, v))
-						.collect(toImmutableList()));
+		return Calculate.executeWithRetries(2, () -> getEntities(c,ids).values().stream()
+				.map(v -> convert(c, v))
+				.collect(toImmutableList()));
 	}
 
 	@Override
@@ -101,26 +113,24 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
-		String name = c.getSimpleName();
-		return Calculate.executeWithRetries(2, () ->
-				changeTracker.postPersist(
-						stream(
-								changeTracker.prePersist(
-										getEntities(c, stream(ids).map(id -> createFactorKey(name, id)).collect(toImmutableList()))
-												.values()
-												.stream()
-												.map(entity -> updater.apply(convert(c, entity)))
-												.collect(toImmutableList())))
-								.peek(t -> {
-									JSONObject json = new JSONObject(t);
-									ImmutableMap<String, Field> fields = JSONUtil.getFields(t.getClass());
-									Object id = json.get("id");
-									Entity entity =
-											(id instanceof Long) ? new Entity(name, (Long) id) : new Entity(name, (String) id);
-									json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
-									datastoreService.put(entity);
-								})
-								.collect(toImmutableList()), false));
+		String kind = c.getSimpleName();
+		ImmutableMap<String, Field> fields = JSONUtil.getFields(c);
+		return Calculate.executeWithRetries(2, () -> {
+				ImmutableList<T> entities = getEntities(c, ids).values().stream()
+						.map(entity -> updater.apply(convert(c, entity)))
+						.collect(toImmutableList());
+				changeTracker.prePersist(entities);
+				datastoreService.put(entities.stream()
+						.map(t -> {
+							JSONObject json = new JSONObject(t);
+							Object id = json.get("id");
+							Entity entity = createEntity(kind, id);
+							json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
+							return entity;
+						})
+						.collect(toImmutableList()));
+				return changeTracker.postPersist(entities, false);
+		});
 	}
 
 	@Override
@@ -132,13 +142,9 @@ public class DAOCloudDS implements DAO {
 	public <T, I> int delete(Class<T> c, Iterable<I> ids) {
 		return Calculate.executeWithRetries(2, () -> {
 			changeTracker.preDelete(c, ids);
-
-			ImmutableList<Key> keys =
-					stream(ids).map(id -> createFactorKey(c.getSimpleName(), id)).collect(toImmutableList());
-			datastoreService.delete(keys);
-
+			datastoreService.delete(createFactorKeys(c, ids));
 			changeTracker.postDelete(c, ids);
-			return keys.size();
+			return Iterables.size(ids);
 		});
 	}
 
@@ -148,7 +154,6 @@ public class DAOCloudDS implements DAO {
 		} else if (id instanceof String) {
 			return new Entity(kind, (String) id);
 		}
-
 		return new Entity(kind);
 	}
 
@@ -165,16 +170,20 @@ public class DAOCloudDS implements DAO {
 		return (id instanceof Long) ? createKey(kind, (Long) id) : createKey(kind, id.toString());
 	}
 
-	private <T> ImmutableMap<Key, Entity> getEntities(Class<T> c, Iterable<Key> keys) {
-		ImmutableMap<Key, Entity> results = ImmutableMap.copyOf(datastoreService.get(keys));
-		if (results.size() != Iterables.size(keys)) {
+	private static <T,I> ImmutableList<Key> createFactorKeys(Class<T> c, Iterable<I> ids) {
+		String kind = c.getSimpleName();
+		return stream(ids).map(id -> createFactorKey(kind, id)).collect(toImmutableList());
+	}
+
+	private <T, I> ImmutableMap<Key, Entity> getEntities(Class<T> c, Iterable<I> ids) {
+		Map<Key, Entity> results = datastoreService.get(createFactorKeys(c, ids));
+		if (results.size() != Iterables.size(ids)) {
 			throw new DD4StorageException(
 					String.format("One or more items not found while fetching: %s. Requested: %d, found: %d",
-							c.getSimpleName(), Iterables.size(keys), results.size()),
-					ErrorCode.NOT_FOUND);
+							c.getSimpleName(), Iterables.size(ids), results.size()), ErrorCode.NOT_FOUND);
 		}
 
-		return results;
+		return ImmutableMap.copyOf(results);
 	}
 
 	private QueryResult<Entity> listEntities(Class<?> c, Query.List query) {

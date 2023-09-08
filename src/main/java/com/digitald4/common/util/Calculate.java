@@ -22,12 +22,13 @@
  */
 package com.digitald4.common.util;
 
+import static java.lang.Thread.sleep;
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.collect.ImmutableList;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Date;
 import java.sql.Time;
 import java.util.Calendar;
@@ -39,8 +40,6 @@ import java.util.regex.Pattern;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Diff;
 import org.joda.time.DateTime;
-
-import static java.lang.Thread.sleep;
 
 
 /**
@@ -372,15 +371,11 @@ public class Calculate {
 
 	public static double calcMaxDeviation(double... values) {
 		double avg = calcAverage(values);
-		return Arrays.stream(values)
-				.parallel()
-				.map(value -> Math.abs(value - avg )) // Calc deviation from average
-				.max()
-				.orElse(0);
+		return stream(values).map(value -> Math.abs(value - avg )).max().orElse(0);
 	}
 
 	public static double calcAverage(double... values) {
-		return Arrays.stream(values).parallel().average().orElse(0);
+		return stream(values).average().orElse(0);
 	}
 
 	public static final double TEN_NANO = .00000001;
@@ -636,10 +631,7 @@ public class Calculate {
 
 	public static double variance(double... values) {
 		double mean = calcAverage(values);
-		return Arrays.stream(values)
-				.parallel()
-				.map(value -> Math.pow(value - mean, 2))
-				.sum() / (values.length - 1);
+		return stream(values).map(value -> Math.pow(value - mean, 2)).sum() / (values.length - 1);
 	}
 
 	public static long factorial(int n) {
