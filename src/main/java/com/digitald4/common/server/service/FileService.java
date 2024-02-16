@@ -32,29 +32,18 @@ import javax.servlet.http.Part;
 		version = "v1",
 		namespace =
 		@ApiNamespace(
-				ownerDomain = "nbastats.digitald4.com",
-				ownerName = "nbastats.digitald4.com"
-		),
-		// [START_EXCLUDE]
-		issuers = {
-				@ApiIssuer(
-						name = "firebase",
-						issuer = "https://securetoken.google.com/fantasy-predictor",
-						jwksUri =
-								"https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system"
-										+ ".gserviceaccount.com"
-				)
-		}
-		// [END_EXCLUDE]
+				ownerDomain = "dd4common.digitald4.com",
+				ownerName = "dd4common.digitald4.com"
+		)
 )
 @MultipartConfig(
 		fileSizeThreshold=1024*1024*10, maxFileSize=1024*1024*32, maxRequestSize=1024*1024*32)
 public class FileService extends EntityServiceImpl<DataFile, String> {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
-	private final Store<DataFile, String> dataFileStore;
-	private final Provider<HttpServletRequest> requestProvider;
-	private final Provider<HttpServletResponse> responseProvider;
+	protected final Store<DataFile, String> dataFileStore;
+	protected final Provider<HttpServletRequest> requestProvider;
+	protected final Provider<HttpServletResponse> responseProvider;
 
 	@Inject
 	public FileService(
@@ -85,7 +74,8 @@ public class FileService extends EntityServiceImpl<DataFile, String> {
 			HttpServletResponse response = responseProvider.get();
 			byte[] bytes = df.getData();
 			response.setContentType("application/" + (!df.getType().isEmpty() ? df.getType() : "pdf"));
-			response.setHeader("Cache-Control", "no-cache, must-revalidate");
+			// Cache for the max of 1 year bcz we like to add a new file rather than update files.
+			response.setHeader("Cache-Control", "max-age=31536000");
 			response.setContentLength(bytes.length);
 			response.getOutputStream().write(bytes);
 		} catch (IOException ioe) {

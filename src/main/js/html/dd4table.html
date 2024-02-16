@@ -1,6 +1,12 @@
 <div class="block-border">
   <h1>{{tableCtrl.title}}</h1>
-  <table class="table sortable no-margin" cellspacing="0" width="100%" data-page-length="25">
+  <div data-ng-repeat="controlFilter in tableCtrl.controlFilters">
+    <label>{{controlFilter.title}}:</label>
+    <select data-ng-model="controlFilter.selected" data-ng-change="tableCtrl.refresh()"
+            data-ng-options="option for option in controlFilter.options">
+    </select>
+  </div>
+  <table data-ng-if="!tableCtrl.loading" class="table sortable no-margin" cellspacing="0" width="100%" data-page-length="25">
     <thead>
       <tr>
         <th class="black-cell"><span data-ng-class="{loading: tableCtrl.loading}"></span></th>

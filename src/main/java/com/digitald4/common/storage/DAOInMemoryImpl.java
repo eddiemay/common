@@ -11,14 +11,8 @@ import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -29,7 +23,8 @@ import org.json.JSONObject;
 public class DAOInMemoryImpl implements DAO {
 
   private final AtomicLong idGenerator = new AtomicLong(5000);
-  private final Map<String, JSONObject> items = new HashMap<>();
+  protected final Map<String, JSONObject> items = new HashMap<>();
+  private final Map<Class<?>, List<JSONObject>> byType = new HashMap<>();
 
   @Override
   public <T> T create(T t) {
@@ -38,7 +33,7 @@ public class DAOInMemoryImpl implements DAO {
     if (id == null || id instanceof Number && (long) id == 0L) {
       json.put("id", id = idGenerator.incrementAndGet());
     }
-    items.put(getIdString(t.getClass(), id), json);
+    write(getIdString(t.getClass(), id), json);
     return t;
   }
 
@@ -71,12 +66,12 @@ public class DAOInMemoryImpl implements DAO {
             Object value = json.opt(field);
             Object filterValue = filter.getValue();
             switch (filter.getOperator()) {
-              case "<": return (Integer) value < (Integer) filterValue;
-              case "<=": return (Integer) value <= (Integer) filterValue;
-              case ">=": return (Integer) value >= (Integer) filterValue;
-              case ">": return (Integer) value > (Integer) filterValue;
+              case "<": return ((Comparable) value).compareTo(filterValue) < 0;
+              case "<=": return ((Comparable) value).compareTo(filterValue) <= 0;
+              case ">=": return ((Comparable) value).compareTo(filterValue) >= 0;
+              case ">": return ((Comparable) value).compareTo(filterValue) > 0;
             }
-            return filterValue.equals(value);
+            return Objects.equals(value, filterValue);
           })
           .collect(toImmutableList());
     }
@@ -113,7 +108,7 @@ public class DAOInMemoryImpl implements DAO {
     T t = get(c, id);
     if (t != null) {
       t = updater.apply(t);
-      items.put(getIdString(c, id), JSONUtil.toJSON(t));
+      write(getIdString(c, id), JSONUtil.toJSON(t));
     }
 
     return t;
@@ -134,41 +129,11 @@ public class DAOInMemoryImpl implements DAO {
     return (int) stream(ids).map(id -> delete(c, id)).filter(Boolean::booleanValue).count();
   }
 
-  public DAOInMemoryImpl loadFromFile(String file) {
-    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-      String line;
-      while ((line = br.readLine()) != null && !line.isEmpty()) {
-        JSONObject entry = new JSONObject(line);
-        items.put(entry.getString("idString"), entry.getJSONObject("entity"));
-      }
-    } catch (FileNotFoundException fnfe) {
-      System.out.println("Load file not found, continuing");
-    } catch (IOException ioe) {
-      throw new DD4StorageException("Error reading load file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
-    }
-
-    return this;
-  }
-
-  public DAOInMemoryImpl saveToFile(String file) {
-    try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-      items.entrySet().stream()
-          .sorted(Entry.comparingByKey())
-          .map(e -> new JSONObject().put("idString", e.getKey()).put("entity", e.getValue()))
-          .forEach(json -> {
-            try {
-              bw.write(json + "\n");
-            } catch (IOException ioe) {
-              throw new DD4StorageException("Error writting file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
-            }
-          });
-    } catch (IOException ioe) {
-      throw new DD4StorageException("Error writting file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
-    }
-    return this;
-  }
-
   private <T> String getIdString(Class<T> c, Object id) {
     return String.format("%s-%s", c.getSimpleName(), id);
+  }
+
+  protected void write(String id, JSONObject json) {
+    items.put(id, json);
   }
 }

@@ -64,15 +64,13 @@ public class DAOCloudDS implements DAO {
 		return Calculate.executeWithRetries(2, () -> {
 			changeTracker.prePersist(ts);
 			List<Key> keys = datastoreService.put(
-					items.stream()
-							.map(item -> {
-								JSONObject json = new JSONObject(item);
-								Object id = json.opt("id");
-								Entity entity = createEntity(item.getClass().getSimpleName(), id);
-								json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
-								return entity;
-							})
-							.collect(toImmutableList()));
+					items.stream().map(item -> {
+						JSONObject json = new JSONObject(item);
+						Object id = json.opt("id");
+						Entity entity = createEntity(item.getClass().getSimpleName(), id);
+						json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
+						return entity;
+					}).collect(toImmutableList()));
 			for (int k = 0; k < keys.size(); k++) {
 				Key key = keys.get(k);
 				if (key.getId() > 0) {
@@ -220,27 +218,36 @@ public class DAOCloudDS implements DAO {
 			return;
 		}
 
+		Field field = fields.get(fieldName);
 		Object value = json.get(fieldName);
-		if (value instanceof JSONArray
-				&& fields.get(fieldName).getType().getSimpleName().equals("byte[]")) {
+		if (value instanceof JSONArray && field.getType().getSimpleName().equals("byte[]")) {
 			JSONArray jsonArray = json.getJSONArray(fieldName);
 			byte[] bytes = new byte[jsonArray.length()];
 			for (int b = 0; b < bytes.length; b++) {
 				bytes[b] = (Byte) jsonArray.get(b);
 			}
-			entity.setProperty(fieldName, new Blob(bytes));
+			setProperty(entity, fieldName, new Blob(bytes), field);
 		} else if (value instanceof JSONObject || value instanceof JSONArray) {
-			entity.setProperty(fieldName, value.toString());
+			setProperty(entity, fieldName, new Text(value.toString()), field);
 		} else if (value instanceof Enum) {
-			entity.setProperty(fieldName, value.toString());
+			setProperty(entity, fieldName, value.toString(), field);
 		} else if (value instanceof DateTime) {
-			entity.setProperty(fieldName, new Date(((DateTime) value).getMillis()));
+			setProperty(entity, fieldName, new Date(((DateTime) value).getMillis()), field);
 		} else if (value instanceof Instant) {
-			entity.setProperty(fieldName, new Date(((Instant) value).toEpochMilli()));
-		} else if (value instanceof Long && fields.get(fieldName).getType() == DateTime.class) {
-			entity.setProperty(fieldName, new Date((Long) value));
+			setProperty(entity, fieldName, new Date(((Instant) value).toEpochMilli()), field);
+		} else if (value instanceof Long && (fields.get(fieldName).getType() == DateTime.class
+				|| fields.get(fieldName).getType() == Instant.class)) {
+			setProperty(entity, fieldName, new Date((Long) value), field);
 		} else if (value instanceof StringBuilder) {
-			entity.setProperty(fieldName, new Text(value.toString()));
+			setProperty(entity, fieldName, new Text(value.toString()), field);
+		} else {
+			setProperty(entity, fieldName, value, field);
+		}
+	}
+
+	private static void setProperty(Entity entity, String fieldName, Object value, Field field) {
+		if (field.isNonIndexed()) {
+			entity.setUnindexedProperty(fieldName, value);
 		} else {
 			entity.setProperty(fieldName, value);
 		}
@@ -269,6 +276,10 @@ public class DAOCloudDS implements DAO {
 
 			if (field.getSetMethod() == null) {
 				return;
+			}
+
+			if (value instanceof Text) {
+				value = ((Text) value).getValue();
 			}
 
 			switch (field.getType().getSimpleName()) {
@@ -313,7 +324,7 @@ public class DAOCloudDS implements DAO {
 					}
 					break;
 				case "StringBuilder":
-					jsonObject.put(javaName, (value instanceof Text) ? ((Text) value).getValue() : value);
+					jsonObject.put(javaName, new StringBuilder((String) value));
 					break;
 				case "String":
 				default:
@@ -375,6 +386,8 @@ public class DAOCloudDS implements DAO {
 				case "DateTime":
 					value = Long.parseLong(value.toString()) * 1000;
 					break;
+				case "Instant":
+					value = new Date(Long.parseLong(value.toString()));
 				default:
 					value = value instanceof Collection ?
 							((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList())

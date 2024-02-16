@@ -180,4 +180,10 @@ public class CalculateTest {
 		assertThat(Calculate.getDiffHtml("כי ילד יולד לנו בן נתן לנו", "כי־ילד ילד־לנו בן נתן־לנו"))
 				.isEqualTo("כי<span class=\"diff-delete\"> </span><span class=\"diff-insert\">־</span>ילד י<span class=\"diff-delete\">ו</span>לד<span class=\"diff-delete\"> </span><span class=\"diff-insert\">־</span>לנו בן נתן<span class=\"diff-delete\"> </span><span class=\"diff-insert\">־</span>לנו");
 	}
+
+	@Test
+	public void splitCSV() {
+		assertThat(Calculate.splitCSV("1223,Bob,Smith,,62,\"Young, Barry\",,"))
+				.containsExactly("1223", "Bob", "Smith", "", "62", "Young, Barry", "", "").inOrder();
+	}
 }

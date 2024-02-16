@@ -1,7 +1,9 @@
 com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
     .factory('globalData', function() { return new com.digitald4.common.GlobalData(); })
+    .factory('flags', function() { return {}; })
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('fileService', com.digitald4.common.FileService)
+    .service('flagService', com.digitald4.common.FlagService)
     .service('generalDataService', com.digitald4.common.GeneralDataService)
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
     .service('userPreferences', com.digitald4.common.UserPreferences)
@@ -16,8 +18,8 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
       this.logout = function() {
         userService.logout();
       }
-      this.getFileUrl = function(fileReference) {
-        return userService.getFileUrl(fileReference);
+      this.getFileUrl = function(fileReference, type) {
+        return userService.getFileUrl(fileReference, type);
       }
     }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
@@ -315,27 +317,15 @@ com.digitald4.common.module.directive('dd4Table', function() {
               var table = $(element.find('table'));
               //table.dataTable();
               oTable = table.dataTable({
-                //"bSort": false,
-
                 /*
-                 * We set specific options for each columns here. Some columns contain raw data to enable correct sorting, so we convert it for display
+                 * We set specific options for each columns here. Some columns contain raw data to
+                 * enable correct sorting, so we convert it for display
                  * @url http://www.datatables.net/usage/columns
                  */
-                /*aoColumns: [
-                  { bSortable: false},	// No sorting for this columns, as it only contains checkboxes
-                  { sType: 'string' },
-                  { sType: 'string' },
-                  { sType: 'string' },
-                  { sType: 'string' },
-                  { sType: 'string' }
-                ],*/
-
-                "aoColumnDefs": [
-                  { "bSortable": false, "aTargets": [ 0 ] }
+                aoColumnDefs: [
+                  {"bSortable": false, "aTargets": [0]},
+                  {"bSearchable": false, "aTargets": [0]}
                 ],
-
-                //"order": [[ 1, "asc" ]],
-
 
                 /*
                  * Set DOM structure for table controls
@@ -354,14 +344,14 @@ com.digitald4.common.module.directive('dd4Table', function() {
                 }
               });
 
-              // Sorting arrows behaviour
+              /* Sorting arrows behaviour
               table.find('thead .sort-up').click(function(event) {
                 // Stop link behaviour
                 event.preventDefault();
 
                 // Find column index
-                var column = table.closest('th'),
-                  columnIndex = column.parent().children().index(column.get(0));
+                var column = table.closest('th');
+                var columnIndex = column.parent().children().index(column.get(0));
 
                 // Send command
                 oTable.fnSort([[columnIndex, 'asc']]);
@@ -374,16 +364,16 @@ com.digitald4.common.module.directive('dd4Table', function() {
                 event.preventDefault();
 
                 // Find column index
-                var column = table.closest('th'),
-                  columnIndex = column.parent().children().index(column.get(0));
+                var column = table.closest('th');
+                var columnIndex = column.parent().children().index(column.get(0));
 
                 // Send command
                 oTable.fnSort([[columnIndex, 'desc']]);
 
                 // Prevent bubbling
                 return false;
-              });
-            }, 500);
+              }); */
+            }, 1000);
           });
         }
       }

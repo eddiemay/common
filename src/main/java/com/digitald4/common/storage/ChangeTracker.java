@@ -1,9 +1,7 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Streams.stream;
-import static java.util.function.Function.identity;
 
 import com.digitald4.common.model.ChangeTrackable;
 import com.digitald4.common.model.HasModificationTimes;
@@ -13,18 +11,13 @@ import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.util.JSONUtil;
-import com.google.api.server.spi.config.AnnotationBoolean;
-import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import org.json.JSONObject;
 
 public class ChangeTracker {
   private final Provider<DAO> daoProvider;
@@ -191,14 +184,8 @@ public class ChangeTracker {
       return this;
     }
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Instant getTimeStamp() {
       return timeStamp;
-    }
-
-    @ApiResourceProperty
-    public long timeStamp() {
-      return timeStamp.toEpochMilli();
     }
 
     public ChangeHistory setTimeStamp(long millis) {

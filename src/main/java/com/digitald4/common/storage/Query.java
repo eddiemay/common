@@ -71,6 +71,10 @@ public class Query {
     return new Query.List();
   }
 
+  public static List forList(Filter... filters) {
+    return new List().setFilters(filters);
+  }
+
   public static Query.List forList(String filters, String orderBys, Integer pageSize, int pageToken) {
     Query.List query = new Query.List();
     query.setPageSize(pageSize).setPageToken(pageToken);

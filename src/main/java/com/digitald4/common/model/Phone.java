@@ -21,4 +21,9 @@ public class Phone {
     this.typeId = typeId;
     return this;
   }
+
+  @Override
+  public String toString() {
+    return String.format("%s%s", typeId == null ? "" : typeId + " ", number);
+  }
 }

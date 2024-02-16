@@ -1,6 +1,7 @@
 package com.digitald4.common.server.service;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.ServiceException;
@@ -46,6 +47,9 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 		} catch (DD4StorageException e) {
 			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
 		}
 	}
 
@@ -57,7 +61,11 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 			resolveLogin(idToken,"get");
 			return transform(getStore().get(id));
 		} catch (DD4StorageException e) {
+			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
 		}
 	}
 
@@ -72,7 +80,11 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 			resolveLogin(idToken,"list");
 			return transform(getStore().list(Query.forList(filter, orderBy, pageSize, pageToken)));
 		} catch (DD4StorageException e) {
+			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
 		}
 	}
 
@@ -87,6 +99,9 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 		} catch (DD4StorageException e) {
 			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
 		}
 	}
 
@@ -99,6 +114,9 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 			return new AtomicBoolean(getStore().delete(id));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
 		}
 	}
 
@@ -109,6 +127,9 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 			return new AtomicInteger(getStore().create(getStore().list(Query.forList()).getItems()).size());
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
 		}
 	}
 

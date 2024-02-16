@@ -115,14 +115,16 @@ com.digitald4.common.JSONService.prototype.batchUpdate = function(entities, prop
 	    onSuccess, onError);
 }
 
-com.digitald4.common.JSONService.prototype.getFileUrl = function(fileRef) {
+com.digitald4.common.JSONService.prototype.getFileUrl = function(fileRef, type) {
+  type = type || 'files';
   if (!fileRef) {
     return undefined;
   }
+  var fileName = fileRef.name || fileRef;
   var apiConnector = this.apiConnector;
   var globalData = apiConnector.globalData;
   var idTokenParam = globalData.activeSession ? '?idToken=' + globalData.activeSession.id : '';
-  return apiConnector.baseUrl + apiConnector.apiUrl + 'files/v1/' + fileRef.name + idTokenParam;
+  return apiConnector.baseUrl + apiConnector.apiUrl + type + '/v1/' + fileName + idTokenParam;
 }
 
 processPagination = function(response) {

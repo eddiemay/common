@@ -15,5 +15,19 @@ com.digitald4.common.UserController.prototype.refresh = function() {
 }
 
 com.digitald4.common.UserController.prototype.update = function(prop) {
-  this.userService.update(this.user, [prop], function(user) {this.user = user}.bind(this));
+  this.userService.update(this.user, [prop], function(user) {
+    this.user = user;
+    if (this.password) {
+
+    }
+  }.bind(this));
+}
+
+com.digitald4.common.UserController.prototype.setPassword = function() {
+  if (this.password != this.confirmation) {
+    alert('Confirmation does not match!');
+    return;
+  }
+
+  this.userService.setPassword(this.userId, this.password, function() {alert('Password updated successfully')});
 }

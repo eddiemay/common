@@ -19,4 +19,7 @@ public final class Annotations {
   @BindingAnnotation
   @Retention(RetentionPolicy.RUNTIME)
   public @interface SessionDuration {}
+
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface NonIndexed {}
 }

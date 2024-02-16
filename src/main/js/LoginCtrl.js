@@ -8,7 +8,7 @@ com.digitald4.common.LoginController = function($window, userService, sessionWat
 com.digitald4.common.LoginCtrl = ['$window', 'userService', 'sessionWatcher', com.digitald4.common.LoginController];
 
 com.digitald4.common.LoginController.prototype.login = function() {
-  this.userService.login(this.email, this.password, function(activeSession) {
+  this.userService.login(this.username, this.password, function(activeSession) {
     this.sessionWatcher.enable();
 	  if (this.onLoginSuccess) {
 	    this.onLoginSuccess();

@@ -11,6 +11,7 @@ import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+import com.google.common.collect.Streams;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -36,7 +37,9 @@ public class DAOApiImpl implements DAO {
   public <T> ImmutableList<T> create(Iterable<T> entities) {
     Class<T> c = (Class<T>) entities.iterator().next().getClass();
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
-    JSONObject postData = new JSONObject().put("items", entities);
+    JSONArray items = new JSONArray();
+    Streams.stream(entities).map(JSONObject::new).forEach(items::put);
+    JSONObject postData = new JSONObject().put("items", items);
     return convertList(c, apiConnector.sendPost(url, postData.toString()));
   }
 
@@ -77,8 +80,7 @@ public class DAOApiImpl implements DAO {
     if (!parameters.build().isEmpty()) {
       url.append(parameters.build().stream().collect(Collectors.joining("&", "?", "")));
     }
-    String json = apiConnector.sendGet(url.toString());
-    JSONObject response = new JSONObject(json);
+    JSONObject response = new JSONObject(apiConnector.sendGet(url.toString()));
 
     int totalSize = response.getInt("totalSize");
     if (totalSize == 0) {

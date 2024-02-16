@@ -15,43 +15,37 @@ import javax.servlet.http.HttpServletResponse;
 @WebFilter(asyncSupported = true, urlPatterns = {"/*"})
 public class CORSInterceptor implements Filter {
 
-  private static final ImmutableSet<String> allowedOrigins = ImmutableSet.of(
+  private static final ImmutableSet<String> ALLOWED_ORIGINS = ImmutableSet.of(
       "http://localhost:3000", "http://localhost:5500", "http://localhost:63342",
       "http://127.0.0.1:3000", "http://127.0.0.1:5500", "http://127.0.0.1:63342");
+  private static final String ALLOWED_METHODS = "GET, OPTIONS, HEAD, PUT, POST, PATCH, DELETE";
 
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {}
 
   @Override
-  public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
-      FilterChain filterChain) throws IOException, ServletException {
-    HttpServletRequest request = (HttpServletRequest) servletRequest;
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
+      throws IOException, ServletException {
+    HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 
-    String requestOrigin = request.getHeader("Origin");
-    if (isAllowedOrigin(requestOrigin)) {
+    String requestOrigin = httpServletRequest.getHeader("Origin");
+    if (ALLOWED_ORIGINS.contains(requestOrigin)) {
+      HttpServletResponse httpServletResponse = (HttpServletResponse) response;
       // Authorize the origin, all headers, and all methods
-      ((HttpServletResponse) servletResponse).addHeader("Access-Control-Allow-Origin",
-          requestOrigin);
-      ((HttpServletResponse) servletResponse).addHeader("Access-Control-Allow-Headers", "*");
-      ((HttpServletResponse) servletResponse).addHeader("Access-Control-Allow-Methods",
-          "GET, OPTIONS, HEAD, PUT, POST, DELETE");
-
-      HttpServletResponse resp = (HttpServletResponse) servletResponse;
+      httpServletResponse.addHeader("Access-Control-Allow-Origin", requestOrigin);
+      httpServletResponse.addHeader("Access-Control-Allow-Headers", "*");
+      httpServletResponse.addHeader("Access-Control-Allow-Methods", ALLOWED_METHODS);
 
       // CORS handshake (pre-flight request)
-      if (request.getMethod().equals("OPTIONS")) {
-        resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+      if (httpServletRequest.getMethod().equals("OPTIONS")) {
+        httpServletResponse.setStatus(HttpServletResponse.SC_ACCEPTED);
         return;
       }
     }
     // pass the request along the filter chain
-    filterChain.doFilter(request, servletResponse);
+    filterChain.doFilter(request, response);
   }
 
   @Override
   public void destroy() {}
-
-  private boolean isAllowedOrigin(String origin) {
-    return allowedOrigins.contains(origin);
-  }
 }

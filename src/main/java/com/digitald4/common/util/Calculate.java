@@ -37,9 +37,11 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Diff;
 import org.joda.time.DateTime;
+import org.json.JSONObject;
 
 
 /**
@@ -432,6 +434,8 @@ public class Calculate {
 	// Compute Levenshtein distance
 	//*****************************
 	public static int LD (String s, String t) {
+		if (s == null) s = "";
+		if (t == null) t = "";
 		int d[][]; // matrix
 		int n; // length of s
 		int m; // length of t
@@ -665,6 +669,38 @@ public class Calculate {
 		}
 
 		throw new RuntimeException("Out of retries");
+	}
+
+	public static ImmutableList<String> splitCSV(String line) {
+		ImmutableList.Builder<String> values = ImmutableList.builder();
+		StringBuilder currentValue = new StringBuilder();
+		boolean withinQuotes = false;
+
+		for (int i = 0; i < line.length(); i++) {
+			char c = line.charAt(i);
+			if (c == ',' && !withinQuotes) {
+				values.add(currentValue.toString());
+				currentValue = new StringBuilder();
+			} else if (c == '"') {
+				withinQuotes = !withinQuotes;
+			} else {
+				currentValue.append(c);
+			}
+		}
+
+		return values.add(currentValue.toString()).build();
+	}
+
+	public static JSONObject jsonFromCSV(Iterable<String> colNames, String line) {
+		ImmutableList<String> values = splitCSV(line);
+		JSONObject json = new JSONObject();
+		ImmutableList<String> _colNames = ImmutableList.copyOf(colNames);
+		IntStream.range(0, values.size()).forEach(index -> {
+			if (!values.get(index).isEmpty()) {
+				json.put(_colNames.get(index), values.get(index));
+			}
+		});
+		return json;
 	}
 
 	public static void pause(long millis) {

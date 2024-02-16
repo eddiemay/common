@@ -6,6 +6,7 @@ import static java.util.Arrays.stream;
 import static java.util.function.Function.identity;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.storage.Annotations;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -95,12 +96,14 @@ public class JSONUtil {
     private final Class<?> type;
     private final Method getMethod;
     private final Method setMethod;
+    private final boolean nonIndexed;
 
     public Field(String name, Method getMethod, Method setMethod) {
       this.name = name.substring(0, 1).toLowerCase() + name.substring(1);
       this.type = getMethod.getReturnType();
       this.getMethod = getMethod;
       this.setMethod = setMethod;
+      nonIndexed = getMethod.getAnnotation(Annotations.NonIndexed.class) != null;
     }
 
     public String getName() {
@@ -117,6 +120,10 @@ public class JSONUtil {
 
     public Method getSetMethod() {
       return setMethod;
+    }
+
+    public boolean isNonIndexed() {
+      return nonIndexed;
     }
 
     public <T> T invokeSet(T t, Object value) {

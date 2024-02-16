@@ -2,6 +2,7 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Password;
+import java.time.Instant;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
@@ -37,8 +38,7 @@ public class PasswordStore extends GenericStore<Password, Long> {
 
   public boolean updatePassword(long userId, String passwordHash) {
     validateEncoding(passwordHash);
-    DateTime now = new DateTime(clock);
-    create(new Password().setUserId(userId).setDigest(passwordHash).setCreatedAt(now));
+    create(new Password().setUserId(userId).setDigest(passwordHash).setCreatedAt(Instant.now()));
 
     return true;
   }

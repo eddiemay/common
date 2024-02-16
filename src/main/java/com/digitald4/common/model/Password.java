@@ -1,13 +1,13 @@
 package com.digitald4.common.model;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 public class Password extends ModelObject<Long> {
   private long userId;
   private String digest;
-  private DateTime createdAt;
+  private Instant createdAt;
   private String resetToken;
-  private DateTime resetSentAt;
+  private Instant resetSentAt;
 
   public Password setId(Long id) {
     super.setId(id);
@@ -32,13 +32,17 @@ public class Password extends ModelObject<Long> {
     return this;
   }
 
-  public DateTime getCreatedAt() {
+  public Instant getCreatedAt() {
     return createdAt;
   }
 
-  public Password setCreatedAt(DateTime createdAt) {
+  public Password setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
     return this;
+  }
+
+  public Password setCreatedAt(long createdAt) {
+    return setCreatedAt(Instant.ofEpochMilli(createdAt));
   }
 
   public String getResetToken() {
@@ -50,12 +54,12 @@ public class Password extends ModelObject<Long> {
     return this;
   }
 
-  public DateTime getResetSentAt() {
+  public Instant getResetSentAt() {
     return resetSentAt;
   }
 
-  public Password setResetSentAt(DateTime resetSentAt) {
-    this.resetSentAt = resetSentAt;
+  public Password setResetSentAt(long resetSentAt) {
+    this.resetSentAt = Instant.ofEpochMilli(resetSentAt);
     return this;
   }
 }
