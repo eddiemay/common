@@ -30,25 +30,33 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchCreate")
-  public ImmutableList<T> batchCreate(IterableParam<T> entities, @Nullable @Named("idToken") String idToken)
+  public ImmutableList<T> batchCreate(Iterable<T> entities, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken,"batchCreate");
-      return getStore().create(entities.getItems());
+      return getStore().create(entities);
     } catch (DD4StorageException e) {
+      e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
     }
   }
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "batchGet")
-  public ImmutableList<T> batchGet(IterableParam<I> ids, @Nullable @Named("idToken") String idToken)
+  public ImmutableList<T> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken, "batchGet");
-      return getStore().get(ids.getItems());
+      return getStore().get(ids);
     } catch (DD4StorageException e) {
+      e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
     }
   }
 
@@ -63,7 +71,11 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
       return getStore().update(
           entityMap.keySet(), current -> JSONUtil.merge(updateMask, entityMap.get(current.getId()), current));
     } catch (DD4StorageException e) {
+      e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
     }
   }
 
@@ -74,8 +86,10 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
       resolveLogin(idToken, "batchDelete");
       return new AtomicInteger(getStore().delete(ids.getItems()));
     } catch (DD4StorageException e) {
+      e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);
     } catch (Exception e) {
+      e.printStackTrace();
       throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
     }
   }

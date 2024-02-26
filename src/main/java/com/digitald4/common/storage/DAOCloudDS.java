@@ -282,61 +282,70 @@ public class DAOCloudDS implements DAO {
 				value = ((Text) value).getValue();
 			}
 
-			switch (field.getType().getSimpleName()) {
-				case "Boolean":
-				case "boolean":
-					jsonObject.put(javaName, ((Boolean) value).booleanValue());
-					break;
-				case "ByteArray":
-					jsonObject.put(javaName, value.toString().getBytes());
-					break;
-				case "byte[]":
-				case "Byte[]":
-					jsonObject.put(javaName, ((Blob) value).getBytes());
-					break;
-				case "DateTime":
-					if (value instanceof Date) {
-						jsonObject.put(javaName, ((Date) value).getTime());
-					} else {
-						jsonObject.put(javaName,
-								(value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
-					}
-					break;
-				case "Instant":
-					if (value instanceof Date) {
-						jsonObject.put(javaName, ((Date) value).getTime());
-					} else {
-						jsonObject.put(javaName,
-								(value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
-					}
-					break;
-				case "Integer":
-				case "int":
-					jsonObject.put(javaName, ((Long) value).intValue());
-					break;
-				case "Long":
-				case "long":
-					if (colName.endsWith("id")) {
-						jsonObject.put(javaName, value);
-					} else {
-						jsonObject.put(javaName, value);
-						// field.invokeSet(t, new java.sql.Timestamp((Long.parseLong(value.toString()))));
-					}
-					break;
-				case "StringBuilder":
-					jsonObject.put(javaName, new StringBuilder((String) value));
-					break;
-				case "String":
-				default:
-					if (field.isCollection()) {
-						jsonObject.put(javaName, new JSONArray((String) value));
-					} else if (field.getType().isEnum()) {
-						jsonObject.put(javaName,
-								Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
-					} else {
-						jsonObject.put(javaName, field.isObject() ? new JSONObject((String) value) : value);
-					}
-					break;
+			try {
+
+				switch (field.getType().getSimpleName()) {
+					case "Boolean":
+					case "boolean":
+						jsonObject.put(javaName, ((Boolean) value).booleanValue());
+						break;
+					case "ByteArray":
+						jsonObject.put(javaName, value.toString().getBytes());
+						break;
+					case "byte[]":
+					case "Byte[]":
+						jsonObject.put(javaName, ((Blob) value).getBytes());
+						break;
+					case "DateTime":
+						if (value instanceof Date) {
+							jsonObject.put(javaName, ((Date) value).getTime());
+						} else {
+							jsonObject.put(javaName,
+									(value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
+						}
+						break;
+					case "Double":
+					case "double":
+						jsonObject.put(javaName, ((Double) value).doubleValue());
+						break;
+					case "Instant":
+						if (value instanceof Date) {
+							jsonObject.put(javaName, ((Date) value).getTime());
+						} else {
+							jsonObject.put(javaName,
+									(value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
+						}
+						break;
+					case "Integer":
+					case "int":
+						jsonObject.put(javaName, ((Long) value).intValue());
+						break;
+					case "Long":
+					case "long":
+						if (colName.endsWith("id")) {
+							jsonObject.put(javaName, value);
+						} else {
+							jsonObject.put(javaName, value);
+							// field.invokeSet(t, new java.sql.Timestamp((Long.parseLong(value.toString()))));
+						}
+						break;
+					case "StringBuilder":
+						jsonObject.put(javaName, new StringBuilder((String) value));
+						break;
+					case "String":
+					default:
+						if (field.isCollection()) {
+							jsonObject.put(javaName, new JSONArray((String) value));
+						} else if (field.getType().isEnum()) {
+							jsonObject.put(javaName,
+									Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
+						} else {
+							jsonObject.put(javaName, field.isObject() ? new JSONObject((String) value) : value);
+						}
+						break;
+				}
+			} catch (ClassCastException cce) {
+				throw new DD4StorageException("Error reading column: " + colName, cce);
 			}
 		});
 

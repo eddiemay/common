@@ -51,7 +51,7 @@ public class DAOApiImpl implements DAO {
 
   @Override
   public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
-    String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
+    String url = apiConnector.formatUrl(getResourceName(c)) + "/batchGet";
     return convertList(c, apiConnector.sendPost(url, new JSONObject().put("items", ids).toString()));
   }
 

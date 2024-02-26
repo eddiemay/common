@@ -1,11 +1,8 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -35,8 +32,12 @@ public class APIConnector {
 		return url;
 	}
 
-	public APIConnector setIdToken(String idToken) {
-		this.idToken = idToken;
+	public APIConnector loadIdToken() {
+		try (BufferedReader br = new BufferedReader(new FileReader("data/id.token"))) {
+			this.idToken = br.readLine();
+		} catch (IOException ioe) {
+			throw new DD4StorageException("Error reading Id Token", ioe);
+		}
 		return this;
 	}
 
@@ -102,7 +103,7 @@ public class APIConnector {
 			con.setRequestProperty("Content-Length", String.valueOf(payload.length()));
 			con.setDoOutput(true);
 			DataOutputStream dos = new DataOutputStream(con.getOutputStream());
-			System.out.println("payload: " + payload);
+			// System.out.println("payload: " + payload);
 			dos.write(payload.getBytes());
 			dos.flush();
 			dos.close();

@@ -15,8 +15,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 
-public class SessionStore<U extends User> extends GenericStore<Session, String>
-    implements LoginResolver {
+public class SessionStore<U extends User> extends GenericStore<Session, String> implements LoginResolver {
   private static final DD4StorageException NOT_AUTHENICATED =
       new DD4StorageException("Not Authenticated", ErrorCode.NOT_AUTHENTICATED);
 
