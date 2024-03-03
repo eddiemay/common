@@ -8,6 +8,7 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.server.service.BulkGetable;
 import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
@@ -113,18 +114,17 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
-	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
+	public <T, I> BulkGetable.MultiListResult<T, I> get(Class<T> c, Iterable<I> ids) {
 		return Calculate.executeWithRetries(2, () -> {
 			String sql = String.format(BATCH_SELECT_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
-			try (Connection con = connector.getConnection();
-					 PreparedStatement ps = con.prepareStatement(sql)) {
+			try (Connection con = connector.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 				ImmutableList.Builder<T> results = ImmutableList.builder();
 				ResultSet rs = ps.executeQuery();
 				while (rs.next()) {
 					results.add(parseFromResultSet(c, rs));
 				}
 				rs.close();
-				return results.build();
+				return BulkGetable.MultiListResult.of(results.build(), ids);
 			} catch (SQLException e) {
 				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 			}

@@ -1,18 +1,18 @@
 package com.digitald4.common.storage;
 
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.server.service.BulkGetable;
 import com.google.common.collect.ImmutableList;
 import java.util.function.UnaryOperator;
 
 public interface TypedDAO<R> {
-
 	<T extends R> T create(T t);
 
 	<T extends R> ImmutableList<T> create(Iterable<T> entities);
 
 	<T extends R, I> T get(Class<T> c, I id);
 
-	<T extends R, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids);
+	<T extends R, I> BulkGetable.MultiListResult<T, I> get(Class<T> c, Iterable<I> ids);
 
 	<T extends R> QueryResult<T> list(Class<T> c, Query.List listQuery);
 

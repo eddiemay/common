@@ -9,6 +9,7 @@ import static com.google.common.collect.Streams.stream;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.server.service.BulkGetable;
 import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
@@ -27,7 +28,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
 
@@ -87,10 +87,8 @@ public class DAOCloudDS implements DAO {
 	}
 
 	@Override
-	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
-		return Calculate.executeWithRetries(2, () -> getEntities(c,ids).values().stream()
-				.map(v -> convert(c, v))
-				.collect(toImmutableList()));
+	public <T, I> BulkGetable.MultiListResult<T, I> get(Class<T> c, Iterable<I> ids) {
+		return Calculate.executeWithRetries(2, () -> getEntities(c, ids));
 	}
 
 	@Override
@@ -114,11 +112,16 @@ public class DAOCloudDS implements DAO {
 		String kind = c.getSimpleName();
 		ImmutableMap<String, Field> fields = JSONUtil.getFields(c);
 		return Calculate.executeWithRetries(2, () -> {
-				ImmutableList<T> entities = getEntities(c, ids).values().stream()
-						.map(entity -> updater.apply(convert(c, entity)))
-						.collect(toImmutableList());
-				changeTracker.prePersist(entities);
-				datastoreService.put(entities.stream()
+				BulkGetable.MultiListResult<T, I> getResults = getEntities(c, ids);
+				if (!getResults.getMissingIds().isEmpty()) {
+					throw new DD4StorageException(
+							String.format("One or more items not found while fetching: %s. Requested: %d, found: %d, missing ids: %s",
+									c.getSimpleName(), Iterables.size(ids), getResults.getItems().size(), getResults.getMissingIds()),
+							ErrorCode.NOT_FOUND);
+				}
+				ImmutableList<T> items = getResults.getItems().stream().map(updater).collect(toImmutableList());
+				changeTracker.prePersist(items);
+				datastoreService.put(items.stream()
 						.map(t -> {
 							JSONObject json = new JSONObject(t);
 							Object id = json.get("id");
@@ -127,7 +130,7 @@ public class DAOCloudDS implements DAO {
 							return entity;
 						})
 						.collect(toImmutableList()));
-				return changeTracker.postPersist(entities, false);
+				return changeTracker.postPersist(items, false);
 		});
 	}
 
@@ -173,15 +176,10 @@ public class DAOCloudDS implements DAO {
 		return stream(ids).map(id -> createFactorKey(kind, id)).collect(toImmutableList());
 	}
 
-	private <T, I> ImmutableMap<Key, Entity> getEntities(Class<T> c, Iterable<I> ids) {
-		Map<Key, Entity> results = datastoreService.get(createFactorKeys(c, ids));
-		if (results.size() != Iterables.size(ids)) {
-			throw new DD4StorageException(
-					String.format("One or more items not found while fetching: %s. Requested: %d, found: %d",
-							c.getSimpleName(), Iterables.size(ids), results.size()), ErrorCode.NOT_FOUND);
-		}
-
-		return ImmutableMap.copyOf(results);
+	private <T, I> BulkGetable.MultiListResult<T, I> getEntities(Class<T> c, Iterable<I> ids) {
+		return BulkGetable.MultiListResult.of(
+				datastoreService.get(createFactorKeys(c, ids)).values().stream()
+						.map(entity -> convert(c, entity)).collect(toImmutableList()), ids);
 	}
 
 	private QueryResult<Entity> listEntities(Class<?> c, Query.List query) {

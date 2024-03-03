@@ -8,5 +8,5 @@ import com.google.common.collect.ImmutableList;
 
 public interface BulkCreateable<T> extends EntityService<T> {
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-  ImmutableList<T> batchCreate(IterableParam<T> entites, @Nullable @Named("idToken") String idToken) throws ServiceException;
+  ImmutableList<T> batchCreate(Iterable<T> entites, @Nullable @Named("idToken") String idToken) throws ServiceException;
 }

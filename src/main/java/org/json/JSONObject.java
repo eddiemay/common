@@ -1410,11 +1410,7 @@ public class JSONObject {
    * with <code>}</code>&nbsp;<small>(right brace)</small>.
    */
   public String toString() {
-    try {
-      return this.toString(0);
-    } catch (Exception e) {
-      return null;
-    }
+    return this.toString(0);
   }
 
 

@@ -111,10 +111,9 @@ public class ChangeTracker {
             .collect(toImmutableList()));
   }
 
-  public <ID, T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackDeleted(
-      Class<T> c, Iterable<ID> ids) {
+  public <ID, T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackDeleted(Class<T> c, Iterable<ID> ids) {
     DAO dao = daoProvider.get();
-    return dao.create(dao.get(c, ids).stream()
+    return dao.create(dao.get(c, ids).getItems().stream()
         .map(item -> createChangeHistory(Action.DELETED, item))
         .collect(toImmutableList()));
   }

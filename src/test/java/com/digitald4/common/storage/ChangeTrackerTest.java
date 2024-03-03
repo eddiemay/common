@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.ChangeTrackable;
 import com.digitald4.common.model.User;
-import com.digitald4.common.storage.ChangeTracker.Change;
+import com.digitald4.common.server.service.BulkGetable;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.storage.testing.DAOTestingImpl;
@@ -41,11 +41,7 @@ public class ChangeTrackerTest {
 
   @Test
   public void trackCreated() {
-    when(dao.get(ChangeTrackableUser.class, ImmutableList.of(1002L)))
-        .thenReturn(ImmutableList.of());
-
-    ChangeTrackableUser trackable =
-        new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
+    ChangeTrackableUser trackable = new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First");
 
     ChangeHistory changeHistory = changeTracker.trackRevised(ImmutableList.of(trackable), true).get(0);
 
@@ -55,15 +51,10 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity()).isEqualTo(trackable);
-    assertThat(changeHistory.getChanges()).isNull();
   }
 
   @Test
   public void trackUpdated() {
-    when(dao.get(ChangeTrackableUser.class, ImmutableList.of(1002L))).thenReturn(
-        ImmutableList.of(
-            new ChangeTrackableUser().setId(1002L).setUsername("user2").setFirstName("First")));
-
     ChangeTrackableUser updated = new ChangeTrackableUser().setId(1002L)
         .setUsername(null).setFirstName("FirstName").setLastName("LastName");
 
@@ -79,10 +70,9 @@ public class ChangeTrackerTest {
 
   @Test
   public void trackDeleted() {
-    ChangeTrackableUser trackable =
-        new ChangeTrackableUser().setUsername("user2").setId(1002L).setFirstName("First");
+    ChangeTrackableUser trackable = new ChangeTrackableUser().setUsername("user2").setId(1002L).setFirstName("First");
     when(dao.get(ChangeTrackableUser.class, ImmutableList.of(1002L)))
-        .thenReturn(ImmutableList.of(trackable));
+       .thenReturn(BulkGetable.MultiListResult.of(ImmutableList.of(trackable), ImmutableList.of(1002L)));
 
     ChangeHistory changeHistory =
         changeTracker.trackDeleted(ChangeTrackableUser.class, ImmutableList.of(1002L)).get(0);
@@ -93,7 +83,6 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity()).isEqualTo(trackable);
-    assertThat(changeHistory.getChanges()).isNull();
   }
 
   @Test

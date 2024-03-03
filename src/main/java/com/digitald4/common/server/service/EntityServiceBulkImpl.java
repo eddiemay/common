@@ -45,8 +45,8 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
   }
 
   @Override
-  @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "batchGet")
-  public ImmutableList<T> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken)
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchGet")
+  public MultiListResult<T, I> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken, "batchGet");

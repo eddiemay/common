@@ -17,6 +17,7 @@ import com.digitald4.common.model.HasModificationUser;
 import com.digitald4.common.model.ModelObject;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
+import com.digitald4.common.server.service.BulkGetable;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import java.time.Instant;
@@ -36,7 +37,7 @@ public class ChangeProcessorTest {
   public void setup() {
     when(clock.millis()).thenReturn(1000L);
     when(userProvider.get()).thenReturn(user);
-    when(dao.get(any(), eq(ImmutableList.of()))).thenReturn(ImmutableList.of());
+    // when(dao.get(any(), eq(ImmutableList.of()))).thenReturn(ImmutableList.of());
     changeTracker = new ChangeTracker(() -> dao, userProvider, searchIndexer, clock);
   }
 
@@ -184,7 +185,7 @@ public class ChangeProcessorTest {
   @Test
   public void updateTrackable() {
     Trackable trackable = new Trackable().setId(75L);
-    when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(trackable));
+    // when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(trackable));
 
     changeTracker.prePersist(ImmutableList.of(trackable));
     changeTracker.postPersist(ImmutableList.of(trackable), false);
@@ -198,7 +199,8 @@ public class ChangeProcessorTest {
   @Test
   public void deleteTrackable() {
     Trackable trackable = new Trackable();
-    when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(trackable));
+    when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(
+        BulkGetable.MultiListResult.of(ImmutableList.of(trackable), ImmutableList.of(75L)));
 
     changeTracker.preDelete(Trackable.class, ImmutableList.of(75L));
     changeTracker.postDelete(Trackable.class, ImmutableList.of(75L));
@@ -269,10 +271,9 @@ public class ChangeProcessorTest {
 
   @Test
   public void updateSubAll() {
-    SubAll subAll = (SubAll)
-        new SubAll().setId(75L).setCreationUserId(501L).setCreationTime(Instant.ofEpochMilli(500L));
+    SubAll subAll = (SubAll) new SubAll().setId(75L).setCreationUserId(501L).setCreationTime(Instant.ofEpochMilli(500L));
 
-    when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
+    // when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
 
     changeTracker.prePersist(ImmutableList.of(subAll));
     changeTracker.postPersist(ImmutableList.of(subAll), false);
@@ -294,7 +295,8 @@ public class ChangeProcessorTest {
   @Test
   public void deleteSubAll() {
     SubAll subAll = (SubAll) new SubAll().setId(75L);
-    when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
+    when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(
+        BulkGetable.MultiListResult.of(ImmutableList.of(subAll), ImmutableList.of(75L)));
 
     changeTracker.preDelete(SubAll.class, ImmutableList.of(75L));
     changeTracker.postDelete(SubAll.class, ImmutableList.of(75L));

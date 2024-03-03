@@ -1,5 +1,6 @@
 package com.digitald4.common.storage;
 
+import com.digitald4.common.server.service.BulkGetable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.function.UnaryOperator;
@@ -43,8 +44,8 @@ public class GenericStore<T, I> implements Store<T, I> {
 	}
 
 	@Override
-	public ImmutableList<T> get(Iterable<I> ids) {
-		return ImmutableList.copyOf(transform(daoProvider.get().get(c, ids)));
+	public BulkGetable.MultiListResult<T, I> get(Iterable<I> ids) {
+		return BulkGetable.MultiListResult.of(transform(daoProvider.get().get(c, ids).getItems()), ids);
 	}
 
 	@Override

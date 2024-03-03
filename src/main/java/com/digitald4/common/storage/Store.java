@@ -1,5 +1,6 @@
 package com.digitald4.common.storage;
 
+import com.digitald4.common.server.service.BulkGetable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.function.UnaryOperator;
@@ -13,7 +14,7 @@ public interface Store<T, I> {
 
 	T get(I id);
 
-	ImmutableList<T> get(Iterable<I> ids);
+	BulkGetable.MultiListResult<T, I> get(Iterable<I> ids);
 
 	QueryResult<T> list(Query.List listQuery);
 

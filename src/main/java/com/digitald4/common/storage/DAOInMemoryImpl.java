@@ -2,20 +2,20 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
+import static java.util.List.of;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.server.service.BulkGetable;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 import org.json.JSONObject;
@@ -48,8 +48,8 @@ public class DAOInMemoryImpl implements DAO {
   }
 
   @Override
-  public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
-    return stream(ids).map(id -> get(c, id)).filter(Objects::nonNull).collect(toImmutableList());
+  public <T, I> BulkGetable.MultiListResult<T, I> get(Class<T> c, Iterable<I> ids) {
+    return BulkGetable.MultiListResult.of(stream(ids).map(id -> get(c, id)).collect(toImmutableList()), ids);
   }
 
   @Override

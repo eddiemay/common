@@ -6,13 +6,11 @@ import static com.google.common.collect.Streams.stream;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Searchable;
-import com.digitald4.common.storage.ChangeTracker;
-import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.Query;
+import com.digitald4.common.server.service.BulkGetable;
+import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.common.storage.Query.Search;
-import com.digitald4.common.storage.QueryResult;
 import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 
@@ -22,7 +20,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
+
 import org.json.JSONObject;
 
 public class DAOTestingImpl implements DAO {
@@ -60,8 +58,9 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
-		return stream(ids).map(id -> get(c, id)).filter(Objects::nonNull).collect(toImmutableList());
+	public <T, I> BulkGetable.MultiListResult<T, I> get(Class<T> c, Iterable<I> ids) {
+		return BulkGetable.MultiListResult.of(
+				stream(ids).map(id -> get(c, id)).filter(Objects::nonNull).collect(toImmutableList()), ids);
 	}
 
 	@Override

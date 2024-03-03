@@ -5,6 +5,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.APIConnector;
+import com.digitald4.common.server.service.BulkGetable;
 import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.JSONUtil;
@@ -50,9 +51,10 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T, I> ImmutableList<T> get(Class<T> c, Iterable<I> ids) {
+  public <T, I> BulkGetable.MultiListResult<T, I> get(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchGet";
-    return convertList(c, apiConnector.sendPost(url, new JSONObject().put("items", ids).toString()));
+    JSONObject response = new JSONObject(apiConnector.sendPost(url, new JSONObject().put("ids", ids).toString()));
+    return BulkGetable.MultiListResult.of(convertList(c, response.getString("items")), ids);
   }
 
   @Override
@@ -87,19 +89,13 @@ public class DAOApiImpl implements DAO {
       return QueryResult.of(ImmutableList.of(), totalSize, query);
     }
 
-    JSONArray resultArray = response.getJSONArray("items");
-    ImmutableList<T> results = IntStream.range(0, resultArray.length())
-        .mapToObj(x -> convert(c, resultArray.getJSONObject(x).toString()))
-        .collect(toImmutableList());
-
-    return QueryResult.of(results, totalSize, query);
+    return QueryResult.of(convertList(c, response), totalSize, query);
   }
 
   @Override
   public <T extends Searchable> QueryResult<T> search(Class<T> c, Search query) {
-    StringBuilder url =
-        new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/search?searchText=")
-            .append(query.getSearchText());
+    StringBuilder url = new StringBuilder(apiConnector.formatUrl(getResourceName(c)) + "/search?searchText=")
+        .append(query.getSearchText());
     if (!query.getOrderBys().isEmpty()) {
       url.append("&orderBy=").append(
           query.getOrderBys().stream()
@@ -121,12 +117,7 @@ public class DAOApiImpl implements DAO {
       return QueryResult.of(ImmutableList.of(), totalSize, query);
     }
 
-    JSONArray resultArray = response.getJSONArray("items");
-    ImmutableList<T> results = IntStream.range(0, resultArray.length())
-        .mapToObj(x -> convert(c, resultArray.getJSONObject(x).toString()))
-        .collect(toImmutableList());
-
-    return QueryResult.of(results, totalSize, query);
+    return QueryResult.of(convertList(c, response), totalSize, query);
   }
 
   @Override
@@ -170,18 +161,21 @@ public class DAOApiImpl implements DAO {
   @Override
   public <T, I> int delete(Class<T> c, Iterable<I> ids) {
     String url = apiConnector.formatUrl(getResourceName(c)) + "/batchDelete";
-    return Integer.parseInt(
-        apiConnector.send("POST", url, new JSONObject().put("items", ids).toString()).trim());
+    return Integer.parseInt(apiConnector.send("POST", url, new JSONObject().put("items", ids).toString()).trim());
   }
 
   private <T> T convert(Class<T> cls, String content) {
     return JSONUtil.toObject(cls, content);
   }
 
-  private <T> ImmutableList<T> convertList(Class<T> c, String content) {
-    JSONArray array = new JSONArray(content);
-    return IntStream.of(array.length())
-        .mapToObj(i -> convert(c, array.getString(i)))
+  private <T> ImmutableList<T> convertList(Class<T> c, String response) {
+    return convertList(c, new JSONObject(response));
+  }
+
+  private <T> ImmutableList<T> convertList(Class<T> c, JSONObject response) {
+    JSONArray array = response.getJSONArray("items");
+    return IntStream.range(0, array.length())
+        .mapToObj(x -> convert(c, array.getJSONObject(x).toString()))
         .collect(toImmutableList());
   }
 
