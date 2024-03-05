@@ -2,7 +2,6 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
-import static java.util.List.of;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
@@ -21,10 +20,8 @@ import java.util.function.UnaryOperator;
 import org.json.JSONObject;
 
 public class DAOInMemoryImpl implements DAO {
-
   private final AtomicLong idGenerator = new AtomicLong(5000);
   protected final Map<String, JSONObject> items = new HashMap<>();
-  private final Map<Class<?>, List<JSONObject>> byType = new HashMap<>();
 
   @Override
   public <T> T create(T t) {
@@ -65,13 +62,13 @@ public class DAOInMemoryImpl implements DAO {
           .filter(json -> {
             Object value = json.opt(field);
             Object filterValue = filter.getValue();
-            switch (filter.getOperator()) {
-              case "<": return ((Comparable) value).compareTo(filterValue) < 0;
-              case "<=": return ((Comparable) value).compareTo(filterValue) <= 0;
-              case ">=": return ((Comparable) value).compareTo(filterValue) >= 0;
-              case ">": return ((Comparable) value).compareTo(filterValue) > 0;
-            }
-            return Objects.equals(value, filterValue);
+            return switch (filter.getOperator()) {
+              case "<" -> ((Comparable) value).compareTo(filterValue) < 0;
+              case "<=" -> ((Comparable) value).compareTo(filterValue) <= 0;
+              case ">=" -> ((Comparable) value).compareTo(filterValue) >= 0;
+              case ">" -> ((Comparable) value).compareTo(filterValue) > 0;
+              default -> Objects.equals(value, filterValue);
+            };
           })
           .collect(toImmutableList());
     }
@@ -79,8 +76,7 @@ public class DAOInMemoryImpl implements DAO {
     for (OrderBy orderBy : query.getOrderBys()) {
       String field = orderBy.getColumn();
       results = results.stream()
-          .sorted(
-              (json1, json2) -> ((Comparable<Object>) json1.get(field)).compareTo(json2.get(field)))
+          .sorted((json1, json2) -> ((Comparable<Object>) json1.get(field)).compareTo(json2.get(field)))
           .collect(toImmutableList());
     }
 

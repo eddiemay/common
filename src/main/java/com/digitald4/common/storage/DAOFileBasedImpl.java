@@ -35,9 +35,9 @@ public class DAOFileBasedImpl extends DAOInMemoryImpl {
     return this;
   }
 
-  public DAOFileBasedImpl saveToFile() {
+  public void saveToFile() {
     if (writesSinceLastSave == 0) {
-      return this;
+      return;
     }
 
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileName))) {
@@ -48,13 +48,12 @@ public class DAOFileBasedImpl extends DAOInMemoryImpl {
             try {
               bw.write(json + "\n");
             } catch (IOException ioe) {
-              throw new DD4StorageException("Error writting file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
+              throw new DD4StorageException("Error writing file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
             }
           });
     } catch (IOException ioe) {
-      throw new DD4StorageException("Error writting file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
+      throw new DD4StorageException("Error writing file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
     }
-    return this;
   }
 
   @Override
