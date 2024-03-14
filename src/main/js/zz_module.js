@@ -136,8 +136,7 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
         width: '@',
         height: '@'
       },
-      template: '<iframe ng-src="{{$ctrl.url | trusted}}" ' +
-          'width="{{$ctrl.width}}" height="{{$ctrl.height}}"></iframe>'
+      template: '<iframe ng-src="{{$ctrl.url | trusted}}" width="{{$ctrl.width}}" height="{{$ctrl.height}}"></iframe>'
     })
 
 
@@ -298,13 +297,21 @@ com.digitald4.common.module.directive('dd4Timepicker', ['$compile', function($co
 }]);
 
 com.digitald4.common.module.controller('TableCtrl', com.digitald4.common.TableCtrl);
+
+com.digitald4.common.module.component('dd4Table', {
+  controller: com.digitald4.common.TableCtrl,
+  bindings: {
+    metadata: '=',
+  },
+  templateUrl: 'js/html/dd4table.html',
+})
 com.digitald4.common.module.directive('dd4Table', function() {
   return {
     restrict: 'A',
     replace: true,
     transclude: true,
     scope: {metadata: '=dd4Table'},
-    controller: 'TableCtrl as tableCtrl',
+    controller: 'TableCtrl as $ctrl',
     templateUrl: 'js/html/dd4table.html',
     compile: function() {
       return {

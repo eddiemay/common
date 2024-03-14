@@ -1,38 +1,43 @@
 <div class="block-border">
-  <h1>{{tableCtrl.title}}</h1>
-  <div data-ng-repeat="controlFilter in tableCtrl.controlFilters">
-    <label>{{controlFilter.title}}:</label>
-    <select data-ng-model="controlFilter.selected" data-ng-change="tableCtrl.refresh()"
-            data-ng-options="option for option in controlFilter.options">
-    </select>
+  <h1>{{$ctrl.title}}</h1>
+  <div data-ng-if="$ctrl.metadata" class="controls-buttons">
+    <div class="sub-hover paging_simple_numbers">
+      <a class="paginate_button previous" data-dt-idx="0" tabindex="0"
+         data-ng-disabled="$ctrl.pageToken==1" data-ng-click="$ctrl.previous()">Previous</a>
+      <a class="paginate_button" data-ng-repeat="page in $ctrl.resultList.pages" data-ng-click="$ctrl.refresh(page)"
+         data-ng-class="{'current': page==$ctrl.pageToken}" data-ng-disabled="page==$ctrl.pageToken">{{page}}</a>
+      <a class="paginate_button next" data-dt-idx="7" tabindex="0" data-ng-click="$ctrl.next()">Next</a>
+    </div>
   </div>
-  <table data-ng-if="!tableCtrl.loading" class="table sortable no-margin" cellspacing="0" width="100%" data-page-length="25">
-    <thead>
-      <tr>
-        <th class="black-cell"><span data-ng-class="{loading: tableCtrl.loading}"></span></th>
-        <th data-ng-repeat="col in tableCtrl.columns" scope="col">{{col.title}}</th>
-      </tr>
-    </thead>
+  <table class="table sortable no-margin" cellspacing="0" width="100%" data-page-length="25">
+    <thead><tr>
+      <th class="black-cell"><span data-ng-class="{loading: $ctrl.loading}"></span></th>
+      <th data-ng-repeat="col in $ctrl.columns">
+        <label data-ng-click="$ctrl.setSort(col)">{{col.title}}</label>
+        <img data-ng-if="$ctrl.orderBy == col.prop" src="images/icons/fugue/arrow-270.png">
+        <img data-ng-if="$ctrl.orderBy == col.prop + ' DESC'" src="images/icons/fugue/arrow-090.png">
+        <br>
+        <select data-ng-if="col.filterOptions" data-ng-model="col.filter" data-ng-change="$ctrl.refresh()"
+                data-ng-options="option for option in col.filterOptions | orderBy: option"></select>
+      </th>
+    </tr></thead>
     <tbody>
-      <tr data-ng-repeat="entity in tableCtrl.entities | orderBy:'name'">
+      <tr data-ng-repeat="entity in $ctrl.resultList.items">
         <td class="th table-check-cell"><input type="checkbox" data-ng-model="entity.selected"></td>
-        <td data-ng-repeat="col in tableCtrl.columns">
+        <td data-ng-repeat="col in $ctrl.columns">
           <input data-ng-if="col.editable" data-ng-model="entity[col.prop]"
-                 data-on-change="tableCtrl.update(entity, col.prop)"/>
+                 data-on-change="$ctrl.update(entity, col.prop)"/>
           <span data-ng-if="col.value">{{col.value(entity)}}</span>
           <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}</a></span>
           <span data-ng-if="col.button">
-            <button data-ng-click="col.button.action(entity)"
-                    data-ng-disabled="col.button.disabled(entity)">{{col.button.display}}</button>
+            <button data-ng-click="col.button.action(entity)" data-ng-disabled="col.button.disabled(entity)">
+              {{col.button.display}}
+            </button>
           </span>
-          <span data-ng-if="col.type == 'address'">
-            {{entity[col.prop].address}}
-          </span>
-          <span data-ng-if="col.type == 'date'">
-            {{tableCtrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy'}}
-          </span>
+          <span data-ng-if="col.type == 'address'">{{entity[col.prop].address}}</span>
+          <span data-ng-if="col.type == 'date'">{{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy'}}</span>
           <span data-ng-if="col.type == 'datetime'">
-            {{tableCtrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy hh:mm a'}}
+            {{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy hh:mm a'}}
           </span>
           <span data-ng-if="col.type == 'percent'">{{entity[col.prop]}}%</span>
           <span data-ng-if="col.type == 'time'">{{entity[col.prop] | date:'shortTime'}}</span>
@@ -47,4 +52,15 @@
       </tr>
     </tbody>
   </table>
+  <ul data-ng-if="$ctrl.metadata" class="message no-margin">
+    <li>Showing {{$ctrl.start}} to {{$ctrl.end}} of {{$ctrl.totalSize}}</li>
+    <li><label>Show
+      <select data-ng-model="$ctrl.pageSize" data-ng-change="$ctrl.refresh()">
+        <option value="25">25</option>
+        <option value="50">50</option
+        ><option value="100">100</option>
+        ><option value="200">200</option>
+      </select> entries</label>
+    </li>
+  </ul>
 </div>
