@@ -1,5 +1,6 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -17,7 +18,6 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.FileInputStream;
 import java.time.Clock;
-import javax.inject.Provider;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
 import org.junit.After;
@@ -228,16 +228,15 @@ public class DAOCloudDSTest {
 	public void list() {
 		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList());
 
-		assertEquals(5, queryResult.getTotalSize());
+		assertThat(queryResult.getTotalSize()).isEqualTo(5);
 		assertEquals(5, queryResult.getItems().size());
 	}
 
 	@Test
 	public void list_withFilter() {
-		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList("typeId>10", null, null, 1));
+		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList("typeId>10", null, null, 1));
 
-		assertEquals(2, queryResult.getTotalSize());
+		assertThat(queryResult.getTotalSize()).isEqualTo(2);
 		assertEquals(2, queryResult.getItems().size());
 		assertThat(queryResult.getItems().get(0).getTypeId()).isGreaterThan(10);
 		assertThat(queryResult.getItems().get(1).getTypeId()).isGreaterThan(10);
@@ -245,10 +244,9 @@ public class DAOCloudDSTest {
 
 	@Test
 	public void list_withInFilter() {
-		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList("typeId IN 4|10", null, 0, 1));
+		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList("typeId IN 4|10", null, 0, 1));
 
-		assertEquals(2, queryResult.getTotalSize());
+		assertThat(queryResult.getTotalSize()).isEqualTo(2);
 		assertEquals(2, queryResult.getItems().size());
 		assertEquals(4, queryResult.getItems().get(0).getTypeId());
 		assertEquals(10, queryResult.getItems().get(1).getTypeId());
@@ -256,45 +254,38 @@ public class DAOCloudDSTest {
 
 	@Test
 	public void list_withOrderBy() {
-		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList(null, "typeId", 0, 0));
+		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList(null, "typeId", 0, 0));
 
-		assertEquals(5, queryResult.getTotalSize());
+		assertThat(queryResult.getTotalSize()).isEqualTo(5);
 		assertEquals(5, queryResult.getItems().size());
 
-		int prevTypeId = 0;
-		for (BasicUser user : queryResult.getItems()) {
-			assertThat(user.getTypeId()).isGreaterThan(prevTypeId);
-			prevTypeId = user.getTypeId();
-		}
+		assertThat(queryResult.getItems().stream().map(BasicUser::getTypeId).collect(toImmutableList()))
+				.containsExactly(2, 4, 10, 18, 22).inOrder();
 	}
 
 	@Test
 	public void list_withLimit() {
-		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList(null, null, 3, 1));
+		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList(null, null, 3, 1));
 
-		assertEquals(5, queryResult.getTotalSize());
+		assertThat(queryResult.getTotalSize()).isEqualTo(5);
 		assertEquals(3, queryResult.getItems().size());
 	}
 
 	@Test
 	public void list_withOffset() {
-		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList(null, null, 2, 2));
+		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList(null, null, 2, 2));
 
-		assertEquals(5, queryResult.getTotalSize());
 		assertEquals(2, queryResult.getItems().size());
+		assertThat(queryResult.getTotalSize()).isEqualTo(5);
 	}
 
 	@Test
 	public void list_advanced()  {
-		QueryResult<BasicUser> queryResult =
-				dao.list(BasicUser.class, Query.forList("typeId>=2", "typeId", 2, 2));
+		QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, Query.forList("typeId>=2", "typeId", 2, 2));
 
-		assertEquals(5, queryResult.getTotalSize());
 		assertEquals(2, queryResult.getItems().size());
 		assertEquals(10, queryResult.getItems().get(0).getTypeId());
+		assertThat(queryResult.getTotalSize()).isEqualTo(5);
 	}
 
 	@Test

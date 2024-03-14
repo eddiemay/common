@@ -1,9 +1,8 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.appengine.api.datastore.FetchOptions.Builder.withDefaults;
 import static com.google.appengine.api.datastore.KeyFactory.createKey;
-import static com.google.appengine.api.datastore.Query.SortDirection.ASCENDING;
-import static com.google.appengine.api.datastore.Query.SortDirection.DESCENDING;
 import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
@@ -23,11 +22,13 @@ import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.List;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
 
@@ -41,8 +42,7 @@ public class DAOCloudDS implements DAO {
 	private final SearchIndexer searchIndexer;
 
 	@Inject
-	public DAOCloudDS(DatastoreService datastoreService,
-			ChangeTracker changeTracker, SearchIndexer searchIndexer) {
+	public DAOCloudDS(DatastoreService datastoreService, ChangeTracker changeTracker, SearchIndexer searchIndexer) {
 		this.datastoreService = datastoreService;
 		this.changeTracker = changeTracker;
 		this.searchIndexer = searchIndexer;
@@ -63,7 +63,7 @@ public class DAOCloudDS implements DAO {
 		ImmutableMap<String, Field> fields = JSONUtil.getFields(ts.iterator().next().getClass());
 		return Calculate.executeWithRetries(2, () -> {
 			changeTracker.prePersist(ts);
-			List<Key> keys = datastoreService.put(
+			var keys = datastoreService.put(
 					items.stream().map(item -> {
 						JSONObject json = new JSONObject(item);
 						Object id = json.opt("id");
@@ -93,8 +93,7 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T> QueryResult<T> list(Class<T> c, Query.List query) {
-		return Calculate.executeWithRetries(2,
-				() -> QueryResult.transform(listEntities(c, query), entity -> convert(c, entity)));
+		return Calculate.executeWithRetries(2, () -> listEntities(c, query));
 	}
 
 	@Override
@@ -182,9 +181,8 @@ public class DAOCloudDS implements DAO {
 						.map(entity -> convert(c, entity)).collect(toImmutableList()), ids);
 	}
 
-	private QueryResult<Entity> listEntities(Class<?> c, Query.List query) {
-		com.google.appengine.api.datastore.Query eQuery =
-				new com.google.appengine.api.datastore.Query(c.getSimpleName());
+	private <T> QueryResult<T> listEntities(Class<T> c, Query.List query) {
+		com.google.appengine.api.datastore.Query eQuery = new com.google.appengine.api.datastore.Query(c.getSimpleName());
 		if (!query.getFilters().isEmpty()) {
 			if (query.getFilters().size() == 1) {
 				eQuery.setFilter(convertToPropertyFilter(c, query.getFilters().get(0)));
@@ -195,23 +193,27 @@ public class DAOCloudDS implements DAO {
 								.collect(toImmutableList())));
 			}
 		}
-		query.getOrderBys().forEach(
-				orderBy -> eQuery.addSort(orderBy.getColumn(), orderBy.getDesc() ? DESCENDING : ASCENDING));
+		// query.getOrderBys().forEach(orderBy -> eQuery.addSort(orderBy.getColumn(), orderBy.getDesc() ? DESCENDING : ASCENDING));
 
-		Iterable<Entity> allResults = datastoreService.prepare(eQuery).asIterable();
+		var allResults = datastoreService.prepare(eQuery).asList(withDefaults());
 
 		Integer limit = query.getLimit();
+		if (limit == null || limit == 0) {
+			limit = Integer.MAX_VALUE;
+		}
 
+		var comparator = getComparator(c, query);
 		return QueryResult.of(
-				Streams.stream(allResults)
+				allResults.stream()
+						.map(entity -> convert(c, entity))
+						.sorted(comparator)
 						.skip(query.getOffset())
-						.limit(limit == null || limit == 0 ? Integer.MAX_VALUE : limit)
+						.limit(limit)
 						.collect(toImmutableList()),
-				Iterables.size(allResults), query);
+				allResults.size(), query);
 	}
 
-	private void setObject(
-			Entity entity, JSONObject json, String fieldName, ImmutableMap<String, Field> fields) {
+	private void setObject(Entity entity, JSONObject json, String fieldName, ImmutableMap<String, Field> fields) {
 		if (fieldName.equals("id")) {
 			return;
 		}
@@ -283,64 +285,45 @@ public class DAOCloudDS implements DAO {
 			try {
 
 				switch (field.getType().getSimpleName()) {
-					case "Boolean":
-					case "boolean":
-						jsonObject.put(javaName, ((Boolean) value).booleanValue());
-						break;
-					case "ByteArray":
-						jsonObject.put(javaName, value.toString().getBytes());
-						break;
-					case "byte[]":
-					case "Byte[]":
-						jsonObject.put(javaName, ((Blob) value).getBytes());
-						break;
-					case "DateTime":
+					case "Boolean", "boolean" -> jsonObject.put(javaName, ((Boolean) value).booleanValue());
+					case "ByteArray" -> jsonObject.put(javaName, value.toString().getBytes());
+					case "byte[]", "Byte[]" -> jsonObject.put(javaName, ((Blob) value).getBytes());
+					case "DateTime" -> {
 						if (value instanceof Date) {
 							jsonObject.put(javaName, ((Date) value).getTime());
 						} else {
 							jsonObject.put(javaName,
 									(value instanceof Long) ? value : DateTime.parse((String) value).getMillis());
 						}
-						break;
-					case "Double":
-					case "double":
-						jsonObject.put(javaName, ((Double) value).doubleValue());
-						break;
-					case "Instant":
+					}
+					case "Double", "double" -> jsonObject.put(javaName, ((Double) value).doubleValue());
+					case "Instant" -> {
 						if (value instanceof Date) {
 							jsonObject.put(javaName, ((Date) value).getTime());
 						} else {
 							jsonObject.put(javaName,
 									(value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
 						}
-						break;
-					case "Integer":
-					case "int":
-						jsonObject.put(javaName, ((Long) value).intValue());
-						break;
-					case "Long":
-					case "long":
+					}
+					case "Integer", "int" -> jsonObject.put(javaName, ((Long) value).intValue());
+					case "Long", "long" -> {
 						if (colName.endsWith("id")) {
 							jsonObject.put(javaName, value);
 						} else {
 							jsonObject.put(javaName, value);
 							// field.invokeSet(t, new java.sql.Timestamp((Long.parseLong(value.toString()))));
 						}
-						break;
-					case "StringBuilder":
-						jsonObject.put(javaName, new StringBuilder((String) value));
-						break;
-					case "String":
-					default:
+					}
+					case "StringBuilder" -> jsonObject.put(javaName, new StringBuilder((String) value));
+					default -> {
 						if (field.isCollection()) {
 							jsonObject.put(javaName, new JSONArray((String) value));
 						} else if (field.getType().isEnum()) {
-							jsonObject.put(javaName,
-									Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
+							jsonObject.put(javaName, Enum.valueOf((Class<? extends Enum>) field.getType(), (String) value));
 						} else {
 							jsonObject.put(javaName, field.isObject() ? new JSONObject((String) value) : value);
 						}
-						break;
+					}
 				}
 			} catch (ClassCastException cce) {
 				throw new DD4StorageException("Error reading column: " + colName, cce);
@@ -402,22 +385,65 @@ public class DAOCloudDS implements DAO {
 			}
 		}
 
-		switch (filter.getOperator()) {
-			case "<":
-				return new FilterPredicate(fieldName, FilterOperator.LESS_THAN, value);
-			case "<=":
-				return new FilterPredicate(fieldName, FilterOperator.LESS_THAN_OR_EQUAL, value);
-			case "=":
-			case "":
-				return new FilterPredicate(fieldName, FilterOperator.EQUAL, value);
-			case ">=":
-				return new FilterPredicate(fieldName, FilterOperator.GREATER_THAN_OR_EQUAL, value);
-			case ">":
-				return new FilterPredicate(fieldName, FilterOperator.GREATER_THAN, value);
-			case "IN":
-				return new FilterPredicate(fieldName, FilterOperator.IN, value);
-			default:
-				throw new IllegalArgumentException("Unknown operator " + filter.getOperator());
+		return switch (filter.getOperator()) {
+			case "<" -> new FilterPredicate(fieldName, FilterOperator.LESS_THAN, value);
+			case "<=" -> new FilterPredicate(fieldName, FilterOperator.LESS_THAN_OR_EQUAL, value);
+			case "=", "" -> new FilterPredicate(fieldName, FilterOperator.EQUAL, value);
+			case ">=" -> new FilterPredicate(fieldName, FilterOperator.GREATER_THAN_OR_EQUAL, value);
+			case ">" -> new FilterPredicate(fieldName, FilterOperator.GREATER_THAN, value);
+			case "IN" -> new FilterPredicate(fieldName, FilterOperator.IN, value);
+			default -> throw new IllegalArgumentException("Unknown operator " + filter.getOperator());
+		};
+	}
+
+	private static <T> Comparator<T> getComparator(Class<T> c, Query query) {
+		if (query.getOrderBys().isEmpty()) {
+			 return (o1, o2) -> 0;
+		}
+
+		Comparator<T> comparator = getComparator(c, query.getOrderBys().get(0));
+		for (int ob = 1; ob < query.getOrderBys().size(); ob++) {
+			comparator = comparator.thenComparing(getComparator(c, query.getOrderBys().get(ob)));
+		}
+
+		return comparator;
+	}
+
+	private static <T> Comparator<T> getComparator(Class<T> c, Query.OrderBy orderBy) {
+		Method method = getMethod(c, orderBy);
+		return (c1, c2) -> {
+			try {
+				Object o1 = method.invoke(c1);
+				Object o2 = method.invoke(c2);
+				if (o1 == null && o2 == null) {
+					return 0;
+				} else if (o1 == null) {
+					return -1;
+				} else if (o2 == null) {
+					return 1;
+				} else if (o1 instanceof Integer integer) {
+					return integer.compareTo((Integer) o2);
+				} else if (o1 instanceof Double d) {
+					return d.compareTo((Double) o2);
+				}
+				return o1.toString().compareTo(o2.toString()) * (orderBy.getDesc() ? -1 : 1);
+			} catch (IllegalAccessException | InvocationTargetException e) {
+				throw new RuntimeException(e);
+			}
+		};
+	}
+
+	private static <T> Method getMethod(Class<T> c, Query.OrderBy orderBy) {
+		String columnName = orderBy.getColumn();
+		try {
+			return c.getMethod("get" + columnName.substring(0, 1).toUpperCase() + columnName.substring(1));
+		} catch (NoSuchMethodException e) {
+			// Fall out and try the name without the get.
+		}
+		try {
+			return c.getMethod(columnName);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException(e);
 		}
 	}
 }

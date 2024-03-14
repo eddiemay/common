@@ -1,10 +1,8 @@
 package com.digitald4.common.storage;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.collect.ImmutableList;
-import java.util.function.Function;
 
 public class QueryResult<T> {
 	private final ImmutableList<T> items;
@@ -19,13 +17,6 @@ public class QueryResult<T> {
 
 	public static <T> QueryResult<T> of(Iterable<T> results, int totalSize, Query query) {
 		return new QueryResult<>(results, totalSize, query);
-	}
-
-	public static <I, T> QueryResult<T> transform(QueryResult<I> queryResult, Function<I, T> function) {
-		return new QueryResult<>(
-				queryResult.getItems().stream().map(function).collect(toImmutableList()),
-				queryResult.getTotalSize(),
-				queryResult.query());
 	}
 
 	public ImmutableList<T> getItems() {
