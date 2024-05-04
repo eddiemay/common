@@ -1,21 +1,18 @@
-com.digitald4.common.TableController = function($scope, apiConnector) {
-  var metadata = this.metadata || $scope.metadata;
-  if (this.metadata) {
-    console.log(this.metadata);
-    this.pageSize = metadata.pageSize || "50";
-  }
+com.digitald4.common.TableController = function(apiConnector) {
   this.pageToken = 1;
+  var metadata = this.metadata;
   var base = metadata.base || {};
   this.title = metadata.title || base.title;
   this.columns = metadata.columns || base.columns;
   this.filter = metadata.filter || base.filter;
   this.orderBy = metadata.orderBy || base.orderBy;
+  this.pageSize = metadata.pageSize || base.pageSize || '50';
   this.jsonService = new com.digitald4.common.JSONService(metadata.entity || base.entity, apiConnector);
   metadata.refresh = this.refresh.bind(this);
   this.refresh();
 }
 
-com.digitald4.common.TableCtrl = ['$scope', 'apiConnector', com.digitald4.common.TableController];
+com.digitald4.common.TableCtrl = ['apiConnector', com.digitald4.common.TableController];
 
 com.digitald4.common.TableController.prototype.previous = function() {
   if (this.pageToken > 1) {

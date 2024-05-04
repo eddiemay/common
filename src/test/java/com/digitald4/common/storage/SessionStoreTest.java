@@ -59,7 +59,7 @@ public class SessionStoreTest {
       fail("Should not have got here");
     } catch (DD4StorageException e) {
       assertEquals(400, e.getErrorCode());
-      assertEquals("None encrypted password detected. Passwords must be encrypted", e.getMessage());
+      assertEquals("None encrypted password detected. Must be encrypted", e.getMessage());
     }
   }
 

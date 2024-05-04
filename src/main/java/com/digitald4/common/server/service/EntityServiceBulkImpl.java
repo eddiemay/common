@@ -15,26 +15,24 @@ import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntityServiceImpl<T, I>
-    implements BulkCreateable<T>, BulkGetable<T,I>, BulkUpdateable<T,I>, BulkDeleteable<T,I> {
-
-  public EntityServiceBulkImpl(Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
-    super(store, loginResolver, requiresLoginDefault);
-  }
+    implements /*BulkCreateable<T>,*/ BulkGetable<T,I>, BulkUpdateable<T,I>, BulkDeleteable<T,I> {
 
   public EntityServiceBulkImpl(Store<T,I> store, LoginResolver loginResolver) {
     super(store, loginResolver);
   }
 
-  @Override
+  /* @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchCreate")
-  public ImmutableList<T> batchCreate(Iterable<T> entities, @Nullable @Named("idToken") String idToken)
-      throws ServiceException {
+  public ImmutableList<T> batchCreate(
+      IterableParam<T> entities, @Nullable @Named("idToken") String idToken) throws ServiceException {
     try {
       resolveLogin(idToken,"batchCreate");
-      return getStore().create(entities);
+      return getStore().create(entities.getItems());
     } catch (DD4StorageException e) {
       e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);
@@ -42,15 +40,15 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
       e.printStackTrace();
       throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
     }
-  }
+  } */
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchGet")
-  public MultiListResult<T, I> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken)
+  public MultiListResult<T, I> batchGet(IterableParam<I> ids, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken, "batchGet");
-      return getStore().get(ids);
+      return getStore().get(ids.getItems());
     } catch (DD4StorageException e) {
       e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);

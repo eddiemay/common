@@ -14,19 +14,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, Listable<T>, Updateable<T,I>, Deleteable<T,I> {
-
 	private final Store<T,I> store;
 	private final LoginResolver loginResolver;
-	private final boolean requiresLoginDefault;
-
-	public EntityServiceImpl(Store<T,I> store, LoginResolver loginResolver, boolean requiresLoginDefault) {
-		this.store = store;
-		this.loginResolver = loginResolver;
-		this.requiresLoginDefault = requiresLoginDefault;
-	}
 
 	public EntityServiceImpl(Store<T,I> store, LoginResolver loginResolver) {
-		this(store, loginResolver, true);
+		this.store = store;
+		this.loginResolver = loginResolver;
 	}
 
 	protected Store<T,I> getStore() {
@@ -147,7 +140,7 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 	}
 
 	protected boolean requiresLogin(String method) {
-		return requiresLoginDefault;
+		return true;
 	}
 
 	protected void resolveLogin(String idToken, boolean requiresLogin) {

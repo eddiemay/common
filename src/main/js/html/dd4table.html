@@ -31,7 +31,7 @@
           <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}</a></span>
           <span data-ng-if="col.button">
             <button data-ng-click="col.button.action(entity)" data-ng-disabled="col.button.disabled(entity)">
-              {{col.button.display}}
+              {{col.button.display(entity)}}
             </button>
           </span>
           <span data-ng-if="col.type == 'address'">{{entity[col.prop].address}}</span>
@@ -57,21 +57,10 @@
     <li><label>Show
       <select data-ng-model="$ctrl.pageSize" data-ng-change="$ctrl.refresh()">
         <option value="25">25</option>
-        <option value="50">50</option
-        ><option value="100">100</option>
-        ><option value="200">200</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
       </select> entries</label>
     </li>
   </ul>
-  <div class="block-footer clearfix">
-    <div class="float-left">
-      <label>Show
-        <select data-ng-model="$ctrl.pageSize" data-ng-change="$ctrl.refresh()">
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value="200">200</option>
-        </select> entries</label>
-    </div>
-  </div>
 </div>

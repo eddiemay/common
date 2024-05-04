@@ -47,7 +47,7 @@ public class DAOCloudDSTest {
 		helper.setUp();
 		changeTracker = new ChangeTracker(() -> dao, () -> ACTIVE_USER, searchIndexer, clock);
 		dao = new DAOCloudDS(
-				DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer);
+				DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer, () -> DAOCloudDS.Context.TEST);
 		fillDatabase();
 	}
 

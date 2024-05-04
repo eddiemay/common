@@ -14,6 +14,8 @@ import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.api.server.spi.response.UnauthorizedException;
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.servlet.http.HttpServletRequest;
 import java.util.stream.IntStream;
 
 /** The Echo API which Endpoints will be exposing. */
@@ -33,9 +35,12 @@ import java.util.stream.IntStream;
 )
 
 public class Echo {
+	private final Provider<HttpServletRequest> requestProvider;
 
 	@Inject
-	public Echo() {}
+	public Echo(Provider<HttpServletRequest> requestProvider) {
+		this.requestProvider = requestProvider;
+	}
 
 	/**
 	 * Echoes the received message back. If n is a non-negative integer, the message is copied that
@@ -56,6 +61,14 @@ public class Echo {
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "hello")
 	public EchoMessage echoHello(@Named("n") @Nullable Integer n) {
 		return doEcho(new EchoMessage().setMessage("hello"), n);
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "info")
+	public EchoMessage info() {
+		HttpServletRequest request = requestProvider.get();
+		return new EchoMessage().setMessage(
+				String.format("Method: %s, URL: %s, URI: %s, Server Name: %s",
+						request.getMethod(), request.getRequestURL(), request.getRequestURI(), request.getServerName()));
 	}
 
 	/**
@@ -90,10 +103,7 @@ public class Echo {
 
 	private EchoMessage doEcho(EchoMessage message, Integer n) {
 		if (n != null && n > 0) {
-			return message.setMessage(
-					IntStream.of(n)
-							.mapToObj(num -> message.getMessage())
-							.collect(joining(" ")));
+			return message.setMessage(IntStream.of(n).mapToObj(num -> message.getMessage()).collect(joining(" ")));
 		}
 		return message;
 	}

@@ -57,7 +57,7 @@ public class ApiServiceServlet extends HttpServlet {
 
 	public ApiServiceServlet() {
 		userStore = new GenericUserStore<>(BasicUser.class, daoProvider);
-		passwordStore = new PasswordStore(daoProvider, clock);
+		passwordStore = new PasswordStore(daoProvider);
 
 		sessionStore = new SessionStore<>(
 				daoProvider, userStore, passwordStore, userProvider, Duration.ofMinutes(30), true, clock);
@@ -95,7 +95,7 @@ public class ApiServiceServlet extends HttpServlet {
 			ChangeTracker changeTracker =
 					new ChangeTracker(daoProvider, userProvider, searchIndexer, clock);
 			dao = new DAOCloudDS(
-					DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer);
+					DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer, () -> DAOCloudDS.Context.NONE);
 		}
 	}
 

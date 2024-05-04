@@ -2,15 +2,19 @@ package com.digitald4.common.server;
 
 import com.digitald4.common.model.*;
 import com.digitald4.common.storage.*;
+import com.digitald4.common.storage.DAOCloudDS.Context;
 import com.google.api.control.ServiceManagementConfigFilter;
 import com.google.api.control.extensions.appengine.GoogleAppEngineControlFilter;
 import com.google.api.server.spi.guice.EndpointsModule;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import java.time.Clock;
+import javax.inject.Provider;
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 
 public class EndPointsModule extends EndpointsModule {
 	private static final String DEFAULT_API_URL_PATTERN = "/_api/*";
@@ -54,5 +58,11 @@ public class EndPointsModule extends EndpointsModule {
 		bind(DAO.class).to(DAOCloudDS.class);
 
 		bind(new TypeLiteral<Store<DataFile, String>>(){}).to(new TypeLiteral<GenericStore<DataFile, String>>(){});
+		bind(new TypeLiteral<Store<Flag, String>>(){}).to(new TypeLiteral<GenericStore<Flag, String>>(){});
+	}
+
+	@Provides
+	public static Context contextProvider(Provider<HttpServletRequest> requestProvider) {
+		return requestProvider.get().getServerName().startsWith("test") ? Context.TEST : Context.NONE;
 	}
 }

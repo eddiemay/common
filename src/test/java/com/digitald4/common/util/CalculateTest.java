@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Diff;
 import org.joda.time.DateTime;
+import org.json.JSONObject;
 import org.junit.Test;
 
 public class CalculateTest {
@@ -185,5 +186,46 @@ public class CalculateTest {
 	public void splitCSV() {
 		assertThat(Calculate.splitCSV("1223,Bob,Smith,,62,\"Young, Barry\",,"))
 				.containsExactly("1223", "Bob", "Smith", "", "62", "Young, Barry", "", "").inOrder();
+	}
+
+	@Test
+	public void splitCSVWithLineBreaks() {
+		assertThat(Calculate.splitCSV("1223,Bob,Smith,,62,\"Young, Barry\",\"This is a note\nabout this user\nBy me.\","))
+				.containsExactly("1223", "Bob", "Smith", "", "62", "Young, Barry", "This is a note\nabout this user\nBy me.", "").inOrder();
+	}
+
+	@Test
+	public void jsonFromCSVWithLineBreaks() {
+		String content = """
+				Year,Make,Model,Engine,Horse Power,Description
+				2005,Kia,Soul,4 Stroke,200HP,The Kia Soul is a little box car that is pretty cool,
+				2015,Kia,Soul EV,Electric,250HP,"Kia released a EV model of it's Kia Soul, it has done very well",
+				2020,Tesla,Model 3,Electric,320HP,"The Tesla Model 3 is the lowest end car Tesla makes, it is designed to be
+				a cheap car that a lot of people can afford.
+				
+				When it was first announced it was supposed to cost only $35,000USD however you would need to spend about $49K
+				to get one when they first came out. Since then Tesla has dropped the price and lots are selling making it the
+				most popular car to buy in America.",
+				2015,Jeep,Wrangler,,,"This would be a good island vechile, can drive through flooding.
+				Just need to make sure it is working correctly"
+				""";
+		assertThat(Calculate.jsonFromCSV(content)).containsExactly(
+				new JSONObject().put("Year", "2005").put("Make", "Kia").put("Model", "Soul").put("Engine", "4 Stroke")
+						.put("Horse Power", "200HP").put("Description", "The Kia Soul is a little box car that is pretty cool"),
+				new JSONObject().put("Year", "2015").put("Make", "Kia").put("Model", "Soul EV").put("Engine", "Electric")
+						.put("Horse Power", "250HP")
+						.put("Description", "Kia released a EV model of it's Kia Soul, it has done very well"),
+				new JSONObject().put("Year", "2020").put("Make", "Tesla").put("Model", "Model 3").put("Engine", "Electric")
+						.put("Horse Power", "320HP")
+						.put("Description", "The Tesla Model 3 is the lowest end car Tesla makes, it is designed to be\n" +
+								"a cheap car that a lot of people can afford.\n" +
+								"\n" +
+								"When it was first announced it was supposed to cost only $35,000USD however you would need to spend about $49K\n" +
+								"to get one when they first came out. Since then Tesla has dropped the price and lots are selling making it the\n" +
+								"most popular car to buy in America."),
+				new JSONObject().put("Year","2015").put("Make", "Jeep").put("Model", "Wrangler")
+						.put("Description", "This would be a good island vechile, can drive through flooding.\n" +
+								"Just need to make sure it is working correctly")
+		);
 	}
 }

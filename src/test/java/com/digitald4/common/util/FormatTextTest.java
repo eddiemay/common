@@ -22,4 +22,10 @@ public class FormatTextTest {
     // assertThat(FormatText.toUpperCamel("helloThere")).isEqualTo("HelloThere");
     // assertThat(FormatText.toUpperCamel("HelloThere")).isEqualTo("HelloThere");
   }
+
+  @Test
+  public void removeAccents() {
+    assertThat(FormatText.removeAccents("āăąēîïĩíĝġńñšŝśûůŷ")).isEqualTo("aaaeiiiiggnnsssuuy");
+    assertThat(FormatText.removeAccents("Μὴ")).isEqualTo("Μη");
+  }
 }

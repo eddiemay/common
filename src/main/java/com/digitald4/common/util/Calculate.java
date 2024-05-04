@@ -22,18 +22,20 @@
  */
 package com.digitald4.common.util;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.lang.Thread.sleep;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.collect.ImmutableList;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
+import java.util.*;
 import java.sql.Time;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,6 +43,7 @@ import java.util.stream.IntStream;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch.Diff;
 import org.joda.time.DateTime;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 
@@ -679,7 +682,7 @@ public class Calculate {
 		for (int i = 0; i < line.length(); i++) {
 			char c = line.charAt(i);
 			if (c == ',' && !withinQuotes) {
-				values.add(currentValue.toString());
+				values.add(currentValue.toString().replaceAll("\u00a0", " ").trim());
 				currentValue = new StringBuilder();
 			} else if (c == '"') {
 				withinQuotes = !withinQuotes;
@@ -688,13 +691,65 @@ public class Calculate {
 			}
 		}
 
-		return values.add(currentValue.toString()).build();
+		return values.add(currentValue.toString().replaceAll("\u00a0", " ").trim()).build();
+	}
+
+	public static ImmutableList<JSONObject> jsonFromCSV(String csvContent) {
+		HashSet<String> usedNames = new HashSet<>();
+		String[] lines = csvContent.split("\n");
+		ImmutableList<String> colNames = splitCSV(lines[0]).stream()
+				.map(name -> !usedNames.contains(name) ? name : name + "_1")
+				.map(name -> !usedNames.contains(name) ? name : name.substring(0, name.length() - 1) + "2")
+				.map(name -> !usedNames.contains(name) ? name : name.substring(0, name.length() - 1) + "3")
+				.peek(usedNames::add)
+				.collect(toImmutableList());
+		ImmutableList.Builder<JSONObject> results = ImmutableList.builder();
+		StringBuilder value = new StringBuilder();
+		JSONObject json = new JSONObject();
+		boolean withinQuotes = false;
+		int prop = 0;
+		String line = null;
+		int l = 1;
+		try {
+			while (l < lines.length) {
+				line = lines[l++];
+				for (int i = 0; i < line.length(); i++) {
+					char c = line.charAt(i);
+					if (c == ',' && !withinQuotes) {
+						if (value.length() > 0) {
+							json.put(colNames.get(prop), value.toString().replaceAll("\u00a0", " ").trim());
+							value = new StringBuilder();
+						}
+						prop++;
+					} else if (c == '"') {
+						withinQuotes = !withinQuotes;
+					} else {
+						value.append(c);
+					}
+				}
+
+				if (!withinQuotes) {
+					if (value.length() > 0) {
+						json.put(colNames.get(prop), value.toString().replaceAll("\u00a0", " ").trim());
+						value = new StringBuilder();
+					}
+					results.add(json);
+					json = new JSONObject();
+					prop = 0;
+				} else {
+					value.append("\n");
+				}
+			}
+			return results.build();
+		} catch (Exception e) {
+			throw new RuntimeException(String.format("Error parsing csv data, line: %d %s", l, line), e);
+		}
 	}
 
 	public static JSONObject jsonFromCSV(Iterable<String> colNames, String line) {
+		ImmutableList<String> _colNames = ImmutableList.copyOf(colNames);
 		ImmutableList<String> values = splitCSV(line);
 		JSONObject json = new JSONObject();
-		ImmutableList<String> _colNames = ImmutableList.copyOf(colNames);
 		IntStream.range(0, values.size()).forEach(index -> {
 			if (!values.get(index).isEmpty()) {
 				json.put(_colNames.get(index), values.get(index));

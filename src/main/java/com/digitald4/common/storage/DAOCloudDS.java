@@ -1,7 +1,6 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.appengine.api.datastore.FetchOptions.Builder.withDefaults;
 import static com.google.appengine.api.datastore.KeyFactory.createKey;
 import static com.google.common.collect.Streams.stream;
 
@@ -31,21 +30,26 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
+import javax.inject.Provider;
 
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class DAOCloudDS implements DAO {
+	public enum Context {PROD, TEST, NONE};
 	private final DatastoreService datastoreService;
 	private final ChangeTracker changeTracker;
 	private final SearchIndexer searchIndexer;
+	private final Provider<Context> contextProvider;
 
 	@Inject
-	public DAOCloudDS(DatastoreService datastoreService, ChangeTracker changeTracker, SearchIndexer searchIndexer) {
+	public DAOCloudDS(DatastoreService datastoreService, ChangeTracker changeTracker, SearchIndexer searchIndexer,
+										Provider<Context> contextProvider) {
 		this.datastoreService = datastoreService;
 		this.changeTracker = changeTracker;
 		this.searchIndexer = searchIndexer;
+		this.contextProvider = contextProvider;
 	}
 
 	@Override
@@ -67,7 +71,7 @@ public class DAOCloudDS implements DAO {
 					items.stream().map(item -> {
 						JSONObject json = new JSONObject(item);
 						Object id = json.opt("id");
-						Entity entity = createEntity(item.getClass().getSimpleName(), id);
+						Entity entity = createEntity(getTableName(item.getClass()), id);
 						json.keySet().forEach(fieldName -> setObject(entity, json, fieldName, fields));
 						return entity;
 					}).collect(toImmutableList()));
@@ -83,7 +87,7 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T, I> T get(Class<T> c, I id) {
-		return Calculate.executeWithRetries(2, () -> get(c, createFactorKey(c.getSimpleName(), id)));
+		return Calculate.executeWithRetries(2, () -> get(c, createFactorKey(getTableName(c), id)));
 	}
 
 	@Override
@@ -108,14 +112,14 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
-		String kind = c.getSimpleName();
+		String kind = getTableName(c);
 		ImmutableMap<String, Field> fields = JSONUtil.getFields(c);
 		return Calculate.executeWithRetries(2, () -> {
 				BulkGetable.MultiListResult<T, I> getResults = getEntities(c, ids);
 				if (!getResults.getMissingIds().isEmpty()) {
 					throw new DD4StorageException(
 							String.format("One or more items not found while fetching: %s. Requested: %d, found: %d, missing ids: %s",
-									c.getSimpleName(), Iterables.size(ids), getResults.getItems().size(), getResults.getMissingIds()),
+									kind, Iterables.size(ids), getResults.getItems().size(), getResults.getMissingIds()),
 							ErrorCode.NOT_FOUND);
 				}
 				ImmutableList<T> items = getResults.getItems().stream().map(updater).collect(toImmutableList());
@@ -148,6 +152,11 @@ public class DAOCloudDS implements DAO {
 		});
 	}
 
+	private String getTableName(Class<?> c) {
+		Context context = contextProvider.get();
+		return (context == Context.NONE) ? c.getSimpleName() : String.format("%s.%s", context.name(), c.getSimpleName());
+	}
+
 	private static Entity createEntity(String kind, Object id) {
 		if (id instanceof Long && (Long) id > 0L) {
 			return new Entity(kind, (Long) id);
@@ -161,8 +170,7 @@ public class DAOCloudDS implements DAO {
 		try {
 			return convert(c, datastoreService.get(key));
 		} catch (EntityNotFoundException e) {
-			throw new DD4StorageException(
-					"Error fetching item: " + c.getSimpleName() + ":" + key.getId(), e, ErrorCode.NOT_FOUND);
+			throw new DD4StorageException("Error fetching: " + getTableName(c) + ":" + key.getId(), e, ErrorCode.NOT_FOUND);
 		}
 	}
 
@@ -170,8 +178,8 @@ public class DAOCloudDS implements DAO {
 		return (id instanceof Long) ? createKey(kind, (Long) id) : createKey(kind, id.toString());
 	}
 
-	private static <T,I> ImmutableList<Key> createFactorKeys(Class<T> c, Iterable<I> ids) {
-		String kind = c.getSimpleName();
+	private <T,I> ImmutableList<Key> createFactorKeys(Class<T> c, Iterable<I> ids) {
+		String kind = getTableName(c);
 		return stream(ids).map(id -> createFactorKey(kind, id)).collect(toImmutableList());
 	}
 
@@ -182,7 +190,7 @@ public class DAOCloudDS implements DAO {
 	}
 
 	private <T> QueryResult<T> listEntities(Class<T> c, Query.List query) {
-		com.google.appengine.api.datastore.Query eQuery = new com.google.appengine.api.datastore.Query(c.getSimpleName());
+		com.google.appengine.api.datastore.Query eQuery = new com.google.appengine.api.datastore.Query(getTableName(c));
 		if (!query.getFilters().isEmpty()) {
 			if (query.getFilters().size() == 1) {
 				eQuery.setFilter(convertToPropertyFilter(c, query.getFilters().get(0)));
@@ -195,7 +203,7 @@ public class DAOCloudDS implements DAO {
 		}
 		// query.getOrderBys().forEach(orderBy -> eQuery.addSort(orderBy.getColumn(), orderBy.getDesc() ? DESCENDING : ASCENDING));
 
-		var allResults = datastoreService.prepare(eQuery).asList(withDefaults());
+		var allResults = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(4096));
 
 		Integer limit = query.getLimit();
 		if (limit == null || limit == 0) {
@@ -270,8 +278,7 @@ public class DAOCloudDS implements DAO {
 			String javaName = FormatText.toLowerCamel(colName);
 			Field field = fieldMap.get(javaName);
 			if (field == null) {
-				throw new DD4StorageException(
-						"Unknown field: " + javaName + " for Object: " + c.getSimpleName());
+				throw new DD4StorageException("Unknown field: " + javaName + " for Object: " + c.getSimpleName());
 			}
 
 			if (field.getSetMethod() == null) {

@@ -24,10 +24,7 @@ package com.digitald4.common.util;
 
 import com.google.common.collect.ImmutableList;
 import java.sql.Time;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.text.*;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
@@ -42,7 +39,6 @@ import org.joda.time.DateTime;
  * @version 2.0
  */
 public class FormatText {
-
   public final static SimpleDateFormat DB_DATE = new SimpleDateFormat("dd-MMM-yy");
   public final static SimpleDateFormat MYSQL_DATE = new SimpleDateFormat("yyyy-MM-dd");
   public final static SimpleDateFormat MYSQL_DATETIME = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -136,13 +132,12 @@ public class FormatText {
    *
    * @return String The string in Capitalized format.
    */
-  public static String printCapitalized(String str) {
+  public static String toCapitalized(String str) {
     StringBuilder builder = new StringBuilder();
     char prevCh = '.';   // The character that comes before ch in the string.
     for (int i = 0; i < str.length(); i++) {
       char ch = str.charAt(i);
-      builder.append(
-          Character.isLetter(ch) && !Character.isLetter(prevCh) ? Character.toUpperCase(ch) : ch);
+      builder.append(Character.isLetter(ch) && !Character.isLetter(prevCh) ? Character.toUpperCase(ch) : ch);
       prevCh = ch;
     }
 
@@ -357,5 +352,9 @@ public class FormatText {
       result = millis + "ms";
     }
     return result;
+  }
+
+  public static String removeAccents(String input) {
+    return Normalizer.normalize(input, Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
   }
 }

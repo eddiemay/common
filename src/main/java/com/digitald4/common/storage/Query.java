@@ -9,6 +9,7 @@ import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.google.common.collect.ImmutableList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Query {
   private static final Pattern FILTER_PATTERN =
@@ -144,6 +145,10 @@ public class Query {
       super.setPageToken(offset);
       return this;
     }
+
+    public String toString() {
+      return filters.stream().map(Filter::toString).collect(Collectors.joining(","));
+    }
   }
 
   public static class Search extends Query {
@@ -212,6 +217,10 @@ public class Query {
 
     public <T> T getVal() {
       return (T) value;
+    }
+
+    public String toString() {
+      return String.format("%s %s %s", column, operator == null ? "=" : operator, value);
     }
   }
 

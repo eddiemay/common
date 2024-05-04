@@ -6,7 +6,6 @@ import com.digitald4.common.model.DataFile;
 import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.Api;
-import com.google.api.server.spi.config.ApiIssuer;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
 import com.google.api.server.spi.config.ApiNamespace;
@@ -30,11 +29,7 @@ import javax.servlet.http.Part;
 @Api(
 		name = "files",
 		version = "v1",
-		namespace =
-		@ApiNamespace(
-				ownerDomain = "dd4common.digitald4.com",
-				ownerName = "dd4common.digitald4.com"
-		)
+		namespace = @ApiNamespace(ownerDomain = "dd4common.digitald4.com", ownerName = "dd4common.digitald4.com")
 )
 @MultipartConfig(
 		fileSizeThreshold=1024*1024*10, maxFileSize=1024*1024*32, maxRequestSize=1024*1024*32)
@@ -46,10 +41,9 @@ public class FileService extends EntityServiceImpl<DataFile, String> {
 	protected final Provider<HttpServletResponse> responseProvider;
 
 	@Inject
-	public FileService(
-			Store<DataFile, String> dataFileStore, LoginResolver loginResolver,
+	public FileService(Store<DataFile, String> dataFileStore, LoginResolver loginResolver,
 			Provider<HttpServletRequest> requestProvider, Provider<HttpServletResponse> responseProvider) {
-		super(dataFileStore, loginResolver, true);
+		super(dataFileStore, loginResolver);
 		this.dataFileStore = dataFileStore;
 		this.requestProvider = requestProvider;
 		this.responseProvider = responseProvider;

@@ -61,6 +61,9 @@ public class DAOInMemoryImpl implements DAO {
       results = results.parallelStream()
           .filter(json -> {
             Object value = json.opt(field);
+            if (value == null) {
+              return false;
+            }
             Object filterValue = filter.getValue();
             return switch (filter.getOperator()) {
               case "<" -> ((Comparable) value).compareTo(filterValue) < 0;

@@ -10,3 +10,8 @@ notifyError = function(error) {
 
   notify(error);
 }
+
+setDialogStyle = function(ctrl) {
+	ctrl.dialogStyle = {top: 0};
+	// ctrl.dialogStyle = {top: ctrl.window.visualViewport.pageTop + 50};
+}

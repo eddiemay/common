@@ -14,20 +14,7 @@ import static com.google.common.collect.Streams.stream;
 
 public interface BulkGetable<T,I> extends EntityService<T> {
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-  MultiListResult<T, I> batchGet(Iterable<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException;
-
-  class BulkGetRequest<I> {
-    private ImmutableList<I> ids;
-
-    public ImmutableList<I> getIds() {
-      return ids;
-    }
-
-    public BulkGetRequest<I> setIds(Iterable<I> ids) {
-      this.ids = ImmutableList.copyOf(ids);
-      return this;
-    }
-  }
+  MultiListResult<T, I> batchGet(IterableParam<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException;
 
   class MultiListResult<T, I> {
     private final ImmutableList<T> items;

@@ -672,6 +672,11 @@ public class JSONObject {
         "] not a string.");
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof JSONObject && toString().equals(obj.toString());
+  }
+
 
   /**
    * Determine if the JSONObject contains a specific key.

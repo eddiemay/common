@@ -17,9 +17,6 @@ com.digitald4.common.UserController.prototype.refresh = function() {
 com.digitald4.common.UserController.prototype.update = function(prop) {
   this.userService.update(this.user, [prop], function(user) {
     this.user = user;
-    if (this.password) {
-
-    }
   }.bind(this));
 }
 

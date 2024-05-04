@@ -18,7 +18,7 @@ public class ModelObject<ID> {
 
   @Override
   public boolean equals(Object obj) {
-    return Objects.equals(toString(), obj.toString());
+    return Objects.equals(JSONUtil.toJSON(this).toString(), JSONUtil.toJSON(obj).toString());
   }
 
   @Override

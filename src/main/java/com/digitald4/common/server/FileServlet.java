@@ -1,9 +1,7 @@
 package com.digitald4.common.server;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.DataFile;
 import com.digitald4.common.model.FileReference;
 import com.digitald4.common.model.User;
@@ -13,7 +11,6 @@ import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.storage.GenericStore;
-import com.digitald4.common.storage.GenericUserStore;
 import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.common.storage.PasswordStore;
 import com.digitald4.common.storage.SearchIndexer;
@@ -21,7 +18,6 @@ import com.digitald4.common.storage.SearchIndexerAppEngineImpl;
 import com.digitald4.common.storage.SessionStore;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.storage.UserStore;
-import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import java.io.ByteArrayOutputStream;
@@ -37,7 +33,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -70,7 +65,7 @@ public class FileServlet extends HttpServlet {
   @Override
   public void init() throws ServletException {
     super.init();
-    PasswordStore passwordStore = new PasswordStore(daoProvider, clock);
+    PasswordStore passwordStore = new PasswordStore(daoProvider);
     loginResolver = new SessionStore<>(
         daoProvider, userStore, passwordStore, userProvider, Duration.ofMinutes(30), false, clock);
     ServletContext sc = getServletContext();
@@ -92,7 +87,7 @@ public class FileServlet extends HttpServlet {
       ChangeTracker changeTracker =
           new ChangeTracker(daoProvider, userProvider, searchIndexer, clock);
       dao = new DAOCloudDS(
-          DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer);
+          DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer, () -> DAOCloudDS.Context.NONE);
     }
   }
 

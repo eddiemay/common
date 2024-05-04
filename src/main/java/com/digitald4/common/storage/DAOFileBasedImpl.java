@@ -27,7 +27,7 @@ public class DAOFileBasedImpl extends DAOInMemoryImpl {
         items.put(entry.getString("idString"), entry.getJSONObject("entity"));
       }
     } catch (FileNotFoundException fnfe) {
-      System.out.println("Load file not found, continuing");
+      System.out.printf("File: %s not found, continuing\n", fileName);
     } catch (IOException ioe) {
       throw new DD4StorageException("Error reading load file", ioe, ErrorCode.INTERNAL_SERVER_ERROR);
     }
