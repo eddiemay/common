@@ -36,7 +36,7 @@ public class ChangeTrackerTest {
     when(clock.millis()).thenReturn(1000L);
     when(dao.create(any(Object.class))).then(i -> i.getArgument(0));
     when(dao.create(anyList())).then(i -> i.getArgument(0));
-    changeTracker = new ChangeTracker(() -> dao, () -> user, searchIndexer, clock);
+    changeTracker = new ChangeTracker(() -> dao, () -> user, null, searchIndexer, clock);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class ChangeTrackerTest {
 
   @Test
   public void withTestDao() {
-    changeTracker = new ChangeTracker(testDaoProvider, () -> user, searchIndexer, clock);
+    changeTracker = new ChangeTracker(testDaoProvider, () -> user, null, searchIndexer, clock);
     testingDao = new DAOTestingImpl(changeTracker);
 
     ChangeTrackableUser trackable =

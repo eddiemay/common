@@ -43,6 +43,7 @@ public class FormatText {
   public final static SimpleDateFormat MYSQL_DATE = new SimpleDateFormat("yyyy-MM-dd");
   public final static SimpleDateFormat MYSQL_DATETIME = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   public final static SimpleDateFormat BUILD_DATE = new SimpleDateFormat("yyyyMMdd");
+  public final static SimpleDateFormat BUILD_DATETIME = new SimpleDateFormat("yyyyMMdd_HHmmss");
   public final static SimpleDateFormat DB_DATETIME = new SimpleDateFormat("dd-MMM-yy HH:mm:ss");
   public final static SimpleDateFormat NOTIFICATION = new SimpleDateFormat("yyyyddMMHHmmss");
   public final static SimpleDateFormat USER_DATE = new SimpleDateFormat("MM/dd/yyyy");

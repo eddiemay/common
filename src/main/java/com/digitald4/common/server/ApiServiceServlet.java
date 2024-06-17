@@ -87,13 +87,13 @@ public class ApiServiceServlet extends HttpServlet {
 							sc.getInitParameter("dburl"),
 							sc.getInitParameter("dbuser"),
 							sc.getInitParameter("dbpass")),
-					new ChangeTracker(daoProvider, userProvider, null, clock),
+					new ChangeTracker(daoProvider, userProvider, null, null, clock),
 					useViews);
 		} else {
 			// We use CloudDataStore with AppEngine.
 			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl();
 			ChangeTracker changeTracker =
-					new ChangeTracker(daoProvider, userProvider, searchIndexer, clock);
+					new ChangeTracker(daoProvider, userProvider, null, searchIndexer, clock);
 			dao = new DAOCloudDS(
 					DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer, () -> DAOCloudDS.Context.NONE);
 		}

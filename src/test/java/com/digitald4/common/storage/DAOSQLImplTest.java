@@ -29,7 +29,7 @@ public class DAOSQLImplTest {
 
 	@Before
 	public void setUp() throws SQLException {
-		changeTracker = new ChangeTracker(() -> daoSql, () -> ACTIVE_USER, searchIndexer, clock);
+		changeTracker = new ChangeTracker(() -> daoSql, () -> ACTIVE_USER, null, searchIndexer, clock);
 		daoSql = new DAOSQLImpl(connector, changeTracker);
 
 		when(connector.getConnection()).thenReturn(connection);

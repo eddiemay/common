@@ -203,7 +203,7 @@ public class DAOCloudDS implements DAO {
 		}
 		// query.getOrderBys().forEach(orderBy -> eQuery.addSort(orderBy.getColumn(), orderBy.getDesc() ? DESCENDING : ASCENDING));
 
-		var allResults = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(4096));
+		var allResults = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(2048));
 
 		Integer limit = query.getLimit();
 		if (limit == null || limit == 0) {
@@ -385,10 +385,10 @@ public class DAOCloudDS implements DAO {
 					break;
 				case "Instant":
 					value = new Date(Long.parseLong(value.toString()));
+					break;
 				default:
 					value = value instanceof Collection ?
-							((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList())
-							: value;
+							((Collection<?>) value).stream().map(Object::toString).collect(toImmutableList()) : String.valueOf(value);
 			}
 		}
 

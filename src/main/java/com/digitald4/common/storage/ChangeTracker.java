@@ -22,14 +22,16 @@ import javax.inject.Provider;
 public class ChangeTracker {
   private final Provider<DAO> daoProvider;
   private final Provider<User> userProvider;
+  private final UserStore<? extends User> userStore;
   private final SearchIndexer searchIndexer;
   private final Clock clock;
 
   @Inject
-  public ChangeTracker(Provider<DAO> daoProvider, Provider<User> userProvider,
+  public ChangeTracker(Provider<DAO> daoProvider, Provider<User> userProvider, UserStore<? extends User> userStore,
       SearchIndexer searchIndexer, Clock clock) {
     this.daoProvider = daoProvider;
     this.userProvider = userProvider;
+    this.userStore = userStore;
     this.searchIndexer = searchIndexer;
     this.clock = clock;
   }
@@ -55,13 +57,26 @@ public class ChangeTracker {
 
     if (first instanceof HasModificationUser) {
       User user = userProvider.get();
+      CachedReader cachedReader = new CachedReader(daoProvider.get());
       stream(entities)
           .map(t -> (HasModificationUser) t)
           .forEach(hasModificationUser -> {
-            if (hasModificationUser.getCreationUserId() == null) {
-              hasModificationUser.setCreationUserId(user.getId());
+            if (hasModificationUser.getCreationUserId() != null && hasModificationUser.getCreationUsername() == null) {
+              hasModificationUser.setCreationUsername(
+                  userStore.get(hasModificationUser.getCreationUserId()).getUsername());
+              hasModificationUser.setCreationUserId(null);
             }
-            hasModificationUser.setLastModifiedUserId(user.getId());
+            if (hasModificationUser.getCreationUsername() == null) {
+              hasModificationUser.setCreationUsername(user.getUsername());
+            }
+
+            if (hasModificationUser.getLastModifiedUserId() != null && hasModificationUser.getLastModifiedUsername() == null) {
+              hasModificationUser.setLastModifiedUsername(
+                  userStore.get(hasModificationUser.getLastModifiedUserId()).getUsername());
+              hasModificationUser.setLastModifiedUserId(null);
+            } else {
+              hasModificationUser.setLastModifiedUsername(user.getUsername());
+            }
           });
     }
 

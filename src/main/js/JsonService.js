@@ -96,7 +96,8 @@ com.digitald4.common.JSONService.prototype.search = function(request, onSuccess,
 /**
 * Updates a batch of objects in the data store.
 *
-* @param {Object} entity The object to update.
+* @param {Array<Object>} entities to update
+* @param {Array<Object>} props properties to update
 * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
@@ -113,6 +114,17 @@ com.digitald4.common.JSONService.prototype.batchUpdate = function(entities, prop
 	this.sendRequest(
 	    {action: 'batchUpdate', method: 'PUT', params: {updateMask: props.join()}, data: {items: updates}},
 	    onSuccess, onError);
+}
+
+/**
+* Deletes a batch of objects in the data store.
+*
+* @param {Array<String>} ids of the items to delete
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.batchDelete = function(ids, onSuccess, onError) {
+	this.sendRequest({action: 'batchDelete', method: 'PUT', params: {ids: ids.join()}}, onSuccess, onError);
 }
 
 com.digitald4.common.JSONService.prototype.getFileUrl = function(fileRef, type) {

@@ -7,7 +7,7 @@ import com.digitald4.common.storage.*;
 import org.junit.Test;
 
 public class DAOTestingImplTest {
-	private final DAOTestingImpl dao = new DAOTestingImpl(new ChangeTracker(null, null, null, null));
+	private final DAOTestingImpl dao = new DAOTestingImpl(new ChangeTracker(null, null, null, null, null));
 	private final GenericStore<BasicUser, Long> userStore = new GenericStore<>(BasicUser.class, () -> dao);
 
 	@Test

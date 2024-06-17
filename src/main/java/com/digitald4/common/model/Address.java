@@ -5,8 +5,8 @@ import com.digitald4.common.util.JSONUtil;
 public class Address {
   private String address;
   private String unit;
-  private Double latitude;
-  private Double longitude;
+  private double latitude;
+  private double longitude;
 
   public String getAddress() {
     return address;
@@ -26,21 +26,21 @@ public class Address {
     return this;
   }
 
-  public Double getLatitude() {
+  public double getLatitude() {
     return latitude;
   }
 
-  public Address setLatitude(Double latitude) {
-    this.latitude = latitude == null || latitude == 0 ? null : latitude;
+  public Address setLatitude(double latitude) {
+    this.latitude = latitude;
     return this;
   }
 
-  public Double getLongitude() {
+  public double getLongitude() {
     return longitude;
   }
 
-  public Address setLongitude(Double longitude) {
-    this.longitude = longitude == null || longitude == 0 ? null : longitude;
+  public Address setLongitude(double longitude) {
+    this.longitude = longitude;
     return this;
   }
 

@@ -1,5 +1,6 @@
 <div class="block-border">
   <h1>{{$ctrl.title}}</h1>
+  <button data-ng-show="$ctrl.showDelete" data-ng-click="$ctrl.deleteSelected()">Delete</button>
   <div data-ng-if="$ctrl.metadata" class="controls-buttons">
     <div class="sub-hover paging_simple_numbers">
       <a class="paginate_button previous" data-dt-idx="0" tabindex="0"
@@ -23,7 +24,9 @@
     </tr></thead>
     <tbody>
       <tr data-ng-repeat="entity in $ctrl.resultList.items">
-        <td class="th table-check-cell"><input type="checkbox" data-ng-model="entity.selected"></td>
+        <td class="th table-check-cell">
+          <input type="checkbox" data-ng-model="entity.selected" data-ng-change="$ctrl.onSelectionChange()">
+        </td>
         <td data-ng-repeat="col in $ctrl.columns">
           <input data-ng-if="col.editable" data-ng-model="entity[col.prop]"
                  data-on-change="$ctrl.update(entity, col.prop)"/>
@@ -62,5 +65,14 @@
         <option value="200">200</option>
       </select> entries</label>
     </li>
+    <div data-ng-if="$ctrl.metadata" class="controls-buttons">
+      <div class="sub-hover paging_simple_numbers">
+        <a class="paginate_button previous" data-dt-idx="0" tabindex="0"
+           data-ng-disabled="$ctrl.pageToken==1" data-ng-click="$ctrl.previous()">Previous</a>
+        <a class="paginate_button" data-ng-repeat="page in $ctrl.resultList.pages" data-ng-click="$ctrl.refresh(page)"
+           data-ng-class="{'current': page==$ctrl.pageToken}" data-ng-disabled="page==$ctrl.pageToken">{{page}}</a>
+        <a class="paginate_button next" data-dt-idx="7" tabindex="0" data-ng-click="$ctrl.next()">Next</a>
+      </div>
+    </div>
   </ul>
 </div>

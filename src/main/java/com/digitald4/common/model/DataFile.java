@@ -3,11 +3,12 @@ package com.digitald4.common.model;
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 
-public class DataFile {
+public class DataFile extends ModelObjectModUser<String> {
   private String name;
   private String type;
   private int size;
   private byte[] data;
+  private String comment;
 
   public String getId() {
     return getName();
@@ -52,6 +53,15 @@ public class DataFile {
   public DataFile setData(byte[] data) {
     this.data = data;
     this.size = data.length;
+    return this;
+  }
+
+  public String getComment() {
+    return comment;
+  }
+
+  public DataFile setComment(String comment) {
+    this.comment = comment;
     return this;
   }
 }

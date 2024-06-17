@@ -190,7 +190,7 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
     },
     template: '<span><label data-ng-if="label">{{label}}</label>' +
         '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10"/>' +
-        '<img src="images/icons/fugue/calendar-month.png" width="16" height="16"/></span>',
+        '&nbsp;<img src="images/icons/fugue/calendar-month.png" width="16" height="16"/></span>',
     replace: true,
     require: 'ngModel',
     link: function(scope, element, attrs) {

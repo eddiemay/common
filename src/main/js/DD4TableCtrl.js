@@ -3,6 +3,7 @@ com.digitald4.common.TableController = function(apiConnector) {
   var metadata = this.metadata;
   var base = metadata.base || {};
   this.title = metadata.title || base.title;
+  this.deleteEnabled = this.deleteEnabled || metadata.deleteEnabled || base.deleteEnabled;
   this.columns = metadata.columns || base.columns;
   this.filter = metadata.filter || base.filter;
   this.orderBy = metadata.orderBy || base.orderBy;
@@ -57,11 +58,11 @@ com.digitald4.common.TableController.prototype.setSort = function(col) {
 }
 
 com.digitald4.common.TableController.prototype.update = function(entity, prop) {
-  this.loading = this.scope.loading = true;
+  this.loading = true;
   var index = this.resultList.items.indexOf(entity);
   this.jsonService.update(entity, [prop], function(entity) {
     this.resultList.items.splice(index, 1, entity);
-    this.loading = this.scope.loading = false;
+    this.loading = false;
   }.bind(this));
 }
 
@@ -73,4 +74,35 @@ com.digitald4.common.TableController.prototype.getDate = function(value) {
   }
 
   return value;
+}
+
+com.digitald4.common.TableController.prototype.onSelectionChange = function() {
+	this.showDelete = undefined;
+	if (this.deleteEnabled) {
+		for (var i = 0; i < this.resultList.items.length; i++) {
+			if (this.resultList.items[i].selected) {
+				this.showDelete = true;
+			}
+		}
+	}
+}
+
+com.digitald4.common.TableController.prototype.deleteSelected = function() {
+	this.loading = true;
+	var items = [];
+	var ids = [];
+	this.showDelete = undefined;
+	for (var i = 0; i < this.resultList.items.length; i++) {
+		var item = this.resultList.items[i];
+		if (item.selected) {
+			items.push(item);
+			ids.push(item.id);
+		}
+	}
+	this.jsonService.batchDelete(ids, function(count) {
+		for (var i = 0; i < items.length; i++) {
+			this.resultList.items.splice(this.resultList.items.indexOf(items[i]), 1);
+		}
+		this.loading = false;
+	}.bind(this));
 }

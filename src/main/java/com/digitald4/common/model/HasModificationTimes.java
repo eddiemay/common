@@ -6,30 +6,25 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 import java.time.Instant;
 
 public interface HasModificationTimes {
+  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE) Instant getCreationTime();
+  HasModificationTimes setCreationTime(Instant time);
   @ApiResourceProperty default Long creationTime() {
     return getCreationTime() == null ? null : getCreationTime().toEpochMilli();
   }
-  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE) Instant getCreationTime();
-  default HasModificationTimes setCreationTime(Instant time) {
-    return setCreationTime(time.toEpochMilli());
-  }
   HasModificationTimes setCreationTime(long millis);
-
+  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE) Instant getLastModifiedTime();
+  HasModificationTimes setLastModifiedTime(Instant time);
   @ApiResourceProperty default Long lastModifiedTime() {
     return getLastModifiedTime() == null ? null : getLastModifiedTime().toEpochMilli();
   }
-  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE) Instant getLastModifiedTime();
-  default HasModificationTimes setLastModifiedTime(Instant time) {
-    return setLastModifiedTime(time.toEpochMilli());
-  }
   HasModificationTimes setLastModifiedTime(long millis);
 
+  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE) Instant getDeletionTime();
+  HasModificationTimes setDeletionTime(Instant time);
   @ApiResourceProperty default Long deletionTime() {
     return getDeletionTime() == null ? null : getDeletionTime().toEpochMilli();
   }
-  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE) Instant getDeletionTime();
-  default HasModificationTimes setDeletionTime(Instant time) {
-    return setDeletionTime(time.toEpochMilli());
+  default HasModificationTimes setDeletionTime(long millis) {
+    return setDeletionTime(Instant.ofEpochMilli(millis));
   }
-  HasModificationTimes setDeletionTime(long millis);
 }
