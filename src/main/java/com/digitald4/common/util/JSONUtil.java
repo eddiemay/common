@@ -147,5 +147,10 @@ public class JSONUtil {
     public static boolean isCollection(Class<?> cls) {
       return cls.getName().startsWith("com.google.common.collect.") || cls.getName().startsWith("java.util.");
     }
+
+    @Override
+    public String toString() {
+      return String.format("%s %s", getType(), getName());
+    }
   }
 }

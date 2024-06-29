@@ -118,6 +118,9 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
         case "Instant":
           docField.setDate(new Date(json.getLong(fieldName)));
           break;
+        case "Boolean":
+        case "boolean":
+          docField.setAtom(String.valueOf(json.getBoolean(fieldName)));
         case "Integer":
         case "int":
         case "Float":
@@ -186,6 +189,9 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
         case "Instant":
           json.put(javaName, docField.getDate().getTime());
           break;
+        case "Boolean":
+        case "boolean":
+          json.put(javaName, Boolean.valueOf(docField.getText()));
         case "Integer":
         case "int":
           json.put(javaName, docField.getNumber().intValue());

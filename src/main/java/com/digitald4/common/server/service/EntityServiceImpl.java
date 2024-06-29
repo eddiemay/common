@@ -130,7 +130,7 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 		}
 	}
 
-	private T transform(T t) {
+	protected T transform(T t) {
 		return transform(ImmutableList.of(t)).iterator().next();
 	}
 
