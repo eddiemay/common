@@ -83,6 +83,13 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
             + '    <input type="checkbox" data-ng-model="option.selected" data-ng-change="handleChange()"/>{{option.name}}'
             + '</span></span>',
         link: function(scope, element, attrs) {
+          if (typeof scope.options[0] === 'string') {
+            var options = []
+            for (var i = 0; i < scope.options.length; i++) {
+              options.push({id: scope.options[i], name: scope.options[i]});
+            }
+            this.options = scope.options = options;
+          }
           scope.$watch('ngModel', function(selected) {
             selected = selected || [];
             for (var i = 0; i < scope.options.length; i++) {
@@ -186,7 +193,8 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
   return {
     restrict: 'AE',
     scope: {
-      ngModel: '='
+      ngModel: '=',
+      onChange: '&'
     },
     template: '<span><label data-ng-if="label">{{label}}</label>' +
         '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10"/>' +
@@ -211,6 +219,9 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
           console.log('DateTime changed from ' + currentValue + ' to ' + newValue);
           scope.$parent.$eval(attrs.ngModel + ' = ' + newValue);
           scope.$parent.$apply(attrs.dd4Datepicker);
+          if (attrs.onChange) {
+            scope.$parent.$eval(attrs.onChange);
+          }
         }
       };
 
