@@ -1,6 +1,12 @@
 <div class="block-border">
   <h1>{{$ctrl.title}}</h1>
   <button data-ng-show="$ctrl.showDelete" data-ng-click="$ctrl.deleteSelected()">Delete</button>
+  <div data-ng-if="$ctrl.dateRange">
+    <label>From</label>
+    <div data-dd4-datepicker data-ng-model="$ctrl.dateRange.start" data-on-change="$ctrl.refresh()"></div>
+    <label>To</label>
+    <div data-dd4-datepicker data-ng-model="$ctrl.dateRange.end" data-on-change="$ctrl.refresh()"></div>
+  </div>
   <div data-ng-if="$ctrl.metadata" class="controls-buttons">
     <div class="sub-hover paging_simple_numbers">
       <a class="paginate_button previous" data-dt-idx="0" tabindex="0"
@@ -28,7 +34,7 @@
           <input type="checkbox" data-ng-model="entity.selected" data-ng-change="$ctrl.onSelectionChange()">
         </td>
         <td data-ng-repeat="col in $ctrl.columns">
-          <input data-ng-if="col.editable" data-ng-model="entity[col.prop]"
+          <input data-ng-if="col.editable && col.type != 'date'" type="text" data-ng-model="entity[col.prop]"
                  data-on-change="$ctrl.update(entity, col.prop)"/>
           <span data-ng-if="col.value">{{col.value(entity)}}</span>
           <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}</a></span>
@@ -38,6 +44,8 @@
             </button>
           </span>
           <span data-ng-if="col.type == 'address'">{{entity[col.prop].address}}</span>
+          <div data-dd4-datepicker data-ng-if="col.type == 'editableDate'" data-ng-model="entity[col.prop]"
+               data-on-change="$ctrl.update(entity, col.prop)"></div>
           <span data-ng-if="col.type == 'date'">{{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy'}}</span>
           <span data-ng-if="col.type == 'datetime'">
             {{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy hh:mm a'}}

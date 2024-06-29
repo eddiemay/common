@@ -6,6 +6,7 @@ com.digitald4.common.TableController = function(apiConnector) {
   this.deleteEnabled = this.deleteEnabled || metadata.deleteEnabled || base.deleteEnabled;
   this.columns = metadata.columns || base.columns;
   this.filter = metadata.filter || base.filter;
+  this.dateRange = metadata.dateRange || base.dateRange;
   this.orderBy = metadata.orderBy || base.orderBy;
   this.pageSize = metadata.pageSize || base.pageSize || '50';
   this.jsonService = new com.digitald4.common.JSONService(metadata.entity || base.entity, apiConnector);
@@ -24,7 +25,14 @@ com.digitald4.common.TableController.prototype.previous = function() {
 com.digitald4.common.TableController.prototype.refresh = function(pageToken) {
   this.loading = true;
   this.pageToken = pageToken || 1;
-  var request = {filter: this.filter, pageSize: this.pageSize, pageToken: this.pageToken, orderBy: this.orderBy};
+  var filter = this.filter;
+  if (this.dateRange) {
+    var dateFilter = this.dateRange.prop + '>=' + this.dateRange.start +
+        "," + this.dateRange.prop + '<=' + this.dateRange.end;
+    filter = (filter ? filter + ',' : '') + dateFilter;
+  }
+  var request =
+      {filter: filter, pageSize: this.pageSize, pageToken: this.pageToken, orderBy: this.orderBy};
   for (var c = 0; c < this.columns.length; c++) {
     var column = this.columns[c];
     if (column.filter && column.filter != '*All') {
