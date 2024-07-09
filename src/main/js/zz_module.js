@@ -23,6 +23,16 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
       }
     }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
+    .component('dd4Chat', {
+      templateUrl: 'js/html/dd4chat_table.html',
+      controller: com.digitald4.common.ChatCtrl,
+      bindings: {
+        title: '@',
+        description: '@',
+        url: '@',
+        chatFunc: '&?'
+      }
+    })
     .component('dd4Input', {
       templateUrl: 'js/html/dd4input.html',
       controller: function() {
@@ -194,7 +204,7 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
     restrict: 'AE',
     scope: {
       ngModel: '=',
-      onChange: '&'
+      onUpdate: '&'
     },
     template: '<span><label data-ng-if="label">{{label}}</label>' +
         '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10"/>' +
@@ -219,8 +229,8 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
           console.log('DateTime changed from ' + currentValue + ' to ' + newValue);
           scope.$parent.$eval(attrs.ngModel + ' = ' + newValue);
           scope.$parent.$apply(attrs.dd4Datepicker);
-          if (attrs.onChange) {
-            scope.$parent.$eval(attrs.onChange);
+          if (attrs.onUpdate) {
+            scope.$parent.$eval(attrs.onUpdate);
           }
         }
       };
