@@ -24,7 +24,7 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
     }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
     .component('dd4Chat', {
-      templateUrl: 'js/html/dd4chat_table.html',
+      templateUrl: 'js/html/dd4chat.html',
       controller: com.digitald4.common.ChatCtrl,
       bindings: {
         title: '@',
