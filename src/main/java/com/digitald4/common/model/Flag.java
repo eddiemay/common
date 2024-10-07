@@ -21,4 +21,8 @@ public class Flag {
     this.value = value;
     return this;
   }
+
+  public static Flag of(String id, Object value) {
+    return new Flag().setId(id).setValue(value);
+  }
 }

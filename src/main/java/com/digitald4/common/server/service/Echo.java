@@ -103,7 +103,7 @@ public class Echo {
 
 	private EchoMessage doEcho(EchoMessage message, Integer n) {
 		if (n != null && n > 0) {
-			return message.setMessage(IntStream.of(n).mapToObj(num -> message.getMessage()).collect(joining(" ")));
+			return message.setMessage(IntStream.range(0, n).mapToObj(num -> message.getMessage()).collect(joining(" ")));
 		}
 		return message;
 	}

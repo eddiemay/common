@@ -31,8 +31,7 @@ import javax.servlet.http.Part;
 		version = "v1",
 		namespace = @ApiNamespace(ownerDomain = "dd4common.digitald4.com", ownerName = "dd4common.digitald4.com")
 )
-@MultipartConfig(
-		fileSizeThreshold=1024*1024*10, maxFileSize=1024*1024*32, maxRequestSize=1024*1024*32)
+@MultipartConfig(fileSizeThreshold=1024*1024*10, maxFileSize=1024*1024*32, maxRequestSize=1024*1024*32)
 public class FileService extends EntityServiceImpl<DataFile, String> {
 	private static final Logger LOGGER = Logger.getLogger(FileService.class.getCanonicalName());
 
@@ -60,16 +59,16 @@ public class FileService extends EntityServiceImpl<DataFile, String> {
 	}
 
 	@ApiMethod(httpMethod = HttpMethod.GET, path = "{fileName}")
-	public Empty getFileContents(
-			@Named("fileName") String fileName, @Nullable @Named("idToken") String idToken) {
+	public Empty getFileContents(@Named("fileName") String fileName, @Nullable @Named("idToken") String idToken) {
 		try {
 			resolveLogin(idToken, "getFileContents");
 			DataFile df = dataFileStore.get(fileName);
 			HttpServletResponse response = responseProvider.get();
 			byte[] bytes = df.getData();
 			response.setContentType("application/" + (!df.getType().isEmpty() ? df.getType() : "pdf"));
+			response.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
 			// Cache for the max of 1 year bcz we like to add a new file rather than update files.
-			response.setHeader("Cache-Control", "max-age=31536000");
+			response.setHeader("Cache-Control", "max-age=30");
 			response.setContentLength(bytes.length);
 			response.getOutputStream().write(bytes);
 		} catch (IOException ioe) {

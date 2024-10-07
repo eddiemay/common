@@ -105,7 +105,7 @@ public class SessionStoreTest {
   public void get() {
     when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
-        QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, Query.forList()));
+        QueryResult.of(Password.class, ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, Query.forList()));
     when(clock.millis()).thenReturn(10000L).thenReturn(15000L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 
@@ -120,7 +120,7 @@ public class SessionStoreTest {
   public void get_closesOutExpiredSession() {
     when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
-        QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
+        QueryResult.of(Password.class, ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
     when(clock.millis()).thenReturn(10000L).thenReturn(25000L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 
@@ -136,7 +136,7 @@ public class SessionStoreTest {
   public void resolve_works() {
     when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
-        QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
+        QueryResult.of(Password.class, ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
     when(clock.millis()).thenReturn(10000L).thenReturn(11000L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 
@@ -151,7 +151,7 @@ public class SessionStoreTest {
   public void resolve_extendsHalfwayOverSession() {
     when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
     when(mockPasswordStore.list(any(Query.List.class))).thenReturn(
-        QueryResult.of(ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
+        QueryResult.of(Password.class, ImmutableList.of(new Password().setDigest("0123456789ABCDEF")), 1, null));
     when(clock.millis()).thenReturn(10000L).thenReturn(15001L);
     Session session = sessionStore.create("username", "0123456789ABCDEF");
 

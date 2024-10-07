@@ -91,7 +91,7 @@ public class ApiServiceServlet extends HttpServlet {
 					useViews);
 		} else {
 			// We use CloudDataStore with AppEngine.
-			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl();
+			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl(() -> DAOCloudDS.Context.NONE);
 			ChangeTracker changeTracker =
 					new ChangeTracker(daoProvider, userProvider, null, searchIndexer, clock);
 			dao = new DAOCloudDS(
@@ -278,8 +278,8 @@ public class ApiServiceServlet extends HttpServlet {
 	public Emailer getEmailer() {
 		if (emailer == null) {
 			ServletContext sc = getServletContext();
-			emailer = new Emailer(sc.getInitParameter("emailserver"),
-					sc.getInitParameter("emailuser"), sc.getInitParameter("emailpass"));
+			emailer = new Emailer(sc.getInitParameter("emailserver"), sc.getInitParameter("emailuser"),
+					sc.getInitParameter("emailpass"), dataFileStore);
 		}
 		return emailer;
 	}

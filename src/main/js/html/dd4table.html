@@ -3,9 +3,9 @@
   <button data-ng-show="$ctrl.showDelete" data-ng-click="$ctrl.deleteSelected()">Delete</button>
   <div data-ng-if="$ctrl.dateRange">
     <label>From</label>
-    <div data-dd4-datepicker data-ng-model="$ctrl.dateRange.start" data-on-change="$ctrl.refresh()"></div>
+    <div data-dd4-datepicker data-ng-model="$ctrl.dateRange.start" data-on-update="$ctrl.refresh()"></div>
     <label>To</label>
-    <div data-dd4-datepicker data-ng-model="$ctrl.dateRange.end" data-on-change="$ctrl.refresh()"></div>
+    <div data-dd4-datepicker data-ng-model="$ctrl.dateRange.end" data-on-update="$ctrl.refresh()"></div>
   </div>
   <div data-ng-if="$ctrl.metadata" class="controls-buttons">
     <div class="sub-hover paging_simple_numbers">
@@ -16,7 +16,7 @@
       <a class="paginate_button next" data-dt-idx="7" tabindex="0" data-ng-click="$ctrl.next()">Next</a>
     </div>
   </div>
-  <table class="table sortable no-margin" cellspacing="0" width="100%" data-page-length="25">
+  <table class="table sortable no-margin" cellspacing="0" style="width: 100%" data-page-length="25">
     <thead><tr>
       <th class="black-cell"><span data-ng-class="{loading: $ctrl.loading}"></span></th>
       <th data-ng-repeat="col in $ctrl.columns">
@@ -31,21 +31,27 @@
     <tbody>
       <tr data-ng-repeat="entity in $ctrl.resultList.items">
         <td class="th table-check-cell">
-          <input type="checkbox" data-ng-model="entity.selected" data-ng-change="$ctrl.onSelectionChange()">
+          <input type="checkbox" data-ng-model="entity.selected" data-ng-change="$ctrl.onSelectionChange(entity)">
         </td>
         <td data-ng-repeat="col in $ctrl.columns">
-          <input data-ng-if="col.editable && col.type != 'date'" type="text" data-ng-model="entity[col.prop]"
-                 data-on-change="$ctrl.update(entity, col.prop)"/>
-          <span data-ng-if="col.value">{{col.value(entity)}}</span>
-          <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}</a></span>
+          <input type="text" data-ng-if="col.editable || col.type == 'editable'" size="{{col.size}}"
+                 data-ng-model="entity[col.prop]" data-on-change="$ctrl.update(entity, col.prop)"/>
+          <span data-ng-if="col.value && !col.url">{{col.value(entity)}}</span>
+          <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}{{col.value(entity)}}</a></span>
           <span data-ng-if="col.button">
-            <button data-ng-click="col.button.action(entity)" data-ng-disabled="col.button.disabled(entity)">
+            <button data-ng-click="col.button.action(entity, $ctrl)" data-ng-disabled="col.button.disabled(entity)">
               {{col.button.display(entity)}}
             </button>
           </span>
           <span data-ng-if="col.type == 'address'">{{entity[col.prop].address}}</span>
+          <input type="number" data-ng-if="col.type == 'editableNumber'" data-ng-model="entity[col.prop]"
+                 data-on-change="$ctrl.update(entity, col.prop)" size="{{col.size}}"/>
+          <input type="checkbox" data-ng-if="col.type == 'checkbox'" data-ng-model="entity[col.prop]"
+                 data-ng-change="$ctrl.update(entity, col.prop)"/>
           <div data-dd4-datepicker data-ng-if="col.type == 'editableDate'" data-ng-model="entity[col.prop]"
-               data-on-change="$ctrl.update(entity, col.prop)"></div>
+               data-on-update="$ctrl.update(entity, col.prop)"></div>
+          <dd4-time data-ng-if="col.type == 'editableTime'" data-ng-model="entity[col.prop]"
+                    data-on-update="$ctrl.update(entity, col.prop)"></dd4-time>
           <span data-ng-if="col.type == 'date'">{{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy'}}</span>
           <span data-ng-if="col.type == 'datetime'">
             {{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy hh:mm a'}}
@@ -56,9 +62,11 @@
           <span data-ng-if="col.prop && !col.type && !col.url && !col.editable && !col.value">
             {{entity[col.prop]}}
           </span>
-          <span data-ng-if="col.imageLink">
-            <a href="{{col.imageLink.url(entity)}}"><img data-ng-src="{{col.imageLink.src}}"></a>
+          <span data-ng-if="col.imageLink && col.imageLink.url(entity)">
+            <a href="{{col.imageLink.url(entity)}}" target="{{col.imageLink.target}}">
+              <img data-ng-src="{{col.imageLink.src}}"></a>
           </span>
+          <div data-ng-if="col.type == 'html'" data-bind-html-compile="entity[col.prop]"></div>
         </td>
       </tr>
     </tbody>

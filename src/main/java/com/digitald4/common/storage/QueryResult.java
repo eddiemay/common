@@ -2,21 +2,35 @@ package com.digitald4.common.storage;
 
 import static java.util.stream.Collectors.joining;
 
+import com.google.api.server.spi.config.AnnotationBoolean;
+import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.common.collect.ImmutableList;
 
 public class QueryResult<T> {
+	private final Class<T> type;
 	private final ImmutableList<T> items;
 	private final int totalSize;
 	private final Query query;
 
-	protected QueryResult(Iterable<T> items, int totalSize, Query query) {
+	protected QueryResult(Class<T> type, Iterable<T> items, int totalSize, Query query) {
+		this.type = type;
 		this.items = ImmutableList.copyOf(items);
 		this.totalSize = totalSize;
 		this.query = query;
 	}
 
-	public static <T> QueryResult<T> of(Iterable<T> results, int totalSize, Query query) {
-		return new QueryResult<>(results, totalSize, query);
+	public static <T> QueryResult<T> of(Class<T> type, Iterable<T> results, int totalSize, Query query) {
+		return new QueryResult<>(type, results, totalSize, query);
+	}
+
+	@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	public Class<T> getType() {
+		return type;
+	}
+
+	@ApiResourceProperty
+	public String type() {
+		return type.getSimpleName();
 	}
 
 	public ImmutableList<T> getItems() {

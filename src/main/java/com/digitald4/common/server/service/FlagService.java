@@ -20,6 +20,6 @@ public class FlagService extends EntityServiceImpl<Flag, String> {
 
   @Override
   protected boolean requiresLogin(String method) {
-    return "list".equals(method);
+    return !"list".equals(method);
   }
 }

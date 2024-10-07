@@ -18,6 +18,8 @@ public interface Store<T, I> {
 
 	QueryResult<T> list(Query.List listQuery);
 
+	QueryResult<T> search(Query.Search searchQuery);
+
 	T update(I id, UnaryOperator<T> updater);
 
 	ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater);

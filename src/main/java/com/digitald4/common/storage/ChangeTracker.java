@@ -2,6 +2,7 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
+import static java.util.stream.Collectors.joining;
 
 import com.digitald4.common.model.ChangeTrackable;
 import com.digitald4.common.model.HasModificationTimes;
@@ -11,6 +12,7 @@ import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.util.JSONUtil;
+import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
@@ -154,6 +156,7 @@ public class ChangeTracker {
     private Long userId;
     private String username;
     private Object entity;
+    private ImmutableList<Change> changes;
 
     public ChangeHistory setId(Long id) {
       super.setId(id);
@@ -234,20 +237,39 @@ public class ChangeTracker {
       return this;
     }
 
-    @Deprecated
     public ImmutableList<Change> getChanges() {
-      return null;
+      return changes;
     }
 
-    @Deprecated
     public ChangeHistory setChanges(Iterable<Change> changes) {
+      this.changes = ImmutableList.copyOf(changes);
       return this;
+    }
+
+    private static final String CHANGE_TEMPLATE =
+        "%s: <span class=\"diff-insert\">%s</span> <span class=\"diff-delete\">%s</span>";
+    @ApiResourceProperty
+    public String changeHtml() {
+      return changes == null ? null : changes.stream()
+          .map(c -> {
+            if (c.getSubChanges() != null) {
+              return String.format("%s: {%s}", c.getField(), c.getSubChanges().stream()
+                  .map(sc -> String.format(CHANGE_TEMPLATE, sc.getField(), sc.getValue(), sc.getPreviousValue()))
+                  .collect(joining(", ")));
+            }
+            return String.format(CHANGE_TEMPLATE, c.getField(), c.getValue(), c.getPreviousValue());
+          })
+          .collect(joining("<br>"));
     }
   }
 
   public static class Change {
     private String field;
-    private Object previousValue;
+    public enum Type {Add, Modified, Removed};
+    private Type type;
+    private String value;
+    private String previousValue;
+    private ImmutableList<Change> subChanges;
 
     public String getField() {
       return field;
@@ -258,12 +280,39 @@ public class ChangeTracker {
       return this;
     }
 
-    public Object getPreviousValue() {
+    public Type getType() {
+      return type;
+    }
+
+    public Change setType(Type type) {
+      this.type = type;
+      return this;
+    }
+
+    public String getValue() {
+      return value;
+    }
+
+    public Change setValue(String value) {
+      this.value = value != null ? value : "";
+      return this;
+    }
+
+    public String getPreviousValue() {
       return previousValue;
     }
 
-    public Change setPreviousValue(Object previousValue) {
-      this.previousValue = previousValue;
+    public Change setPreviousValue(String previousValue) {
+      this.previousValue = previousValue != null ? previousValue : "";
+      return this;
+    }
+
+    public ImmutableList<Change> getSubChanges() {
+      return subChanges;
+    }
+
+    public Change setSubChanges(Iterable<Change> subChanges) {
+      this.subChanges = ImmutableList.copyOf(subChanges);
       return this;
     }
 
@@ -277,8 +326,12 @@ public class ChangeTracker {
       return JSONUtil.toJSON(this).toString();
     }
 
-    public static Change create(String field, Object from) {
-      return new Change().setField(field).setPreviousValue(from);
+    public static Change create(String field, Type type, String value, Object from) {
+      return new Change().setField(field).setType(type).setValue(value).setPreviousValue(from != null ? "" + from : "");
+    }
+
+    public static Change create(String field, Iterable<Change> subChanges) {
+      return new Change().setField(field).setSubChanges(subChanges);
     }
   }
 }

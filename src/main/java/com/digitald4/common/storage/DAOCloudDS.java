@@ -170,7 +170,9 @@ public class DAOCloudDS implements DAO {
 		try {
 			return convert(c, datastoreService.get(key));
 		} catch (EntityNotFoundException e) {
-			throw new DD4StorageException("Error fetching: " + getTableName(c) + ":" + key.getId(), e, ErrorCode.NOT_FOUND);
+			throw new DD4StorageException(
+					"Error fetching: " + getTableName(c) + ":" + (key.getId() > 0 ? key.getId() : key.getName()),
+					e, ErrorCode.NOT_FOUND);
 		}
 	}
 
@@ -211,7 +213,7 @@ public class DAOCloudDS implements DAO {
 		}
 
 		var comparator = getComparator(c, query);
-		return QueryResult.of(
+		return QueryResult.of(c,
 				allResults.stream()
 						.map(entity -> convert(c, entity))
 						.sorted(comparator)

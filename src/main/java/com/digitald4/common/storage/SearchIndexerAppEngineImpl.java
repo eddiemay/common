@@ -7,6 +7,7 @@ import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.storage.DAOCloudDS.Context;
 import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.JSONUtil;
 import com.digitald4.common.util.JSONUtil.Field;
@@ -27,12 +28,20 @@ import com.google.common.collect.Iterables;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class SearchIndexerAppEngineImpl implements SearchIndexer {
   private static final int UPDATE_LIMIT = 200;
   private final Map<Class<?>, Index> indexes = new HashMap<>();
+  private final Provider<Context> contextProvider;
+
+  @Inject
+  public SearchIndexerAppEngineImpl(Provider<Context> contextProvider) {
+    this.contextProvider = contextProvider;
+  }
 
   @Override
   public <T extends Searchable> void index(Iterable<T> entities) {
@@ -69,7 +78,7 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
         .map(document -> fromDocument(c, document))
         .collect(toImmutableList());
 
-    return QueryResult.of(ts, (int) Math.min(results.getNumberFound(), 1000), searchQuery);
+    return QueryResult.of(c, ts, (int) Math.min(results.getNumberFound(), 1000), searchQuery);
   }
 
   @Override
@@ -86,8 +95,10 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
   }
 
   protected Index computeIndex(Class<?> c) {
-    return SearchServiceFactory.getSearchService()
-        .getIndex(IndexSpec.newBuilder().setName(c.getSimpleName()).build());
+    Context context = contextProvider.get();
+    String indexName =
+        (context == Context.NONE) ? c.getSimpleName() : String.format("%s.%s", context.name(), c.getSimpleName());
+    return SearchServiceFactory.getSearchService().getIndex(IndexSpec.newBuilder().setName(indexName).build());
   }
 
   protected <T> Document toDocument(T t) {
@@ -109,27 +120,20 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
           com.google.appengine.api.search.Field.newBuilder().setName(fieldName);
 
       switch (field.getType().getSimpleName()) {
-        case "ByteArray":
-        case "byte[]":
-        case "Byte[]":
+        case "ByteArray", "byte[]", "Byte[]":
           docField.setText(json.getString(fieldName));
           break;
-        case "DateTime":
-        case "Instant":
+        case "DateTime", "Instant":
           docField.setDate(new Date(json.getLong(fieldName)));
           break;
-        case "Boolean":
-        case "boolean":
+        case "Boolean", "boolean":
           docField.setAtom(String.valueOf(json.getBoolean(fieldName)));
-        case "Integer":
-        case "int":
-        case "Float":
-        case "float":
-        case "Long":
-        case "long":
-        case "Double":
-        case "double":
+          break;
+        case "Integer", "int", "Float", "float", "Double", "double":
           docField.setNumber(json.getDouble(fieldName));
+          break;
+        case "Long", "long":
+          docField.setAtom(String.valueOf(json.getLong(fieldName)));
           break;
         case "StringBuilder":
           docField.setText(json.get(fieldName).toString());
@@ -169,11 +173,7 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
     document.getFields().forEach(docField -> {
       String javaName = docField.getName();
       Field field = fieldMap.get(javaName);
-      if (field == null) {
-        return;
-      }
-
-      if (field.getSetMethod() == null) {
+      if (field == null || field.getSetMethod() == null) {
         return;
       }
 
@@ -183,37 +183,31 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
         case "Byte[]":
           json.put(javaName, docField.getText().getBytes());
           break;
-        case "DateTime":
+        case "DateTime", "Instant":
           json.put(javaName, docField.getDate().getTime());
           break;
-        case "Instant":
-          json.put(javaName, docField.getDate().getTime());
-          break;
-        case "Boolean":
-        case "boolean":
+        case "Boolean", "boolean":
           json.put(javaName, Boolean.valueOf(docField.getText()));
-        case "Integer":
-        case "int":
-          json.put(javaName, docField.getNumber().intValue());
+        case "Integer", "int":
+          json.put(javaName, docField.getNumber() == null ? null : docField.getNumber().intValue());
           break;
-        case "Long":
-        case "long":
-          json.put(javaName, docField.getNumber().longValue());
+        case "Long", "long":
+          json.put(javaName, docField.getNumber() == null ? null : docField.getNumber().longValue());
+          break;
+        case "Double", "double":
+          json.put(javaName, docField.getNumber());
           break;
         case "StringBuilder":
-          json.put(javaName,
-              Strings.isNullOrEmpty(docField.getText()) ? docField.getHTML() : docField.getText());
+          json.put(javaName, Strings.isNullOrEmpty(docField.getText()) ? docField.getHTML() : docField.getText());
           break;
         case "String":
-          json.put(javaName,
-              Strings.isNullOrEmpty(docField.getText()) ? docField.getAtom() : docField.getText());
+          json.put(javaName, Strings.isNullOrEmpty(docField.getText()) ? docField.getAtom() : docField.getText());
           break;
         default:
           if (field.isCollection()) {
             json.put(javaName, new JSONArray(docField.getText()));
           } else if (field.getType().isEnum()) {
-            json.put(javaName,
-                Enum.valueOf((Class<? extends Enum>) field.getType(), docField.getAtom()));
+            json.put(javaName, Enum.valueOf((Class<? extends Enum>) field.getType(), docField.getAtom()));
           } else if (field.isObject()) {
             json.put(javaName, new JSONObject(docField.getText()));
           } else {

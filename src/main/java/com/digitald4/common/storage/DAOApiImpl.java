@@ -86,10 +86,10 @@ public class DAOApiImpl implements DAO {
 
     int totalSize = response.getInt("totalSize");
     if (totalSize == 0) {
-      return QueryResult.of(ImmutableList.of(), totalSize, query);
+      return QueryResult.of(c, ImmutableList.of(), totalSize, query);
     }
 
-    return QueryResult.of(convertList(c, response), totalSize, query);
+    return QueryResult.of(c, convertList(c, response), totalSize, query);
   }
 
   @Override
@@ -114,10 +114,10 @@ public class DAOApiImpl implements DAO {
 
     int totalSize = response.getInt("totalSize");
     if (totalSize == 0) {
-      return QueryResult.of(ImmutableList.of(), totalSize, query);
+      return QueryResult.of(c, ImmutableList.of(), totalSize, query);
     }
 
-    return QueryResult.of(convertList(c, response), totalSize, query);
+    return QueryResult.of(c, convertList(c, response), totalSize, query);
   }
 
   @Override

@@ -58,7 +58,7 @@ public class EndPointsModule extends EndpointsModule {
 		bind(DAO.class).to(DAOCloudDS.class);
 
 		bind(new TypeLiteral<Store<DataFile, String>>(){}).to(new TypeLiteral<GenericStore<DataFile, String>>(){});
-		bind(new TypeLiteral<Store<Flag, String>>(){}).to(new TypeLiteral<GenericStore<Flag, String>>(){});
+		// bind(new TypeLiteral<Store<Flag, String>>(){}).to(new TypeLiteral<GenericStore<Flag, String>>(){});
 	}
 
 	@Provides

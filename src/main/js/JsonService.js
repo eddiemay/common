@@ -94,6 +94,18 @@ com.digitald4.common.JSONService.prototype.search = function(request, onSuccess,
 }
 
 /**
+* Creates a batch of objects in the data store.
+*
+* @param {Array<Object>} entities to create
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.batchCreate = function(entities, onSuccess, onError) {
+	this.sendRequest(
+	    {action: 'batchCreate', method: 'POST', data: {items: entities}}, onSuccess, onError);
+}
+
+/**
 * Updates a batch of objects in the data store.
 *
 * @param {Array<Object>} entities to update

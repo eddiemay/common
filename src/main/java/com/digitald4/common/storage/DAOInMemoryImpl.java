@@ -93,8 +93,7 @@ public class DAOInMemoryImpl implements DAO {
     }
 
     return QueryResult.of(
-        results.stream()
-            .map(json -> JSONUtil.toObject(c, json)).collect(toImmutableList()), totalSize, query);
+        c, results.stream().map(json -> JSONUtil.toObject(c, json)).collect(toImmutableList()), totalSize, query);
   }
 
   @Override

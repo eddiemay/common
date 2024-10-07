@@ -180,7 +180,7 @@ public class DAOSQLImpl implements DAO {
 					rs.close();
 					ps2.close();
 				}
-				return QueryResult.of(results, totalSize, query);
+				return QueryResult.of(c, results, totalSize, query);
 			} catch (SQLException e) {
 				throw new RuntimeException("Error reading record: " + e.getMessage(), e);
 			}

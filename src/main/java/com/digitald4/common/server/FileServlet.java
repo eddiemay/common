@@ -83,7 +83,7 @@ public class FileServlet extends HttpServlet {
           true);
     } else {
       // We use CloudDataStore with AppEngine.
-      SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl();
+      SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl(() -> DAOCloudDS.Context.NONE);
       ChangeTracker changeTracker =
           new ChangeTracker(daoProvider, userProvider, null, searchIndexer, clock);
       dao = new DAOCloudDS(

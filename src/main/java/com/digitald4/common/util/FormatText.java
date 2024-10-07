@@ -30,6 +30,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import java.util.TimeZone;
 import org.joda.time.DateTime;
 
 /**
@@ -39,33 +40,39 @@ import org.joda.time.DateTime;
  * @version 2.0
  */
 public class FormatText {
-  public final static SimpleDateFormat DB_DATE = new SimpleDateFormat("dd-MMM-yy");
-  public final static SimpleDateFormat MYSQL_DATE = new SimpleDateFormat("yyyy-MM-dd");
-  public final static SimpleDateFormat MYSQL_DATETIME = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-  public final static SimpleDateFormat BUILD_DATE = new SimpleDateFormat("yyyyMMdd");
-  public final static SimpleDateFormat BUILD_DATETIME = new SimpleDateFormat("yyyyMMdd_HHmmss");
-  public final static SimpleDateFormat DB_DATETIME = new SimpleDateFormat("dd-MMM-yy HH:mm:ss");
-  public final static SimpleDateFormat NOTIFICATION = new SimpleDateFormat("yyyyddMMHHmmss");
-  public final static SimpleDateFormat USER_DATE = new SimpleDateFormat("MM/dd/yyyy");
-  public final static SimpleDateFormat USER_DATE_SHORT = new SimpleDateFormat("EEE MM/dd/yy");
-  public final static SimpleDateFormat USER_DATE_LONG = new SimpleDateFormat("EEE MM/dd/yyyy");
-  public final static SimpleDateFormat USER_MONTH = new SimpleDateFormat("MMM yyyy");
-  public final static SimpleDateFormat USER_MONTH_ONLY = new SimpleDateFormat("MMM");
-  public final static SimpleDateFormat USER_DATETIME = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-  public final static SimpleDateFormat USER_DATETIME_SHORT = new SimpleDateFormat("MM/dd/yy HH:mm");
-  public final static SimpleDateFormat USER_TIME = new SimpleDateFormat("HH:mm");
-  public final static SimpleDateFormat USER_DAY_OF_WEEK = new SimpleDateFormat("EEE");
-  public final static SimpleDateFormat USER_DOW_DATE = new SimpleDateFormat("EEE MM/dd/yyyy");
-  public final static SimpleDateFormat USER_DOW_DATETIME_SHORT = new SimpleDateFormat(
+  public final static SimpleDateFormat DB_DATE = createSimpleDateFormat("dd-MMM-yy");
+  public final static SimpleDateFormat MYSQL_DATE = createSimpleDateFormat("yyyy-MM-dd");
+  public final static SimpleDateFormat MYSQL_DATETIME = createSimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+  public final static SimpleDateFormat BUILD_DATE = createSimpleDateFormat("yyyyMMdd");
+  public final static SimpleDateFormat BUILD_DATETIME = createSimpleDateFormat("yyyyMMdd_HHmmss");
+  public final static SimpleDateFormat DB_DATETIME = createSimpleDateFormat("dd-MMM-yy HH:mm:ss");
+  public final static SimpleDateFormat NOTIFICATION = createSimpleDateFormat("yyyyddMMHHmmss");
+  public final static SimpleDateFormat USER_DATE = createSimpleDateFormat("MM/dd/yyyy");
+  public final static SimpleDateFormat USER_DATE_SHORT = createSimpleDateFormat("EEE MM/dd/yy");
+  public final static SimpleDateFormat USER_DATE_LONG = createSimpleDateFormat("EEE MM/dd/yyyy");
+  public final static SimpleDateFormat USER_MONTH = createSimpleDateFormat("MMM yyyy");
+  public final static SimpleDateFormat USER_MONTH_ONLY = createSimpleDateFormat("MMM");
+  public final static SimpleDateFormat USER_DATETIME = createSimpleDateFormat("MM/dd/yyyy HH:mm");
+  public final static SimpleDateFormat USER_DATETIME_SHORT = createSimpleDateFormat("MM/dd/yy HH:mm");
+  public final static SimpleDateFormat USER_TIME = createSimpleDateFormat("HH:mm");
+  public final static SimpleDateFormat USER_DAY_OF_WEEK = createSimpleDateFormat("EEE");
+  public final static SimpleDateFormat USER_DOW_DATE = createSimpleDateFormat("EEE MM/dd/yyyy");
+  public final static SimpleDateFormat USER_DOW_DATETIME_SHORT = createSimpleDateFormat(
       "EEE MM/dd/yy HH:mm");
-  public final static SimpleDateFormat TIME = new SimpleDateFormat("HH:mm:ss");
-  public final static SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
-  public final static SimpleDateFormat SHORT_DATE = new SimpleDateFormat("MM/dd/yy");
+  public final static SimpleDateFormat TIME = createSimpleDateFormat("HH:mm:ss");
+  public final static SimpleDateFormat HOUR_MIN = createSimpleDateFormat("HH:mm");
+  public final static SimpleDateFormat SHORT_DATE = createSimpleDateFormat("MM/dd/yy");
   public final static DecimalFormat DECIMAL = new DecimalFormat("###.##");
   //	public final static DecimalFormat CURRENCY = new DecimalFormat("$###,###.##;($###,###.##)");
   public final static NumberFormat CURRENCY = NumberFormat.getCurrencyInstance(Locale.US);
   public final static NumberFormat NUMBER = NumberFormat.getInstance();
   public final static DecimalFormat PERCENT = new DecimalFormat("##.##%;(##.##%)");
+
+  public static SimpleDateFormat createSimpleDateFormat(String pattern) {
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("PST"));
+    return simpleDateFormat;
+  }
 
   public final static long ONE_SEC = 1000;
   public final static long ONE_MIN = ONE_SEC * 60;

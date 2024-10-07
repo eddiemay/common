@@ -492,12 +492,10 @@ public class Calculate {
 
 	public static String getDiffHtml(String original, String revised) {
 		return Calculate.getDiff(original, revised).stream()
-				.map(diff -> {
-					switch (diff.operation) {
-						case DELETE: return String.format("<span class=\"diff-delete\">%s</span>", diff.text);
-						case INSERT: return String.format("<span class=\"diff-insert\">%s</span>", diff.text);
-					}
-					return diff.text;
+				.map(diff -> switch (diff.operation) {
+					case DELETE -> String.format("<span class=\"diff-delete\">%s</span>", diff.text);
+					case INSERT -> String.format("<span class=\"diff-insert\">%s</span>", diff.text);
+					default -> diff.text;
 				})
 				.collect(joining());
 	}

@@ -1,27 +1,66 @@
 <section class="grid_12">
   <div class="block-border">
-    <div class="block-content">
+    <div class="block-content form">
       <h1>{{$ctrl.title}}</h1>
       <p>{{$ctrl.description}}</p>
-      <table class="table sortable no-margin" width="100%">
+      <style>
+        .chat-bubble {
+          max-width: 80%;
+          padding: 10px 15px;
+          border-radius: 20px;
+          margin-bottom: 10px;
+          position: relative;
+          clear: both;
+        }
+
+        .user-message {
+          background-color: #1E88E5;
+          color: white;
+          float: right;
+        }
+
+        .agent-message {
+          background-color: #ffe0b3;
+          color: 856404;
+          float: left;
+        }
+
+        .agent-thought {
+          background-color: white;
+          color: black;
+          float: left;
+        }
+      </style>
+
+      <table class="table sortable no-margin" style="width: 95%">
         <thead><tr><th style="text-align: center;">Chat</th></tr></thead>
         <tbody>
-        <tr data-ng-repeat="message in $ctrl.chatHistory">
-          <td data-ng-if="message.type == 'user_message'" style="text-align: right;">
-            {{message.message}}
+        <tr data-ng-repeat="entry in $ctrl.globalData.chatHistory">
+          <td data-ng-if="entry.type == 'user_message'">
+            <div class="chat-bubble user-message">
+              {{entry.message}}
+            </div>
           </td>
-          <td data-ng-if="message.type == 'agent_message'">
-            {{message.message}}
+          <td data-ng-if="entry.type == 'agent_message'">
+            <div class="chat-bubble agent-message" data-bind-html-compile="entry.message"></div>
           </td>
+          <td data-ng-if="$ctrl.globalData.showThought && entry.type == 'agent_thought'" style="text-align: left;">
+            <div class="chat-bubble agent-thought" data-bind-html-compile="entry.message"></div>
+          </td>
+        </tr>
+        <tr data-ng-if="$ctrl.loading">
+          <td><div class="chat-bubble agent-thought"><span class="loading">Loading...</span></div></td>
         </tr>
         </tbody>
       </table>
+
       <div class="columns">
         <div class="colx3-left-double">
           <input type="text" data-ng-model="$ctrl.query" data-ng-keypress="$ctrl.onKey($event)" style="width:100%;"/>
         </div>
         <div class="colx3-right">
           <button data-ng-click="$ctrl.submit()">Submit</button>
+          <input type="checkbox" data-ng-model="$ctrl.globalData.showThought"><label>Show Thought</label>
         </div>
       </div>
     </div>

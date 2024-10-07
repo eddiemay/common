@@ -4,6 +4,7 @@ com.digitald4.common.TableController = function(apiConnector) {
   var base = metadata.base || {};
   this.title = metadata.title || base.title;
   this.deleteEnabled = this.deleteEnabled || metadata.deleteEnabled || base.deleteEnabled;
+  this.onSelectionChange = metadata.onSelectionChange || base.onSelectionChange || this.onSelectionChange;
   this.columns = metadata.columns || base.columns;
   this.filter = metadata.filter || base.filter;
   this.dateRange = metadata.dateRange || base.dateRange;
@@ -46,6 +47,7 @@ com.digitald4.common.TableController.prototype.refresh = function(pageToken) {
 
   this.jsonService.list(request, function(response) {
     this.resultList = response;
+    this.metadata.resultList = response;
     var page = this.pageToken;
     this.start = Math.min((page - 1) * this.pageSize + 1, response.totalSize);
     this.totalSize = response.totalSize;
@@ -68,8 +70,18 @@ com.digitald4.common.TableController.prototype.setSort = function(col) {
 com.digitald4.common.TableController.prototype.update = function(entity, prop) {
   this.loading = true;
   var index = this.resultList.items.indexOf(entity);
-  this.jsonService.update(entity, [prop], function(entity) {
-    this.resultList.items.splice(index, 1, entity);
+  this.jsonService.update(entity, [prop], function(updated) {
+    // this.resultList.items.splice(index, 1, updated);
+    entity.status = updated.status;
+    this.loading = false;
+  }.bind(this));
+}
+
+com.digitald4.common.TableController.prototype.updateAndRemove = function(entity, props) {
+  this.loading = true;
+  var index = this.resultList.items.indexOf(entity);
+  this.jsonService.update(entity, props, function(entity) {
+    this.resultList.items.splice(index, 1);
     this.loading = false;
   }.bind(this));
 }

@@ -68,7 +68,7 @@ public class DAOApiImplTest {
   public void list_empty() {
     Query.List query = Query.forList();
     when(connector.sendGet(anyString())).thenReturn(
-        new JSONObject(QueryResult.of(ImmutableList.of(BASIC_USER), 1, query)).toString());
+        new JSONObject(QueryResult.of(BasicUser.class, ImmutableList.of(BASIC_USER), 1, query)).toString());
 
     QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, query);
 
@@ -87,7 +87,7 @@ public class DAOApiImplTest {
   public void list_withParams() {
     Query.List query = Query.forList("lastLogin>1000,typeId=10", "username", 1, 20);
     when(connector.sendGet(anyString())).thenReturn(
-        new JSONObject(QueryResult.of(ImmutableList.of(BASIC_USER), 5, query)).toString());
+        new JSONObject(QueryResult.of(BasicUser.class, ImmutableList.of(BASIC_USER), 5, query)).toString());
 
     QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, query);
 
@@ -107,7 +107,7 @@ public class DAOApiImplTest {
   public void list_limitOnly() {
     Query.List query = Query.forList().setLimit(500);
     when(connector.sendGet(anyString())).thenReturn(
-        new JSONObject(QueryResult.of(ImmutableList.of(BASIC_USER), 1, query)).toString());
+        new JSONObject(QueryResult.of(BasicUser.class, ImmutableList.of(BASIC_USER), 1, query)).toString());
 
     QueryResult<BasicUser> queryResult = dao.list(BasicUser.class, query);
 
@@ -126,7 +126,7 @@ public class DAOApiImplTest {
   public void search() {
     Query.Search query = Query.forSearch("blah");
     when(connector.sendGet(anyString())).thenReturn(
-        new JSONObject(QueryResult.of(ImmutableList.of(BASIC_USER), 1, query)).toString());
+        new JSONObject(QueryResult.of(BasicUser.class, ImmutableList.of(BASIC_USER), 1, query)).toString());
 
     dao.search(SearchableObj.class, query);
 
@@ -156,8 +156,7 @@ public class DAOApiImplTest {
 
     dao.delete(BasicUser.class, USER_ID);
 
-    verify(connector).send(
-        "DELETE", "http://test.server.net/api/basicUsers/v1/delete?id=123", null);
+    verify(connector).send("DELETE", "http://test.server.net/api/basicUsers/v1/delete?id=123", null);
   }
 
   @Test

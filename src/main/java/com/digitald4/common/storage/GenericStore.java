@@ -1,6 +1,10 @@
 package com.digitald4.common.storage;
 
+import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.exception.DD4StorageException.ErrorCode;
+import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.service.BulkGetable;
+import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 
 import java.util.function.UnaryOperator;
@@ -53,6 +57,17 @@ public class GenericStore<T, I> implements Store<T, I> {
 		QueryResult<T> result = daoProvider.get().list(c, query);
 		transform(result.getItems());
 		return result;
+	}
+
+	@Override
+	public QueryResult<T> search(Query.Search searchQuery) {
+		T defaultInstance = JSONUtil.getDefaultInstance(c);
+		if (!(defaultInstance instanceof Searchable)) {
+			throw new DD4StorageException(
+					"Unsupported Operation: " + c + " does not implement Searchable", ErrorCode.BAD_REQUEST);
+		}
+
+		return (QueryResult<T>) daoProvider.get().search((Class<? extends Searchable>) c, searchQuery);
 	}
 
 	@Override
