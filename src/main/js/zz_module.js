@@ -8,7 +8,9 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
     .service('sessionWatcher', com.digitald4.common.SessionWatcher)
     .service('userPreferences', com.digitald4.common.UserPreferences)
     .service('userService', com.digitald4.common.UserService)
-    .controller('DD4AppCtrl', ['$cookies', 'globalData', 'userService', 'sessionWatcher', function($cookies, globalData, userService, sessionWatcher) {
+    .controller('DD4AppCtrl', ['$cookies', '$interval', '$scope', 'flags', 'globalData', 'userService', 'sessionWatcher',
+        function($cookies, $interval, $scope, flags, globalData, userService, sessionWatcher) {
+      this.flags = flags;
       this.globalData = globalData;
       globalData.activeSession = $cookies.getObject('activeSession');
       this.isUserLoggedIn = function() { return globalData.activeSession != undefined; }
@@ -21,6 +23,10 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
       this.getFileUrl = function(fileReference, type) {
         return userService.getFileUrl(fileReference, type);
       }
+      interval = $interval(function() {
+        flags.ready = true;
+        $interval.cancel(interval);
+      }, 2 * 1000);
     }])
     .controller('UserCtrl', com.digitald4.common.UserCtrl)
     .component('dd4Chat', {

@@ -1,8 +1,6 @@
 package com.digitald4.common.model;
 
-public class GeneralData {
-
-  private long id;
+public class GeneralData extends ModelObject<Long> {
   private long groupId;
   private int inGroupId;
   private String name;
@@ -11,12 +9,13 @@ public class GeneralData {
   private String description;
   private String data;
 
-  public long getId() {
-    return id;
+  @Override
+  public Long getId() {
+    return super.getId();
   }
 
   public GeneralData setId(long id) {
-    this.id = id;
+    super.setId(id);
     return this;
   }
 

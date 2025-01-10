@@ -73,8 +73,8 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "list")
 	public QueryResult<T> list(
 			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-			@Named("pageSize") @DefaultValue("200") int pageSize,
-			@Named("pageToken") @DefaultValue("1") int pageToken, @Nullable @Named("idToken") String idToken) throws ServiceException {
+			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
+			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken, "list");
 			return transform(getStore().list(Query.forList(filter, orderBy, pageSize, pageToken)));

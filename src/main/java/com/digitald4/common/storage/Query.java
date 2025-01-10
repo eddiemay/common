@@ -18,6 +18,7 @@ public class Query {
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();
   private Integer pageSize;
   private int pageToken;
+  private boolean useDBSort = false;
 
   private Query() {}
 
@@ -32,6 +33,15 @@ public class Query {
 
   public Query setOrderBys(OrderBy... orderBys) {
     return setOrderBys(asList(orderBys));
+  }
+
+  public boolean useDBSort() {
+    return useDBSort;
+  }
+
+  public Query setUseDBSort(boolean useDBSort) {
+    this.useDBSort = useDBSort;
+    return this;
   }
 
   public Query setPageSize(Integer pageSize) {

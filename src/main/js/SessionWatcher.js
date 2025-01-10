@@ -1,9 +1,10 @@
-com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(globalData, userService) {
+com.digitald4.common.SessionWatcher = ['$interval', 'globalData', 'userService',
+    function($interval, globalData, userService) {
   var interval;
 
   this.enable = function() {
     console.log("Enabling session watcher");
-    interval = setInterval(function() {
+    interval = $interval(function() {
       var now = Date.now();
       if (globalData.activeSession == undefined) {
         // If the session has ended, disable the watcher.
@@ -28,6 +29,6 @@ com.digitald4.common.SessionWatcher = ['globalData', 'userService', function(glo
 
   this.disable = function() {
     console.log("Disabling session watcher");
-    clearInterval(interval);
+    $interval.cancel(interval);
   };
 }];

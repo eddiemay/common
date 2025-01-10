@@ -1,7 +1,9 @@
 package com.digitald4.common.storage;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.appengine.api.datastore.KeyFactory.createKey;
+import static com.google.appengine.api.datastore.Query.SortDirection.ASCENDING;
+import static com.google.appengine.api.datastore.Query.SortDirection.DESCENDING;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
@@ -144,6 +146,20 @@ public class DAOCloudDS implements DAO {
 
 	@Override
 	public <T, I> int delete(Class<T> c, Iterable<I> ids) {
+    try {
+			Class<?> rt = c.getMethod("getId").getReturnType();
+			if (rt == Long.class || rt.getGenericSuperclass() == Long.class) {
+      	ImmutableList<Long> longIds = stream(ids).map(String::valueOf).map(Long::parseLong).collect(toImmutableList());
+				return Calculate.executeWithRetries(2, () -> {
+					changeTracker.preDelete(c, longIds);
+					datastoreService.delete(createFactorKeys(c, longIds));
+					changeTracker.postDelete(c, longIds);
+					return Iterables.size(longIds);
+				});
+      }
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
 		return Calculate.executeWithRetries(2, () -> {
 			changeTracker.preDelete(c, ids);
 			datastoreService.delete(createFactorKeys(c, ids));
@@ -203,14 +219,20 @@ public class DAOCloudDS implements DAO {
 								.collect(toImmutableList())));
 			}
 		}
-		// query.getOrderBys().forEach(orderBy -> eQuery.addSort(orderBy.getColumn(), orderBy.getDesc() ? DESCENDING : ASCENDING));
-
-		var allResults = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(2048));
 
 		Integer limit = query.getLimit();
 		if (limit == null || limit == 0) {
 			limit = Integer.MAX_VALUE;
 		}
+
+		if (query.useDBSort()) {
+			query.getOrderBys().forEach(orderBy -> eQuery.addSort(orderBy.getColumn(), orderBy.getDesc() ? DESCENDING : ASCENDING));
+			var results = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(limit).offset(query.getOffset()));
+			return QueryResult.of(
+					c, results.stream().map(entity -> convert(c, entity)).collect(toImmutableList()), results.size(), query);
+		}
+
+		var allResults = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(2048));
 
 		var comparator = getComparator(c, query);
 		return QueryResult.of(c,
@@ -420,6 +442,7 @@ public class DAOCloudDS implements DAO {
 
 	private static <T> Comparator<T> getComparator(Class<T> c, Query.OrderBy orderBy) {
 		Method method = getMethod(c, orderBy);
+		int multiplier = orderBy.getDesc() ? -1 : 1;
 		return (c1, c2) -> {
 			try {
 				Object o1 = method.invoke(c1);
@@ -427,15 +450,15 @@ public class DAOCloudDS implements DAO {
 				if (o1 == null && o2 == null) {
 					return 0;
 				} else if (o1 == null) {
-					return -1;
+					return -1 * multiplier;
 				} else if (o2 == null) {
-					return 1;
+					return multiplier;
 				} else if (o1 instanceof Integer integer) {
-					return integer.compareTo((Integer) o2);
+					return integer.compareTo((Integer) o2) * multiplier;
 				} else if (o1 instanceof Double d) {
-					return d.compareTo((Double) o2);
+					return d.compareTo((Double) o2) * multiplier;
 				}
-				return o1.toString().compareTo(o2.toString()) * (orderBy.getDesc() ? -1 : 1);
+				return o1.toString().compareTo(o2.toString()) * multiplier;
 			} catch (IllegalAccessException | InvocationTargetException e) {
 				throw new RuntimeException(e);
 			}

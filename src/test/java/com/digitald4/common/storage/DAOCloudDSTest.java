@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.DataFile;
+import com.digitald4.common.model.GeneralData;
 import com.digitald4.common.model.Session;
 import com.digitald4.common.model.User;
 import com.digitald4.common.util.JSONUtil;
@@ -112,6 +113,52 @@ public class DAOCloudDSTest {
 		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
 		assertThat(session.getExpTime().getMillis()).isEqualTo(20000);
 		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
+	}
+
+	@Test
+	public void deleteWithIdLong() {
+		GeneralData gd = dao.create(
+				new GeneralData()
+						.setId(4567)
+						.setName("test")
+						.setDescription("test data"));
+
+		assertThat(gd.getId()).isEqualTo(4567);
+		assertThat(gd.getName()).isEqualTo("test");
+		assertThat(gd.getDescription()).isEqualTo("test data");
+
+		int deleted = dao.delete(GeneralData.class, ImmutableList.of(4567));
+
+		try {
+			dao.get(GeneralData.class, gd.getId());
+			fail("Should not have got here");
+		} catch (Exception e) {
+			// Expected.
+		}
+		assertThat(deleted).isEqualTo(1);
+	}
+
+	@Test
+	public void deleteWithIdLongValueAsString() {
+		GeneralData gd = dao.create(
+				new GeneralData()
+						.setId(4567)
+						.setName("test")
+						.setDescription("test data"));
+
+		assertThat(gd.getId()).isEqualTo(4567);
+		assertThat(gd.getName()).isEqualTo("test");
+		assertThat(gd.getDescription()).isEqualTo("test data");
+
+		int deleted = dao.delete(GeneralData.class, ImmutableList.of("4567"));
+
+		try {
+			dao.get(GeneralData.class, gd.getId());
+			fail("Should not have got here");
+		} catch (Exception e) {
+			// Expected.
+		}
+		assertThat(deleted).isEqualTo(1);
 	}
 
 	@Test

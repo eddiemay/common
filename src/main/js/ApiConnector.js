@@ -26,6 +26,7 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
       console.log('Status code: ' + response.status);
       if (response.status == 401) {
         globalData.activeSession = undefined;
+        errorCallback(response.data.error);
       } else if (response.data) {
         console.log('message: ' + response.data.error.message);
         errorCallback(response.data.error);

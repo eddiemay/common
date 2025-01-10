@@ -20,11 +20,13 @@ public interface BulkGetable<T,I> extends EntityService<T> {
     private final ImmutableList<T> items;
     private final ImmutableList<I> requestedIds;
     private final ImmutableList<I> missingIds;
+    private final Class<?> idClass;
 
     private MultiListResult(Iterable<T> items, Iterable<I> requestedIds, Iterable<I> missingIds) {
       this.items = ImmutableList.copyOf(items);
       this.requestedIds = ImmutableList.copyOf(requestedIds);
       this.missingIds = ImmutableList.copyOf(missingIds);
+      idClass = requestedIds.iterator().hasNext() ? requestedIds.iterator().next().getClass() : null;
     }
 
     public ImmutableList<T> getItems() {
@@ -39,6 +41,10 @@ public interface BulkGetable<T,I> extends EntityService<T> {
       return missingIds;
     }
 
+    public Class<?> getIdClass() {
+      return idClass;
+    }
+
     public static <T, I> MultiListResult<T, I> of(Iterable<T> items, Iterable<I> requestedIds) {
       if (size(items) == size(requestedIds)) {
         return new MultiListResult<>(items, requestedIds, ImmutableList.of());
@@ -47,7 +53,7 @@ public interface BulkGetable<T,I> extends EntityService<T> {
       ImmutableSet<I> foundIds =
           stream(items).map(JSONObject::new).map(json -> (I) json.get("id")).collect(toImmutableSet());
       return new MultiListResult<>(
-          items, requestedIds, stream(requestedIds).filter(foundIds::contains).collect(toImmutableSet()));
+          items, requestedIds, stream(requestedIds).filter(id -> !foundIds.contains(id)).collect(toImmutableSet()));
     }
   }
 }

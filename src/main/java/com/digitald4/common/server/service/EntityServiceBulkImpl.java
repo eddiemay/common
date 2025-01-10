@@ -1,6 +1,7 @@
 package com.digitald4.common.server.service;
 
 import static java.util.function.Function.identity;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.digitald4.common.exception.DD4StorageException;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntityServiceImpl<T, I>
     implements /*BulkCreateable<T>,*/ BulkGetable<T,I>, BulkUpdateable<T,I>, BulkDeleteable<T,I> {
+
 
   public EntityServiceBulkImpl(Store<T,I> store, LoginResolver loginResolver) {
     super(store, loginResolver);
@@ -48,7 +50,8 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
       throws ServiceException {
     try {
       resolveLogin(idToken, "batchGet");
-      return getStore().get(ids.getItems());
+      return getStore().get((Iterable<I>)
+          ids.getItems().stream().map(id -> Long.parseLong(id.toString())).collect(toImmutableList()));
     } catch (DD4StorageException e) {
       e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);

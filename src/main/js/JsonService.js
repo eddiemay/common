@@ -31,7 +31,7 @@ com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, 
 /**
 * Gets an object from the data store by id.
 *
-* @param {number} id The unique id of the object to restrieve.
+* @param {number} id The unique id of the object to fetch.
 * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
@@ -103,6 +103,17 @@ com.digitald4.common.JSONService.prototype.search = function(request, onSuccess,
 com.digitald4.common.JSONService.prototype.batchCreate = function(entities, onSuccess, onError) {
 	this.sendRequest(
 	    {action: 'batchCreate', method: 'POST', data: {items: entities}}, onSuccess, onError);
+}
+
+/**
+* Gets an object from the data store by id.
+*
+* @param {number} ids The ids of the objects to fetch.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.batchGet = function(ids, onSuccess, onError) {
+	this.sendRequest({action: 'batchGet', method: 'POST', data: {items: ids}}, onSuccess, onError);
 }
 
 /**
