@@ -51,8 +51,7 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
 
     Index index = getIndex(entities.iterator().next().getClass());
     for (int x = 0; x < Iterables.size(entities); x += UPDATE_LIMIT) {
-      index.putAsync(stream(entities).skip(x).limit(UPDATE_LIMIT).map(this::toDocument)
-          .collect(toImmutableList()));
+      index.putAsync(stream(entities).skip(x).limit(UPDATE_LIMIT).map(this::toDocument).collect(toImmutableList()));
     }
   }
 
@@ -101,8 +100,12 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
     return SearchServiceFactory.getSearchService().getIndex(IndexSpec.newBuilder().setName(indexName).build());
   }
 
-  protected <T> Document toDocument(T t) {
-    Document.Builder document = Document.newBuilder();
+  private <T> Document toDocument(T t) {
+    return toDocumentBuilder(t).build();
+  }
+
+  protected <T> Document.Builder toDocumentBuilder(T t) {
+    Document.Builder builder = Document.newBuilder();
     JSONObject json = new JSONObject(t);
     ImmutableMap<String, Field> fields = JSONUtil.getFields(t.getClass());
     json.keySet().forEach(fieldName -> {
@@ -112,7 +115,7 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
       }
 
       if (fieldName.equals("id")) {
-        document.setId(json.get(fieldName).toString());
+        builder.setId(json.get(fieldName).toString());
         return;
       }
 
@@ -153,9 +156,10 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
           }
           break;
       }
-      document.addField(docField);
+      builder.addField(docField);
     });
-    return document.build();
+
+    return builder;
   }
 
   @VisibleForTesting

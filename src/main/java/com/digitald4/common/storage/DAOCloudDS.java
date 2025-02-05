@@ -160,6 +160,7 @@ public class DAOCloudDS implements DAO {
     } catch (NoSuchMethodException e) {
       throw new RuntimeException(e);
     }
+
 		return Calculate.executeWithRetries(2, () -> {
 			changeTracker.preDelete(c, ids);
 			datastoreService.delete(createFactorKeys(c, ids));
@@ -420,6 +421,7 @@ public class DAOCloudDS implements DAO {
 			case "<" -> new FilterPredicate(fieldName, FilterOperator.LESS_THAN, value);
 			case "<=" -> new FilterPredicate(fieldName, FilterOperator.LESS_THAN_OR_EQUAL, value);
 			case "=", "" -> new FilterPredicate(fieldName, FilterOperator.EQUAL, value);
+			case "!=" -> new FilterPredicate(fieldName, FilterOperator.NOT_EQUAL, value);
 			case ">=" -> new FilterPredicate(fieldName, FilterOperator.GREATER_THAN_OR_EQUAL, value);
 			case ">" -> new FilterPredicate(fieldName, FilterOperator.GREATER_THAN, value);
 			case "IN" -> new FilterPredicate(fieldName, FilterOperator.IN, value);

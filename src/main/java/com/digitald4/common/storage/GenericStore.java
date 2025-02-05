@@ -105,7 +105,7 @@ public class GenericStore<T, I> implements Store<T, I> {
 	}
 
 	private T transform(T t) {
-		return transform(ImmutableList.of(t)).iterator().next();
+		return t == null ? null : transform(ImmutableList.of(t)).iterator().next();
 	}
 
 	protected Iterable<T> transform(Iterable<T> entities) {
