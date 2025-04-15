@@ -14,7 +14,7 @@ public class DataFile extends ModelObjectModUser<String> {
     return getName();
   }
 
-  public DataFile setId(long id) {
+  public DataFile setId(String id) {
     return this;
   }
 
