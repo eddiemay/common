@@ -1,8 +1,9 @@
 package com.digitald4.common.server.service;
 
-import static java.util.function.Function.identity;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.function.Function.identity;
+import static java.util.Arrays.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
@@ -17,7 +18,6 @@ import com.google.api.server.spi.config.Nullable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntityServiceImpl<T, I>
@@ -45,13 +45,29 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
   } */
 
   @Override
-  @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchGet")
-  public MultiListResult<T, I> batchGet(IterableParam<I> ids, @Nullable @Named("idToken") String idToken)
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "batchGet")
+  public MultiListResult<T, I> batchGet(@Named("ids") String ids, @Nullable @Named("idToken") String idToken)
       throws ServiceException {
     try {
       resolveLogin(idToken, "batchGet");
       return getStore().get((Iterable<I>)
-          ids.getItems().stream().map(id -> Long.parseLong(id.toString())).collect(toImmutableList()));
+         stream(ids.split(",")).map(id -> Long.parseLong(id.toString())).collect(toImmutableList()));
+    } catch (DD4StorageException e) {
+      e.printStackTrace();
+      throw new ServiceException(e.getErrorCode(), e);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
+    }
+  }
+
+  @Override
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "bulkGet")
+  public MultiListResult<T, I> bulkGet(Ids ids, @Nullable @Named("idToken") String idToken)
+      throws ServiceException {
+    try {
+      resolveLogin(idToken, "bulkGet");
+      return getStore().get((Iterable<I>) ids.itemsAsLongs());
     } catch (DD4StorageException e) {
       e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);
@@ -82,10 +98,10 @@ public class EntityServiceBulkImpl<I, T extends ModelObject<I>> extends EntitySe
 
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "batchDelete")
-  public AtomicInteger batchDelete(IterableParam<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
+  public AtomicInteger batchDelete(Ids ids, @Nullable @Named("idToken") String idToken) throws ServiceException {
     try {
       resolveLogin(idToken, "batchDelete");
-      return new AtomicInteger(getStore().delete(ids.getItems()));
+      return new AtomicInteger(getStore().delete((Iterable<I>) ids.itemsAsLongs()));
     } catch (DD4StorageException e) {
       e.printStackTrace();
       throw new ServiceException(e.getErrorCode(), e);

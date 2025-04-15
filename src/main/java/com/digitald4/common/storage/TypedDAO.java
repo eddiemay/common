@@ -25,4 +25,8 @@ public interface TypedDAO<R> {
 	<T extends R, I> boolean delete(Class<T> c, I id);
 
 	<T extends R, I> int delete(Class<T> c, Iterable<I> ids);
+
+	default <T extends R, I> int index(Class<T> c, Iterable<T> items) {
+		throw new IllegalArgumentException("Index not implemented for DAO");
+	}
 }

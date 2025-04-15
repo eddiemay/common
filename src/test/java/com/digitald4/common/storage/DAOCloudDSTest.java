@@ -106,6 +106,14 @@ public class DAOCloudDSTest {
 		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
 		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
 
+		session = dao.get(Session.class, "4567");
+		assertThat(session.getId()).isEqualTo("4567");
+		assertThat(session.getUserId()).isEqualTo(123);
+		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
+		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
+		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);
+
+
 		session = dao.update(Session.class, "4567", s -> s.setExpTime(new DateTime(20000)));
 
 		assertThat(session.getId()).isEqualTo("4567");

@@ -1,10 +1,15 @@
 package com.digitald4.common.storage;
+import static com.digitald4.common.util.JSONUtil.copy;
+import static com.digitald4.common.util.JSONUtil.getDefaultInstance;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.service.BulkGetable;
-import com.digitald4.common.util.JSONUtil;
+import com.digitald4.common.storage.Query.List;
+import com.digitald4.common.util.Pair;
 import com.google.common.collect.ImmutableList;
 
 import java.util.function.UnaryOperator;
@@ -12,7 +17,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class GenericStore<T, I> implements Store<T, I> {
-
 	private final Class<T> c;
 	private final Provider<DAO> daoProvider;
 
@@ -34,12 +38,13 @@ public class GenericStore<T, I> implements Store<T, I> {
 
 	@Override
 	public T create(T t) {
-		return transform(postprocess(daoProvider.get().create(preprocess(t, true))));
+		return transform(postprocess(daoProvider.get().create(preprocess(t, null))));
 	}
 
 	@Override
 	public ImmutableList<T> create(Iterable<T> entities) {
-		return ImmutableList.copyOf(transform(postprocess(daoProvider.get().create(preprocess(entities, true)))));
+		return ImmutableList.copyOf(transform(postprocess(daoProvider.get().create(
+				preprocess(stream(entities).map(t -> Pair.of(t, (T) null)).collect(toImmutableList()))))));
 	}
 
 	@Override
@@ -61,7 +66,7 @@ public class GenericStore<T, I> implements Store<T, I> {
 
 	@Override
 	public QueryResult<T> search(Query.Search searchQuery) {
-		T defaultInstance = JSONUtil.getDefaultInstance(c);
+		T defaultInstance = getDefaultInstance(c);
 		if (!(defaultInstance instanceof Searchable)) {
 			throw new DD4StorageException(
 					"Unsupported Operation: " + c + " does not implement Searchable", ErrorCode.BAD_REQUEST);
@@ -73,13 +78,13 @@ public class GenericStore<T, I> implements Store<T, I> {
 	@Override
 	public T update(I id, UnaryOperator<T> updater) {
 		return transform(postprocess(
-				daoProvider.get().update(c, id, current -> preprocess(updater.apply(current), false))));
+				daoProvider.get().update(c, id, current -> preprocess(updater.apply(copy(current)), current))));
 	}
 
 	@Override
 	public ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater) {
 		return ImmutableList.copyOf(transform(postprocess(
-				daoProvider.get().update(c, ids, current -> preprocess(updater.apply(current), false)))));
+				daoProvider.get().update(c, ids, current -> preprocess(updater.apply(copy(current)), current)))));
 	}
 
 	@Override
@@ -96,16 +101,26 @@ public class GenericStore<T, I> implements Store<T, I> {
 		return result;
 	}
 
-	protected T preprocess(T t, boolean isCreate) {
-		return preprocess(ImmutableList.of(t), isCreate).iterator().next();
+	protected T preprocess(T t, T current) {
+		return preprocess(ImmutableList.of(Pair.of(t, current))).iterator().next();
 	}
 
-	protected Iterable<T> preprocess(Iterable<T> entities, boolean isCreate) {
-		return entities;
+	protected Iterable<T> preprocess(Iterable<Pair<T, T>> entities) {
+		return stream(entities).map(Pair::getLeft).collect(toImmutableList());
 	}
 
 	private T transform(T t) {
 		return t == null ? null : transform(ImmutableList.of(t)).iterator().next();
+	}
+
+	@Override
+	public int index(Iterable<T> items) {
+		return daoProvider.get().index(c, items);
+	}
+
+	@Override
+	public int index(List query) {
+		return index(list(query).getItems());
 	}
 
 	protected Iterable<T> transform(Iterable<T> entities) {

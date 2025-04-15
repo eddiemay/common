@@ -1,5 +1,10 @@
 package com.digitald4.common.server.service;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.Iterables.size;
+import static com.google.common.collect.Streams.stream;
+
 import com.google.api.server.spi.ServiceException;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.Named;
@@ -8,13 +13,31 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.json.JSONObject;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Iterables.size;
-import static com.google.common.collect.Streams.stream;
-
 public interface BulkGetable<T,I> extends EntityService<T> {
+  @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET)
+  MultiListResult<T, I> batchGet(String ids, @Nullable @Named("idToken") String idToken)
+      throws ServiceException;
+
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.POST)
-  MultiListResult<T, I> batchGet(IterableParam<I> ids, @Nullable @Named("idToken") String idToken) throws ServiceException;
+  MultiListResult<T, I> bulkGet(Ids ids, @Nullable @Named("idToken") String idToken)
+      throws ServiceException;
+
+  class Ids {
+    private ImmutableList<String> items = ImmutableList.of();
+
+    public ImmutableList<String> getItems() {
+      return items;
+    }
+
+    public ImmutableList<Long> itemsAsLongs() {
+      return items.stream().map(Long::parseLong).collect(toImmutableList());
+    }
+
+    public Ids setItems(Iterable<String> items) {
+      this.items = ImmutableList.copyOf(items);
+      return this;
+    }
+  }
 
   class MultiListResult<T, I> {
     private final ImmutableList<T> items;

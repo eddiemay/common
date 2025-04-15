@@ -53,6 +53,19 @@ com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, o
 }
 
 /**
+* Search of objects from the data store.
+*
+* @param {Object{searchText, orderBy, pageSize, pageToken}} request The parameters associated with a list request.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
+  this.sendRequest({action: 'search', method: 'GET', params: request}, function(response) {
+    onSuccess(processPagination(response));
+  }, onError);
+}
+
+/**
 * Updates an object in the data store.
 *
 * @param {Object} entity The object to update.
@@ -81,19 +94,6 @@ com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onEr
 }
 
 /**
-* Search of objects from the data store.
-*
-* @param {Object{searchText, orderBy, pageSize, pageToken}} request The parameters associated with a list request.
-* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
-* @param {!function(!Object)} onError The call back function to call after a submission onError.
-*/
-com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
-  this.sendRequest({action: 'search', method: 'GET', params: request}, function(response) {
-    onSuccess(processPagination(response));
-  }, onError);
-}
-
-/**
 * Creates a batch of objects in the data store.
 *
 * @param {Array<Object>} entities to create
@@ -106,14 +106,25 @@ com.digitald4.common.JSONService.prototype.batchCreate = function(entities, onSu
 }
 
 /**
-* Gets an object from the data store by id.
+* Gets a list of objects from the data store by id.
 *
 * @param {number} ids The ids of the objects to fetch.
 * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.batchGet = function(ids, onSuccess, onError) {
-	this.sendRequest({action: 'batchGet', method: 'POST', data: {items: ids}}, onSuccess, onError);
+	this.sendRequest({action: 'batchGet', method: 'GET', params: {ids: ids.join()}}, onSuccess, onError);
+}
+
+/**
+* Gets a list of objects from the data store by id.
+*
+* @param {number} ids The ids of the objects to fetch.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.bulkGet = function(ids, onSuccess, onError) {
+	this.sendRequest({action: 'bulkGet', method: 'POST', data: {items: ids}}, onSuccess, onError);
 }
 
 /**

@@ -23,13 +23,17 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class JSONUtil {
+
   private static final Map<Class<?>, Object> defaultInstances = new HashMap<>();
   private static final Map<Class<?>, ImmutableMap<String, Field>> typeFields = new HashMap<>();
   private static final ObjectMapper MAPPER =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-  private JSONUtil() {}
 
-  public static <T> ImmutableList<T> transform(JSONArray jsonArray, Function<Integer, T> converter) {
+  private JSONUtil() {
+  }
+
+  public static <T> ImmutableList<T> transform(JSONArray jsonArray,
+      Function<Integer, T> converter) {
     return IntStream.range(0, jsonArray.length())
         .mapToObj(converter::apply)
         .collect(toImmutableList());
@@ -61,6 +65,10 @@ public class JSONUtil {
     } catch (IOException e) {
       throw new DD4StorageException("Error reading json object: " + json + " of type: " + cls, e);
     }
+  }
+
+  public static <T> T copy(T t) {
+    return toObject((Class<T>) t.getClass(), toJSON(t));
   }
 
   public static <T> T getDefaultInstance(Class<T> cls) {

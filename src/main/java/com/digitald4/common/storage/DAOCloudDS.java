@@ -169,6 +169,21 @@ public class DAOCloudDS implements DAO {
 		});
 	}
 
+	@Override
+	public <T, I> int index(Class<T> c, Iterable<T> items) {
+		if (Iterables.isEmpty(items)) {
+			return 0;
+		}
+
+		T first = items.iterator().next();
+		if (!(first instanceof Searchable)) {
+			throw new IllegalArgumentException(
+					String.format("Can not index, %s not instance of Searchable", c));
+		}
+		searchIndexer.index((Iterable<? extends Searchable>) items);
+		return 0;
+	}
+
 	private String getTableName(Class<?> c) {
 		Context context = contextProvider.get();
 		return (context == Context.NONE) ? c.getSimpleName() : String.format("%s.%s", context.name(), c.getSimpleName());
@@ -233,7 +248,7 @@ public class DAOCloudDS implements DAO {
 					c, results.stream().map(entity -> convert(c, entity)).collect(toImmutableList()), results.size(), query);
 		}
 
-		var allResults = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(2048));
+		var allResults = datastoreService.prepare(eQuery).asList(FetchOptions.Builder.withLimit(2750));
 
 		var comparator = getComparator(c, query);
 		return QueryResult.of(c,
@@ -260,7 +275,7 @@ public class DAOCloudDS implements DAO {
 				bytes[b] = (Byte) jsonArray.get(b);
 			}
 			setProperty(entity, fieldName, new Blob(bytes), field);
-		} else if (value instanceof JSONObject || value instanceof JSONArray) {
+		} else if (value instanceof JSONObject || value instanceof JSONArray || value instanceof StringBuilder) {
 			setProperty(entity, fieldName, new Text(value.toString()), field);
 		} else if (value instanceof Enum) {
 			setProperty(entity, fieldName, value.toString(), field);
@@ -271,8 +286,6 @@ public class DAOCloudDS implements DAO {
 		} else if (value instanceof Long && (fields.get(fieldName).getType() == DateTime.class
 				|| fields.get(fieldName).getType() == Instant.class)) {
 			setProperty(entity, fieldName, new Date((Long) value), field);
-		} else if (value instanceof StringBuilder) {
-			setProperty(entity, fieldName, new Text(value.toString()), field);
 		} else {
 			setProperty(entity, fieldName, value, field);
 		}
@@ -295,9 +308,8 @@ public class DAOCloudDS implements DAO {
 		JSONObject jsonObject = new JSONObject();
 		Field idField = fieldMap.get("id");
 		if (idField != null && idField.getSetMethod() != null) {
-			Class<?> idType = idField.getSetMethod().getParameterTypes()[0];
-			jsonObject.put(
-					"id", idType == String.class ? entity.getKey().getName() : entity.getKey().getId());
+			Key key = entity.getKey();
+			jsonObject.put("id", key.getId() > 0 ? key.getId() : key.getName());
 		}
 		entity.getProperties().forEach((colName, value) -> {
 			String javaName = FormatText.toLowerCamel(colName);

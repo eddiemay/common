@@ -2,7 +2,6 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.server.service.BulkGetable;
 import com.google.common.collect.ImmutableList;
-
 import java.util.function.UnaryOperator;
 
 public interface Store<T, I> {
@@ -27,4 +26,8 @@ public interface Store<T, I> {
 	boolean delete(I id);
 
 	int delete(Iterable<I> ids);
+
+	int index(Iterable<T> items);
+
+	int index(Query.List query);
 }

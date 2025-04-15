@@ -44,15 +44,17 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
   }
 
   @Override
-  public <T extends Searchable> void index(Iterable<T> entities) {
+  public <T extends Searchable> int index(Iterable<T> entities) {
     if (Iterables.isEmpty(entities)) {
-      return;
+      return 0;
     }
 
     Index index = getIndex(entities.iterator().next().getClass());
     for (int x = 0; x < Iterables.size(entities); x += UPDATE_LIMIT) {
       index.putAsync(stream(entities).skip(x).limit(UPDATE_LIMIT).map(this::toDocument).collect(toImmutableList()));
     }
+
+    return Iterables.size(entities);
   }
 
   @Override

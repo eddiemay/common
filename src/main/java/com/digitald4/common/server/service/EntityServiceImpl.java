@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
+import com.digitald4.common.model.Searchable;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.ServiceException;
@@ -137,6 +138,25 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 			resolveLogin(idToken, "migrate");
 			return new AtomicInteger(
 					getStore().create(getStore().list(Query.forList(filter, orderBy, pageSize, pageToken)).getItems()).size());
+		} catch (DD4StorageException e) {
+			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
+		}
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "reindex")
+	public AtomicInteger reindex(@Nullable @Named("filter") String filter,
+			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
+			@Nullable @Named("orderBy") String orderBy, @Nullable @Named("idToken") String idToken) throws ServiceException {
+		try {
+			resolveLogin(idToken, "reindex");
+			if (!(JSONUtil.getDefaultInstance(getTypeClass()) instanceof Searchable)) {
+				throw new IllegalArgumentException(String.format(
+						"Can not index %s, not instance of Searchable", getTypeClass().getSimpleName()));
+			}
+			return new AtomicInteger(getStore().index(Query.forList(filter, orderBy, pageSize, pageToken)));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		} catch (Exception e) {

@@ -12,6 +12,7 @@ import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.util.JSONUtil;
+import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -150,7 +151,7 @@ public class ChangeTracker {
   public static class ChangeHistory extends ModelObject<Long> {
     private String entityType;
     private String entityId;
-    enum Action {CREATED, UPDATED, DELETED}
+    public enum Action {CREATED, UPDATED, MIGRATED, DELETED}
     private Action action;
     private Instant timeStamp;
     private Long userId;
@@ -201,6 +202,12 @@ public class ChangeTracker {
       return this;
     }
 
+    @ApiResourceProperty
+    public long timeStamp() {
+      return timeStamp.toEpochMilli();
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Instant getTimeStamp() {
       return timeStamp;
     }
