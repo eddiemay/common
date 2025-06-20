@@ -1,9 +1,8 @@
 package com.digitald4.common.server.service;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
+import com.digitald4.common.model.Identifier;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
@@ -13,9 +12,9 @@ import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, Listable<T>, Updateable<T,I>, Deleteable<T,I> {
 	private final Store<T,I> store;
@@ -73,12 +72,47 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "list")
 	public QueryResult<T> list(
-			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+			@Nullable @Named("fields") String fields, @Nullable @Named("filter") String filter,
+			@Nullable @Named("orderBy") String orderBy,
 			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
 			@Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken, "list");
-			return transform(getStore().list(Query.forList(filter, orderBy, pageSize, pageToken)));
+			return transform(getStore().list(Query.forList(fields, filter, orderBy, pageSize, pageToken)));
+		} catch (DD4StorageException e) {
+			e.printStackTrace();
+			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
+		}
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "listAsIds")
+	public QueryResult<Identifier> listAsIds(
+			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1")
+			int pageToken, @Nullable @Named("idToken") String idToken) throws ServiceException {
+		try {
+			resolveLogin(idToken, "listAsIds");
+			return getStore().listAsIdentifer(Query.forList(null, filter, orderBy, pageSize, pageToken));
+		} catch (DD4StorageException e) {
+			e.printStackTrace();
+			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
+		}
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "listForReport")
+	public QueryResult<T> listforReport(
+			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
+			@Nullable @Named("idToken") String idToken) throws ServiceException {
+		try {
+			resolveLogin(idToken, "listForReport");
+			return getStore().list(Query.forList(String.join(",", getReportFields()), filter, orderBy, pageSize, pageToken));
 		} catch (DD4StorageException e) {
 			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);
@@ -137,7 +171,7 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 		try {
 			resolveLogin(idToken, "migrate");
 			return new AtomicInteger(
-					getStore().create(getStore().list(Query.forList(filter, orderBy, pageSize, pageToken)).getItems()).size());
+					getStore().create(getStore().list(Query.forList(null, filter, orderBy, pageSize, pageToken)).getItems()).size());
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		} catch (Exception e) {
@@ -156,7 +190,7 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 				throw new IllegalArgumentException(String.format(
 						"Can not index %s, not instance of Searchable", getTypeClass().getSimpleName()));
 			}
-			return new AtomicInteger(getStore().index(Query.forList(filter, orderBy, pageSize, pageToken)));
+			return new AtomicInteger(getStore().index(Query.forList(null, filter, orderBy, pageSize, pageToken)));
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		} catch (Exception e) {
@@ -176,6 +210,10 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 
 	protected Iterable<T> transform(Iterable<T> entities) {
 		return entities;
+	}
+
+	protected ImmutableSet<String> getReportFields() {
+		return ImmutableSet.of();
 	}
 
 	protected boolean requiresLogin(String method) {

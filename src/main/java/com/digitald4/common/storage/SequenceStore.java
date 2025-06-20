@@ -2,10 +2,10 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
+import com.digitald4.common.storage.Transaction.Op;
 import com.google.common.collect.ImmutableList;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 public class SequenceStore {
@@ -19,19 +19,20 @@ public class SequenceStore {
   public synchronized long getAndIncrement(Class<?> cls) {
     Sequence sequence = daoProvider.get().get(Sequence.class, cls.getSimpleName());
     long value = sequence.getValue();
-    daoProvider.get().create(sequence.increment());
+    daoProvider.get().persist(Transaction.of(Op.create(sequence.increment())));
     return value;
   }
 
   public synchronized ImmutableList<Long> allocate(Class<?> cls, long number) {
     Sequence sequence = daoProvider.get().get(Sequence.class, cls.getSimpleName());
     long start = sequence.getValue();
-    daoProvider.get().create(sequence.setValue(start + number));
+    daoProvider.get().persist(Transaction.of(Op.create(sequence.setValue(start + number))));
     return LongStream.range(start, start + number).boxed().collect(toImmutableList());
   }
 
   public void create(Class<?> cls, long initialValue) {
-    daoProvider.get().create(new Sequence().setId(cls.getSimpleName()).setValue(initialValue));
+    daoProvider.get().persist(
+        Transaction.of(Op.create(new Sequence().setId(cls.getSimpleName()).setValue(initialValue))));
   }
 
   public static class Sequence {

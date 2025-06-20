@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.APIConnector;
+import com.digitald4.common.storage.Transaction.Op;
 import com.google.common.collect.ImmutableList;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -42,7 +43,9 @@ public class DAOApiImplTest {
     when(connector.sendPost(anyString(), anyString())).thenAnswer(
         i -> new JSONObject(i.<String>getArgument(1)).put("id", USER_ID).toString());
 
-    BasicUser user = dao.create(new BasicUser().setUsername("user@name").setTypeId(10));
+    BasicUser user = dao
+        .persist(Transaction.of(Op.create(new BasicUser().setUsername("user@name").setTypeId(10))))
+        .getOps().get(0).getEntity();
 
     assertThat(user.getId()).isEqualTo(USER_ID);
     assertThat(user.getUsername()).isEqualTo("user@name");
@@ -85,7 +88,7 @@ public class DAOApiImplTest {
 
   @Test
   public void list_withParams() {
-    Query.List query = Query.forList("lastLogin>1000,typeId=10", "username", 1, 20);
+    Query.List query = Query.forList(null,"lastLogin>1000,typeId=10", "username", 1, 20);
     when(connector.sendGet(anyString())).thenReturn(
         new JSONObject(QueryResult.of(BasicUser.class, ImmutableList.of(BASIC_USER), 5, query)).toString());
 

@@ -19,7 +19,7 @@
   <table class="table sortable no-margin" cellspacing="0" style="width: 100%" data-page-length="25">
     <thead><tr>
       <th class="black-cell"><span data-ng-class="{loading: $ctrl.loading}"></span></th>
-      <th data-ng-repeat="col in $ctrl.columns">
+      <th data-ng-repeat="col in $ctrl.columns | filter: $ctrl.isVisible">
         <label data-ng-click="$ctrl.setSort(col)">{{col.title}}</label>
         <img data-ng-if="$ctrl.orderBy == col.prop" src="images/icons/fugue/arrow-270.png">
         <img data-ng-if="$ctrl.orderBy == col.prop + ' DESC'" src="images/icons/fugue/arrow-090.png">
@@ -33,7 +33,7 @@
         <td class="th table-check-cell">
           <input type="checkbox" data-ng-model="entity.selected" data-ng-change="$ctrl.onSelectionChange(entity)">
         </td>
-        <td data-ng-repeat="col in $ctrl.columns">
+        <td data-ng-repeat="col in $ctrl.columns | filter: $ctrl.isVisible">
           <input type="text" data-ng-if="col.editable || col.type == 'editable'" size="{{col.size}}"
                  data-ng-model="entity[col.prop]" data-on-change="$ctrl.update(entity, col.prop)"/>
           <span data-ng-if="col.value && !col.url">{{col.value(entity)}}</span>
@@ -44,12 +44,13 @@
             </button>
           </span>
           <span data-ng-if="col.type == 'address'">{{entity[col.prop].address}}</span>
+          <span data-ng-if="col.type == 'city'">{{$ctrl.getCity(entity[col.prop].address)}}</span>
           <input type="number" data-ng-if="col.type == 'editableNumber'" data-ng-model="entity[col.prop]"
                  data-on-change="$ctrl.update(entity, col.prop)" size="{{col.size}}"/>
           <input type="checkbox" data-ng-if="col.type == 'checkbox'" data-ng-model="entity[col.prop]"
                  data-ng-change="$ctrl.update(entity, col.prop)"/>
           <div data-dd4-datepicker data-ng-if="col.type == 'editableDate'" data-ng-model="entity[col.prop]"
-               data-on-update="$ctrl.update(entity, col.prop)"></div>
+               data-on-update="$ctrl.update(entity, col.prop)" data-ng-disabled="col.disabled(entity)"></div>
           <dd4-time data-ng-if="col.type == 'editableTime'" data-ng-model="entity[col.prop]"
                     data-on-update="$ctrl.update(entity, col.prop)"></dd4-time>
           <span data-ng-if="col.type == 'date'">{{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy'}}</span>

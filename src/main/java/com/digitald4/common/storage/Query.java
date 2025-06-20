@@ -15,12 +15,22 @@ public class Query {
   private static final Pattern FILTER_PATTERN =
       Pattern.compile("([A-Za-z_]+)\\s*([!=<>]+|IN)\\s*([A-Za-z0-9-_|\\. ]+)");
 
+  private ImmutableList<String> fields = ImmutableList.of();
   private ImmutableList<OrderBy> orderBys = ImmutableList.of();
   private Integer pageSize;
   private int pageToken;
   private boolean useDBSort = false;
 
   private Query() {}
+
+  public Query setFields(Iterable<String> fields) {
+    this.fields = ImmutableList.copyOf(fields);
+    return this;
+  }
+
+  public ImmutableList<String> getFields() {
+    return fields;
+  }
 
   public ImmutableList<OrderBy> getOrderBys() {
     return orderBys;
@@ -86,9 +96,11 @@ public class Query {
     return new List().setFilters(filters);
   }
 
-  public static Query.List forList(String filters, String orderBys, Integer pageSize, int pageToken) {
+  public static Query.List forList(String fields, String filters, String orderBys, Integer pageSize, int pageToken) {
     Query.List query = new Query.List();
-    query.setPageSize(pageSize).setPageToken(pageToken);
+    if (fields != null && !fields.isEmpty()) {
+      query.setFields(stream(fields.split(",")).collect(toImmutableList()));
+    }
     if (filters != null && !filters.isEmpty()) {
       query.setFilters(stream(filters.split(",")).map(Filter::parse).collect(toImmutableList()));
     }
@@ -98,7 +110,9 @@ public class Query {
           .collect(toImmutableList()));
     }
 
+    query.setPageSize(pageSize).setPageToken(pageToken);
     return query;
+
   }
 
   public static Query.Search forSearch(String searchText) {

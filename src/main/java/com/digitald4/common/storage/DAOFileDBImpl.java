@@ -2,24 +2,22 @@ package com.digitald4.common.storage;
 
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.service.BulkGetable;
-import com.google.common.collect.ImmutableList;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.UnaryOperator;
 
 public class DAOFileDBImpl implements DAO {
   private static final String FIlE_FORMAT = "data/%s.db";
   protected final Map<Class<?>, DAOFileBasedImpl> itemDAOs = new HashMap<>();
+  private final ChangeTracker changeTracker;
 
-  @Override
-  public <T> T create(T t) {
-    return getFileDAO(t.getClass()).create(t);
+  public DAOFileDBImpl(ChangeTracker changeTracker) {
+    this.changeTracker = changeTracker;
   }
 
   @Override
-  public <T> ImmutableList<T> create(Iterable<T> entities) {
-    return getFileDAO(entities.iterator().next().getClass()).create(entities);
+  public <T> Transaction<T> persist(Transaction<T> transaction) {
+    return getFileDAO(transaction.getOps().get(0).getTypeClass()).persist(transaction);
   }
 
   @Override
@@ -43,16 +41,6 @@ public class DAOFileDBImpl implements DAO {
   }
 
   @Override
-  public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
-    return getFileDAO(c).update(c, id, updater);
-  }
-
-  @Override
-  public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
-    return getFileDAO(c).update(c, ids, updater);
-  }
-
-  @Override
   public <T, I> boolean delete(Class<T> c, I id) {
     return getFileDAO(c).delete(c, id);
   }
@@ -63,7 +51,8 @@ public class DAOFileDBImpl implements DAO {
   }
 
   private DAOFileBasedImpl getFileDAO(Class<?> cls) {
-    itemDAOs.putIfAbsent(cls, new DAOFileBasedImpl(String.format(FIlE_FORMAT, cls.getSimpleName())).loadFromFile());
+    itemDAOs.putIfAbsent(cls,
+        new DAOFileBasedImpl(changeTracker, String.format(FIlE_FORMAT, cls.getSimpleName())).loadFromFile());
     return itemDAOs.get(cls);
   }
 

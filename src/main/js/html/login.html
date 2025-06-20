@@ -15,7 +15,7 @@
         <div class="block-header">Please Login</div>
         <a data-ng-if="$ctrl.allowSignup" href="#signup" data-ng-click="$ctrl.showSignUpDialog()">Sign Up</a>
         <p class="message error no-margin" data-ng-show="$ctrl.errorMessage">{{$ctrl.errorMessage}}</p>
-        <div class="form with-margin">
+        <div class="form with-margin" data-ng-submit="$ctrl.login()">
           <p class="inline-small-label">
             <label for="username"><span class="big">Username</span></label>
             <input type="text" id="username" class="full-width" data-ng-model="$ctrl.username" data-on-enter="$ctrl.login()">

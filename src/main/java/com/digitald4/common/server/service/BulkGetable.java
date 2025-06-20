@@ -1,15 +1,18 @@
 package com.digitald4.common.server.service;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.size;
 import static com.google.common.collect.Streams.stream;
+import static java.util.function.Function.identity;
 
 import com.google.api.server.spi.ServiceException;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.json.JSONObject;
 
@@ -44,12 +47,14 @@ public interface BulkGetable<T,I> extends EntityService<T> {
     private final ImmutableList<I> requestedIds;
     private final ImmutableList<I> missingIds;
     private final Class<?> idClass;
+    private final ImmutableMap<Object, T> itemsById;
 
     private MultiListResult(Iterable<T> items, Iterable<I> requestedIds, Iterable<I> missingIds) {
       this.items = ImmutableList.copyOf(items);
       this.requestedIds = ImmutableList.copyOf(requestedIds);
       this.missingIds = ImmutableList.copyOf(missingIds);
       idClass = requestedIds.iterator().hasNext() ? requestedIds.iterator().next().getClass() : null;
+      itemsById = this.items.stream().filter(t -> new JSONObject(t).has("id")).collect(toImmutableMap(t -> new JSONObject(t).get("id"), identity()));
     }
 
     public ImmutableList<T> getItems() {
@@ -66,6 +71,10 @@ public interface BulkGetable<T,I> extends EntityService<T> {
 
     public Class<?> getIdClass() {
       return idClass;
+    }
+
+    public T getItem(Object id) {
+      return itemsById.get(id);
     }
 
     public static <T, I> MultiListResult<T, I> of(Iterable<T> items, Iterable<I> requestedIds) {

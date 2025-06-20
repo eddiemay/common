@@ -15,7 +15,8 @@ public class DAOFileBasedImpl extends DAOInMemoryImpl {
   private final String fileName;
   private int writesSinceLastSave = 0;
 
-  public DAOFileBasedImpl(String fileName) {
+  public DAOFileBasedImpl(ChangeTracker changeTracker, String fileName) {
+    super(changeTracker);
     this.fileName = fileName;
   }
 

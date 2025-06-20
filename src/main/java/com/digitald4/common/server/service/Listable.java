@@ -10,7 +10,8 @@ import com.google.api.server.spi.config.Nullable;
 public interface Listable<T> extends EntityService<T> {
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "list")
   QueryResult<T> list(
-      @Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
+      @Nullable @Named("fields") String fields, @Nullable @Named("filter") String filter,
+      @Nullable @Named("orderBy") String orderBy,
       @Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken,
       @Nullable @Named("idToken") String idToken) throws ServiceException;
 }

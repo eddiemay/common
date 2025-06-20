@@ -1,17 +1,23 @@
 package com.digitald4.common.storage;
-import static com.digitald4.common.util.JSONUtil.copy;
 import static com.digitald4.common.util.JSONUtil.getDefaultInstance;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
+import com.digitald4.common.model.HasModificationTimes;
+import com.digitald4.common.model.Identifier;
+import com.digitald4.common.model.ModelObject;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.model.SoftDeletable;
 import com.digitald4.common.server.service.BulkGetable;
 import com.digitald4.common.storage.Query.List;
-import com.digitald4.common.util.Pair;
+import com.digitald4.common.storage.Transaction.Op;
 import com.google.common.collect.ImmutableList;
 
+import com.google.common.collect.ImmutableSet;
+import java.time.Instant;
 import java.util.function.UnaryOperator;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -38,13 +44,18 @@ public class GenericStore<T, I> implements Store<T, I> {
 
 	@Override
 	public T create(T t) {
-		return transform(postprocess(daoProvider.get().create(preprocess(t, null))));
+		Op<T> op = Op.create(t, this::preprocess, this::postprocess);
+		daoProvider.get().persist(Transaction.of(op, this::preprocess, this::postprocess));
+		return op.getEntity();
 	}
 
 	@Override
 	public ImmutableList<T> create(Iterable<T> entities) {
-		return ImmutableList.copyOf(transform(postprocess(daoProvider.get().create(
-				preprocess(stream(entities).map(t -> Pair.of(t, (T) null)).collect(toImmutableList()))))));
+		ImmutableList<Op<T>> ops = stream(entities)
+				.map(t -> Op.create(t, this::preprocess, this::postprocess))
+				.collect(toImmutableList());
+		daoProvider.get().persist(Transaction.of(ops, this::preprocess, this::postprocess));
+		return ops.stream().map(Op::getEntity).collect(toImmutableList());
 	}
 
 	@Override
@@ -65,6 +76,14 @@ public class GenericStore<T, I> implements Store<T, I> {
 	}
 
 	@Override
+	public QueryResult<Identifier> listAsIdentifer(List query) {
+		QueryResult<T> result = daoProvider.get().list(c, query);
+		ImmutableList<Identifier> results = result.getItems().stream()
+				.map(r -> Identifier.of((ModelObject<I>) r)).collect(toImmutableList());
+		return QueryResult.of(Identifier.class, results, result.getTotalSize(), result.query());
+	}
+
+	@Override
 	public QueryResult<T> search(Query.Search searchQuery) {
 		T defaultInstance = getDefaultInstance(c);
 		if (!(defaultInstance instanceof Searchable)) {
@@ -77,41 +96,90 @@ public class GenericStore<T, I> implements Store<T, I> {
 
 	@Override
 	public T update(I id, UnaryOperator<T> updater) {
-		return transform(postprocess(
-				daoProvider.get().update(c, id, current -> preprocess(updater.apply(copy(current)), current))));
+		Op<T> op = Op.update(c, id, updater, this::preprocess, this::postprocess);
+		daoProvider.get().persist(Transaction.of(op, this::preprocess, this::postprocess));
+		return op.getEntity();
 	}
 
 	@Override
 	public ImmutableList<T> update(Iterable<I> ids, UnaryOperator<T> updater) {
-		return ImmutableList.copyOf(transform(postprocess(
-				daoProvider.get().update(c, ids, current -> preprocess(updater.apply(copy(current)), current)))));
+		ImmutableList<Op<T>> ops = stream(ids)
+				.map(id -> Op.update(c, id, updater, this::preprocess, this::postprocess))
+				.collect(toImmutableList());
+		daoProvider.get().persist(Transaction.of(ops, this::preprocess, this::postprocess));
+		return ops.stream().map(Op::getEntity).collect(toImmutableList());
+	}
+
+	@Override
+	public ImmutableList<T> migrate(Iterable<T> entities) {
+		ImmutableList<Op<T>> ops = stream(entities)
+				.map(t -> Op.migrate(t, this::preprocess, this::postprocess))
+				.collect(toImmutableList());
+		daoProvider.get().persist(Transaction.of(ops));
+		return ops.stream().map(Op::getEntity).collect(toImmutableList());
 	}
 
 	@Override
 	public boolean delete(I id) {
-		boolean result = daoProvider.get().delete(c, id);
-		postdelete(ImmutableList.of(id));
-		return result;
+		return delete(ImmutableList.of(id)) == 1;
 	}
 
 	@Override
 	public int delete(Iterable<I> ids) {
-		int result = daoProvider.get().delete(c, ids);
+		int result = 0;
+		T defaultInstance = getDefaultInstance(getTypeClass());
+		if (defaultInstance instanceof SoftDeletable<?>) {
+			ImmutableSet<I> softDeleteIds = get(ids).getItems().stream()
+					.map(e -> (SoftDeletable<I>) e)
+					.filter(mo -> mo.getDeletionTime() == null)
+					.map(HasModificationTimes::getId)
+					.collect(toImmutableSet());
+			ImmutableSet<I> hardDeleteIds =
+					stream(ids).filter(id -> !softDeleteIds.contains(id)).collect(toImmutableSet());
+			update(softDeleteIds, current -> (T) ((SoftDeletable<?>) current)
+					.setDeletionTime(Instant.now()));
+			result += softDeleteIds.size() + daoProvider.get().delete(c, hardDeleteIds);
+		} else {
+			result = daoProvider.get().delete(c, ids);
+		}
+
 		postdelete(ids);
 		return result;
 	}
 
-	protected T preprocess(T t, T current) {
-		return preprocess(ImmutableList.of(Pair.of(t, current))).iterator().next();
+	protected Op<T> preprocess(Op<T> op) {
+		return op;
 	}
 
-	protected Iterable<T> preprocess(Iterable<Pair<T, T>> entities) {
-		return stream(entities).map(Pair::getLeft).collect(toImmutableList());
+	protected Iterable<Op<T>> preprocess(Iterable<Op<T>> ops) {
+		return ops;
+	}
+
+	protected Op<T> postprocess(Op<T> op) {
+		return op;
+	}
+
+	protected Iterable<Op<T>> postprocess(Iterable<Op<T>> ops) {
+		return ops;
+	}
+
+	private T transformOp(Op<T> op) {
+		return transform(op.getEntity());
 	}
 
 	private T transform(T t) {
 		return t == null ? null : transform(ImmutableList.of(t)).iterator().next();
 	}
+
+	protected Iterable<T> transformOps(Iterable<Op<T>> ops) {
+		return transform(stream(ops).map(Op::getEntity).collect(toImmutableList()));
+	}
+
+	protected Iterable<T> transform(Iterable<T> entities) {
+		return entities;
+	}
+
+	protected void postdelete(Iterable<I> ids) {}
 
 	@Override
 	public int index(Iterable<T> items) {
@@ -122,18 +190,4 @@ public class GenericStore<T, I> implements Store<T, I> {
 	public int index(List query) {
 		return index(list(query).getItems());
 	}
-
-	protected Iterable<T> transform(Iterable<T> entities) {
-		return entities;
-	}
-
-	private T postprocess(T t) {
-		return postprocess(ImmutableList.of(t)).iterator().next();
-	}
-
-	protected Iterable<T> postprocess(Iterable<T> entities) {
-		return entities;
-	}
-
-	protected void postdelete(Iterable<I> ids) {}
 }

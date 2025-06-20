@@ -7,8 +7,9 @@ import org.junit.Test;
 public class QueryTest {
   @Test
   public void forValues_nullsOkay() {
-    Query.List query = Query.forList(null, null, null, 0);
+    Query.List query = Query.forList(null, null, null, null, 0);
 
+    assertThat(query.getFields()).isEmpty();
     assertThat(query.getFilters()).isEmpty();
     assertThat(query.getOrderBys()).isEmpty();
     assertThat(query.getLimit()).isNull();
@@ -17,8 +18,9 @@ public class QueryTest {
 
   @Test
   public void forValues_parsesCorrectly() {
-    Query.List query = Query.forList("city=LA,championships>3", "championships DESC", 5, 2);
+    Query.List query = Query.forList(null, "city=LA,championships>3", "championships DESC", 5, 2);
 
+    assertThat(query.getFields()).isEmpty();
     assertThat(query.getFilters()).hasSize(2);
     Query.Filter filter = query.getFilters().get(0);
     assertThat(filter.getColumn()).isEqualTo("city");
@@ -41,8 +43,9 @@ public class QueryTest {
 
   @Test
   public void forValues_canParseADate() {
-    Query.List query = Query.forList("date=2021-01-18", "", 92, 12);
+    Query.List query = Query.forList("", "date=2021-01-18", "", 92, 12);
 
+    assertThat(query.getFields()).isEmpty();
     assertThat(query.getFilters()).hasSize(1);
     Query.Filter filter = query.getFilters().get(0);
     assertThat(filter.getColumn()).isEqualTo("date");
@@ -59,8 +62,9 @@ public class QueryTest {
 
   @Test
   public void forValues_canParseIn() {
-    Query.List query = Query.forList("type IN 1|2|3", null, null, 0);
+    Query.List query = Query.forList("","type IN 1|2|3", null, null, 0);
 
+    assertThat(query.getFields()).isEmpty();
     assertThat(query.getFilters()).hasSize(1);
     Query.Filter filter = query.getFilters().get(0);
     assertThat(filter.getColumn()).isEqualTo("type");
@@ -70,8 +74,9 @@ public class QueryTest {
 
   @Test
   public void forValues_canParseEnumValue() {
-    Query.List query = Query.forList("status=Unconfirmed", null, null, 0);
+    Query.List query = Query.forList(null, "status=Unconfirmed", null, null, 0);
 
+    assertThat(query.getFields()).isEmpty();
     assertThat(query.getFilters()).hasSize(1);
     Query.Filter filter = query.getFilters().get(0);
     assertThat(filter.getColumn()).isEqualTo("status");
@@ -81,8 +86,21 @@ public class QueryTest {
 
   @Test
   public void forValues_canParseStringValue() {
-    Query.List query = Query.forList("entityType = Nurse", null, null, 0);
+    Query.List query = Query.forList(null, "entityType = Nurse", null, null, 0);
 
+    assertThat(query.getFields()).isEmpty();
+    assertThat(query.getFilters()).hasSize(1);
+    Query.Filter filter = query.getFilters().get(0);
+    assertThat(filter.getColumn()).isEqualTo("entityType");
+    assertThat(filter.getOperator()).isEqualTo("=");
+    assertThat(filter.getValue()).isEqualTo("Nurse");
+  }
+
+  @Test
+  public void forValues_withFields() {
+    Query.List query = Query.forList("id,name,date", "entityType = Nurse", null, null, 0);
+
+    assertThat(query.getFields()).containsExactly("id", "name", "date");
     assertThat(query.getFilters()).hasSize(1);
     Query.Filter filter = query.getFilters().get(0);
     assertThat(filter.getColumn()).isEqualTo("entityType");

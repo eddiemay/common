@@ -1,7 +1,6 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Streams.stream;
 import static java.util.stream.Collectors.joining;
 
 import com.digitald4.common.model.ChangeTrackable;
@@ -9,46 +8,51 @@ import com.digitald4.common.model.HasModificationTimes;
 import com.digitald4.common.model.HasModificationUser;
 import com.digitald4.common.model.ModelObject;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.model.SoftDeletable;
 import com.digitald4.common.model.User;
-import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
+import com.digitald4.common.storage.ChangeTracker.Change.Type;
+import com.digitald4.common.storage.Transaction.Op;
+import com.digitald4.common.storage.Transaction.Op.Action;
 import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import org.json.JSONObject;
 
 public class ChangeTracker {
-  private final Provider<DAO> daoProvider;
   private final Provider<User> userProvider;
   private final UserStore<? extends User> userStore;
   private final SearchIndexer searchIndexer;
   private final Clock clock;
 
   @Inject
-  public ChangeTracker(Provider<DAO> daoProvider, Provider<User> userProvider, UserStore<? extends User> userStore,
+  public ChangeTracker(Provider<User> userProvider, UserStore<? extends User> userStore,
       SearchIndexer searchIndexer, Clock clock) {
-    this.daoProvider = daoProvider;
     this.userProvider = userProvider;
     this.userStore = userStore;
     this.searchIndexer = searchIndexer;
     this.clock = clock;
   }
 
-  public <T> Iterable<T> prePersist(Iterable<T> entities) {
-    if (!entities.iterator().hasNext()) {
-      return entities;
+  public <T> Transaction<T> prePersist(DAO dao, Transaction<T> transaction) {
+    if (transaction.getOps().isEmpty()) {
+      return transaction;
     }
 
-    T first = entities.iterator().next();
+    ImmutableList<T> entities = transaction.executeUpdate(dao).prePersist().getOps().stream()
+        .map(Op::getEntity).collect(toImmutableList());
+    T first = entities.get(0);
 
     if (first instanceof HasModificationTimes) {
       Instant now = Instant.ofEpochMilli(clock.millis());
-      stream(entities)
+      entities.stream()
           .map(t -> (HasModificationTimes) t)
           .forEach(hasModificationTimes -> {
             if (hasModificationTimes.getCreationTime() == null) {
@@ -60,55 +64,62 @@ public class ChangeTracker {
 
     if (first instanceof HasModificationUser) {
       User user = userProvider.get();
-      CachedReader cachedReader = new CachedReader(daoProvider.get());
-      stream(entities)
+      CachedReader cachedReader = new CachedReader(dao);
+      entities.stream()
           .map(t -> (HasModificationUser) t)
-          .forEach(hasModificationUser -> {
-            if (hasModificationUser.getCreationUserId() != null && hasModificationUser.getCreationUsername() == null) {
-              hasModificationUser.setCreationUsername(
-                  userStore.get(hasModificationUser.getCreationUserId()).getUsername());
-              hasModificationUser.setCreationUserId(null);
+          .forEach(hmu -> {
+            if (hmu.getCreationUserId() != null && hmu.getCreationUsername() == null) {
+              hmu.setCreationUsername(userStore.get(hmu.getCreationUserId()).getUsername());
+              hmu.setCreationUserId(null);
             }
-            if (hasModificationUser.getCreationUsername() == null) {
-              hasModificationUser.setCreationUsername(user.getUsername());
+            if (hmu.getCreationUsername() == null) {
+              hmu.setCreationUsername(user.getUsername());
             }
 
-            if (hasModificationUser.getLastModifiedUserId() != null && hasModificationUser.getLastModifiedUsername() == null) {
-              hasModificationUser.setLastModifiedUsername(
-                  userStore.get(hasModificationUser.getLastModifiedUserId()).getUsername());
-              hasModificationUser.setLastModifiedUserId(null);
+            if (hmu.getLastModifiedUserId() != null && hmu.getLastModifiedUsername() == null) {
+              hmu.setLastModifiedUsername(userStore.get(hmu.getLastModifiedUserId()).getUsername());
+              hmu.setLastModifiedUserId(null);
             } else {
-              hasModificationUser.setLastModifiedUsername(user.getUsername());
+              hmu.setLastModifiedUsername(user.getUsername());
+            }
+
+            if (hmu instanceof SoftDeletable<?> softDelete) {
+              if (softDelete.getDeletionTime() != null && softDelete.getDeletionUsername() == null) {
+                softDelete.setDeletionUsername(user.getUsername());
+              }
             }
           });
     }
 
-    return entities;
+    return transaction;
   }
 
-  public <T> ImmutableList<T> postPersist(ImmutableList<T> entities, boolean isCreate) {
-    if (entities.isEmpty()) {
-      return entities;
+  public <T> Transaction<T> postPersist(DAO dao, Transaction<T> transaction) {
+    if (transaction.getOps().isEmpty()) {
+      return transaction;
     }
 
-    T first = entities.get(0);
+    ImmutableList<Op<T>> ops = transaction.postPersist().getOps();
+    T first = ops.get(0).getEntity();
 
     if (first instanceof ChangeTrackable) {
-      trackRevised((Iterable<? extends ChangeTrackable>) entities, isCreate);
+      dao.persist(
+          Transaction.of(ops.stream().map(this::createChangeHistory).collect(toImmutableList())));
     }
 
     if (first instanceof Searchable) {
-      searchIndexer.index((Iterable<? extends Searchable>) entities);
+      searchIndexer.index((Iterable<? extends Searchable>)
+          ops.stream().map(Op::getEntity).collect(toImmutableList()));
     }
 
-    return entities;
+    return transaction;
   }
 
-  public <T, I> void preDelete(Class<T> c, Iterable<I> ids) {
+  public <T, I> void preDelete(DAO dao, Class<T> c, Iterable<I> ids) {
     T defaultInstance = JSONUtil.getDefaultInstance(c);
 
     if (defaultInstance instanceof ChangeTrackable) {
-      trackDeleted((Class<? extends ChangeTrackable>) c, ids);
+      trackDeleted(dao, (Class<? extends ChangeTrackable>) c, ids);
     }
   }
 
@@ -120,43 +131,64 @@ public class ChangeTracker {
     }
   }
 
-  @VisibleForTesting
-  <T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackRevised(
-      Iterable<T> items, boolean isCreate) {
-    return daoProvider.get().create(
-        stream(items)
-            .map(item -> createChangeHistory(isCreate ? Action.CREATED : Action.UPDATED, item))
-            .collect(toImmutableList()));
+  public <ID, T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackDeleted(
+      DAO dao, Class<T> c, Iterable<ID> ids) {
+    return dao
+        .persist(Transaction.of(
+            dao.get(c, ids).getItems().stream()
+                .filter(item -> item instanceof ChangeTrackable)
+                .map(item -> Op.deleted(item))
+                .map(this::createChangeHistory)
+                .collect(toImmutableList())))
+        .getOps().stream().map(Op::getEntity).collect(toImmutableList());
   }
 
-  public <ID, T extends ChangeTrackable<?>> ImmutableList<ChangeHistory> trackDeleted(Class<T> c, Iterable<ID> ids) {
-    DAO dao = daoProvider.get();
-    return dao.create(dao.get(c, ids).getItems().stream()
-        .map(item -> createChangeHistory(Action.DELETED, item))
-        .collect(toImmutableList()));
-  }
-
-  private <T extends ChangeTrackable<?>> ChangeHistory createChangeHistory(Action action, T entity) {
+  @VisibleForTesting Op<ChangeHistory> createChangeHistory(Op<?> op) {
     User user = userProvider.get();
-    return new ChangeHistory()
-        .setEntityType(entity.getClass().getSimpleName())
-        .setEntityId(String.valueOf(entity.getId()))
-        .setAction(action)
-        .setTimeStamp(clock.millis())
-        .setUserId(user.getId())
-        .setUsername(user.getUsername())
-        .setEntity(entity);
+    return Op.create(
+        new ChangeHistory()
+            .setEntityType(op.getTypeClass().getSimpleName())
+            .setEntityId(String.valueOf(op.getId()))
+            .setAction(op.getAction())
+            .setTimeStamp(clock.millis())
+            .setUserId(user.getId())
+            .setUsername(user.getUsername())
+            .setEntity(new JSONObject(op.getEntity()).toString())
+            .setChanges(commuteChanges(op)));
+  }
+
+  private static ImmutableList<Change> commuteChanges(Op<?> op) {
+    if (op.getCurrent() == null) {
+      return null;
+    }
+
+    return commuteChanges(new JSONObject(op.getEntity()), new JSONObject(op.getCurrent()));
+  }
+
+  public static ImmutableList<Change> commuteChanges(JSONObject curr, JSONObject prev) {
+    var adds = curr.keySet().stream().filter(key -> !Objects.equals(curr.get(key), prev.opt(key)))
+        .map(key -> {
+          Object value = curr.get(key);
+          Object prevValue = prev.opt(key);
+          if (value instanceof JSONObject && prevValue instanceof JSONObject) {
+            return Change.create(key, commuteChanges((JSONObject) value, (JSONObject) prevValue));
+          }
+          return Change.create(key, prev.has(key) ? Type.Modified : Type.Add, "" + value, prevValue);
+        });
+    var removes = prev.keySet().stream()
+        .filter(key -> !curr.has(key)).map(key -> Change.create(key, Type.Removed, null, prev.get(key)));
+
+    return Streams.concat(adds, removes).collect(toImmutableList());
   }
 
   public static class ChangeHistory extends ModelObject<Long> {
     private String entityType;
     private String entityId;
-    public enum Action {CREATED, UPDATED, MIGRATED, DELETED}
     private Action action;
     private Instant timeStamp;
     private Long userId;
     private String username;
-    private Object entity;
+    private StringBuilder entity;
     private ImmutableList<Change> changes;
 
     public ChangeHistory setId(Long id) {
@@ -235,13 +267,17 @@ public class ChangeTracker {
       return this;
     }
 
-    public Object getEntity() {
+    public StringBuilder getEntity() {
       return entity;
     }
 
-    public ChangeHistory setEntity(Object entity) {
+    public ChangeHistory setEntity(StringBuilder entity) {
       this.entity = entity;
       return this;
+    }
+
+    public ChangeHistory setEntity(String entity) {
+      return setEntity(new StringBuilder(entity));
     }
 
     public ImmutableList<Change> getChanges() {
@@ -249,7 +285,7 @@ public class ChangeTracker {
     }
 
     public ChangeHistory setChanges(Iterable<Change> changes) {
-      this.changes = ImmutableList.copyOf(changes);
+      this.changes = changes == null ? null : ImmutableList.copyOf(changes);
       return this;
     }
 

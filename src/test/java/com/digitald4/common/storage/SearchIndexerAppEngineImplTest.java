@@ -28,7 +28,7 @@ public class SearchIndexerAppEngineImplTest {
 
   private final Index index = mock(Index.class);
 
-  private final SearchIndexerAppEngineImpl searchIndexer = new SearchIndexerAppEngineImpl(() -> DAOCloudDS.Context.NONE) {
+  private final SearchIndexerAppEngineImpl searchIndexer = new SearchIndexerAppEngineImpl(() -> DAOAppEngineDatastore.Context.NONE) {
     @Override
     protected Index computeIndex(Class<?> c) {
       return index;

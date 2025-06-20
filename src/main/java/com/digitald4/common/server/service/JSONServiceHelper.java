@@ -3,7 +3,6 @@ package com.digitald4.common.server.service;
 import static com.digitald4.common.util.JSONUtil.toJSON;
 import static com.digitald4.common.util.JSONUtil.toObject;
 
-import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.ServiceException;
 import com.google.api.server.spi.response.BadRequestException;
 import org.json.JSONArray;
@@ -40,6 +39,7 @@ public class JSONServiceHelper<T> implements JSONService {
 				if (entityService instanceof Listable) {
 					return toJSON(
 							((Listable<?>) entityService).list(
+									jsonRequest.optString("fields"),
 									jsonRequest.optString("filter"), jsonRequest.optString("orderBy"),
 									jsonRequest.optInt("pageSize"), jsonRequest.optInt("pageToken"),
 									jsonRequest.optString("idToken")));

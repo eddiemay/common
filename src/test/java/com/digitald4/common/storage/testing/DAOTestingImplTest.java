@@ -4,11 +4,17 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.storage.*;
+import org.junit.Before;
 import org.junit.Test;
 
 public class DAOTestingImplTest {
-	private final DAOTestingImpl dao = new DAOTestingImpl(new ChangeTracker(null, null, null, null, null));
+	private DAOTestingImpl dao;
 	private final GenericStore<BasicUser, Long> userStore = new GenericStore<>(BasicUser.class, () -> dao);
+
+	@Before
+	public void setup() {
+		dao = new DAOTestingImpl(new ChangeTracker(null, null, null, null));
+	}
 
 	@Test
 	public void testCreate() {

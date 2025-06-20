@@ -27,11 +27,11 @@ com.digitald4.common.ApiConnector = ['$http', '$httpParamSerializer', 'globalDat
       if (response.status == 401) {
         globalData.activeSession = undefined;
         errorCallback(response.data.error);
-      } else if (response.data) {
+      } else if (response.data && response.data.error) {
         console.log('message: ' + response.data.error.message);
         errorCallback(response.data.error);
       } else {
-        errorCallback('Error submitting request');
+        errorCallback('❌ Error Submitting Request');
       }
     });
   }

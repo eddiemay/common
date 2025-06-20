@@ -1,6 +1,6 @@
 package com.digitald4.common.model;
 
-public class ModelObjectModUser<ID> extends ModelObjectModTime<ID> implements HasModificationUser {
+public class ModelObjectModUser<ID> extends ModelObjectModTime<ID> implements HasModificationUser<ID> {
   private String creationUsername;
   private String lastModifiedUsername;
   private String deletionUsername;
@@ -13,7 +13,7 @@ public class ModelObjectModUser<ID> extends ModelObjectModTime<ID> implements Ha
   }
 
   @Override
-  public HasModificationUser setCreationUsername(String creationUsername) {
+  public HasModificationUser<ID> setCreationUsername(String creationUsername) {
     this.creationUsername = creationUsername;
     return this;
   }
@@ -24,18 +24,16 @@ public class ModelObjectModUser<ID> extends ModelObjectModTime<ID> implements Ha
   }
 
   @Override
-  public HasModificationUser setLastModifiedUsername(String lastModifiedUsername) {
+  public HasModificationUser<ID> setLastModifiedUsername(String lastModifiedUsername) {
     this.lastModifiedUsername = lastModifiedUsername;
     return this;
   }
 
-  @Override
   public String getDeletionUsername() {
     return deletionUsername;
   }
 
-  @Override
-  public HasModificationUser setDeletionUsername(String deletionUsername) {
+  public HasModificationUser<ID> setDeletionUsername(String deletionUsername) {
     this.deletionUsername = deletionUsername;
     return this;
   }

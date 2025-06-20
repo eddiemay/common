@@ -6,16 +6,16 @@ import static java.util.Comparator.comparing;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.server.service.BulkGetable.Ids;
-import com.digitald4.common.storage.ChangeTracker.Change;
-import com.digitald4.common.storage.ChangeTracker.Change.Type;
+import com.digitald4.common.storage.ChangeTracker;
 import com.digitald4.common.storage.ChangeTracker.ChangeHistory;
-import com.digitald4.common.storage.ChangeTracker.ChangeHistory.Action;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.common.storage.QueryResult;
+import com.digitald4.common.storage.Transaction;
+import com.digitald4.common.storage.Transaction.Op;
 import com.google.api.server.spi.ServiceException;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
@@ -23,10 +23,7 @@ import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.DefaultValue;
 import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.config.Nullable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Streams;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
@@ -56,15 +53,17 @@ public class ChangeHistoryService implements Listable<ChangeHistory> {
   @Override
   @ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "list")
   public QueryResult<ChangeHistory> list(
-      @Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-      @Named("pageSize") @DefaultValue("0") int pageSize,
-      @Named("pageToken") @DefaultValue("0") int pageToken,
+      @Nullable @Named("fields") String fields, @Nullable @Named("filter") String filter,
+      @Nullable @Named("orderBy") String orderBy,
+      @Named("pageSize") @DefaultValue("0") int pageSize, @Named("pageToken") @DefaultValue("0") int pageToken,
       @Nullable @Named("idToken") String idToken) throws ServiceException {
 
     try {
       loginResolver.resolve(idToken, true);
-      return setDiffs(daoProvider.get()
-          .list(ChangeHistory.class, Query.forList(filter, orderBy, pageSize, pageToken)));
+      DAO dao = daoProvider.get();
+      return setDiffs(
+          dao.list(ChangeHistory.class, Query.forList(fields, filter, orderBy, pageSize, pageToken)),
+          true);
     } catch (DD4StorageException e) {
       throw new ServiceException(e.getErrorCode(), e);
     }
@@ -91,16 +90,18 @@ public class ChangeHistoryService implements Listable<ChangeHistory> {
 
       return new AtomicInteger(
           entityIds.getItems().stream().mapToInt(entityId ->
-                  dao.update(ChangeHistory.class,
-                      dao.list(ChangeHistory.class,
+                  dao.persist(Transaction.of(
+                      setDiffs(
+                          dao.list(ChangeHistory.class,
                               Query
                                   .forList(
                                       Filter.of("entityType", entityType),
                                       Filter.of("entityId", entityId),
                                       Filter.of("action", "CREATED"))
-                                  .setOrderBys(OrderBy.of("timeStamp")))
-                          .getItems().stream().skip(1).map(ChangeHistory::getId).collect(toImmutableList()),
-                      ch -> ch.setAction(Action.MIGRATED)).size())
+                                  .setOrderBys(OrderBy.of("timeStamp"))), false)
+                          .getItems().stream().skip(1)
+                          .map(Op::migrate)
+                          .collect(toImmutableList()))).getOps().size())
               .sum());
     } catch (DD4StorageException e) {
       e.printStackTrace();
@@ -111,31 +112,19 @@ public class ChangeHistoryService implements Listable<ChangeHistory> {
     }
   }
 
-  public static QueryResult<ChangeHistory> setDiffs(QueryResult<ChangeHistory> queryResult) {
+  private QueryResult<ChangeHistory> setDiffs(QueryResult<ChangeHistory> queryResult, boolean save) {
+    DAO dao = daoProvider.get();
     AtomicReference<ChangeHistory> previous = new AtomicReference<>();
     queryResult.getItems().stream().sorted(comparing(ChangeHistory::getTimeStamp)).forEach(entry -> {
-      if (previous.get() != null) {
-        entry.setChanges(getChanges(
+      if (entry.getChanges() == null && previous.get() != null) {
+        entry.setChanges(ChangeTracker.commuteChanges(
             new JSONObject(entry.getEntity().toString()), new JSONObject(previous.get().getEntity().toString())));
+        if (save) {
+          dao.create(entry);
+        }
       }
       previous.set(entry);
     });
     return queryResult;
-  }
-
-  public static ImmutableList<Change> getChanges(JSONObject curr, JSONObject prev) {
-    var adds = curr.keySet().stream().filter(key -> !Objects.equals(curr.get(key), prev.opt(key)))
-        .map(key -> {
-          Object value = curr.get(key);
-          Object prevValue = prev.opt(key);
-          if (value instanceof JSONObject && prevValue instanceof JSONObject) {
-            return Change.create(key, getChanges((JSONObject) value, (JSONObject) prevValue));
-          }
-          return Change.create(key, prev.has(key) ? Type.Modified : Type.Add, "" + value, prevValue);
-        });
-    var removes = prev.keySet().stream()
-        .filter(key -> !curr.has(key)).map(key -> Change.create(key, Type.Removed, null, prev.get(key)));
-
-    return Streams.concat(adds, removes).collect(toImmutableList());
   }
 }

@@ -10,6 +10,7 @@ import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.service.BulkGetable;
 import com.digitald4.common.storage.Query.Search;
+import com.digitald4.common.storage.Transaction.Op;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.JSONUtil;
@@ -25,7 +26,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.UnaryOperator;
 
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -56,9 +56,22 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	@Override
+	public <T> Transaction<T> persist(Transaction<T> transaction) {
+		changeTracker.prePersist(this, transaction);
+		transaction.getOps().forEach(op -> {
+			if (op.getUpdater() == null) {
+				op.setEntity(create(op.getEntity()));
+			} else {
+				op.setEntity(update(op));
+			}
+		});
+		changeTracker.postPersist(this, transaction);
+		return transaction;
+	}
+
+	@Override
 	public <T> T create(T t) {
 		return Calculate.executeWithRetries(2, () -> {
-			changeTracker.prePersist(ImmutableList.of(t));
 			JSONObject json = JSONUtil.toJSON(t);
 			ImmutableList<String> keys = stream(json.keys())
 					.filter(key -> {
@@ -80,17 +93,11 @@ public class DAOSQLImpl implements DAO {
 				if (rs.next()) {
 					return get((Class<T>) t.getClass(), rs.getObject(1));
 				}
-				changeTracker.postPersist(ImmutableList.of(t), true);
 				return t;
 			} catch (SQLException e) {
 				throw new RuntimeException("Error creating record: " + e.getMessage(), e);
 			}
 		});
-	}
-
-	@Override
-	public <T> ImmutableList<T> create(Iterable<T> entities) {
-		return stream(entities).map(this::create).collect(toImmutableList());
 	}
 
 	@Override
@@ -192,13 +199,10 @@ public class DAOSQLImpl implements DAO {
 		throw new DD4StorageException("Unimplemented method", ErrorCode.BAD_REQUEST);
 	}
 
-	@Override
-	public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
+	private <T, I> T update(Op<T> op) {
 		return Calculate.executeWithRetries(2, () -> {
-			T orig = get(c, id);
-			JSONObject origJson = JSONUtil.toJSON(orig);
-			JSONObject updated = JSONUtil.toJSON(
-					changeTracker.prePersist(ImmutableList.of(updater.apply(orig))).iterator().next());
+			JSONObject origJson = JSONUtil.toJSON(op.getCurrent());
+			JSONObject updated = JSONUtil.toJSON(op.getEntity());
 
 			// Find all the fields that were modified in the updated object.
 			ImmutableList<String> modified = updated.keySet().stream()
@@ -213,7 +217,7 @@ public class DAOSQLImpl implements DAO {
 			if (modified.isEmpty() && cleared.isEmpty()) {
 				throw new RuntimeException("Nothing changed, returning");
 			} else {
-				String sql = String.format(UPDATE_SQL, getTable(c),
+				String sql = String.format(UPDATE_SQL, getTable(op.getTypeClass()),
 						modified.stream().map(key -> key + "=?").collect(joining(", ")),
 						!modified.isEmpty() && !cleared.isEmpty() ? ", " : "",
 						cleared.stream().map(key -> key + "=NULL").collect(joining(",")));
@@ -223,19 +227,14 @@ public class DAOSQLImpl implements DAO {
 					for (String key : modified) {
 						setObject(ps, index++, updated.get(key));
 					}
-					ps.setObject(index, id);
+					ps.setObject(index, origJson.get("id"));
 					ps.executeUpdate();
 				} catch (Exception e) {
 					throw new RuntimeException("Error updating record " + updated + ": " + e.getMessage(), e);
 				}
 			}
-			return changeTracker.postPersist(ImmutableList.of(get(c, id)), false).get(0);
+			return op.getEntity();
 		});
-	}
-
-	@Override
-	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
-		return stream(ids).map(id -> update(c, id, updater)).collect(toImmutableList());
 	}
 
 	@Override
@@ -246,7 +245,7 @@ public class DAOSQLImpl implements DAO {
 	@Override
 	public <T, I> int delete(Class<T> c, Iterable<I> ids) {
 		return Calculate.executeWithRetries(2, () -> {
-			changeTracker.preDelete(c, ids);
+			changeTracker.preDelete(this, c, ids);
 			String sql = String.format(
 					BATCH_DELETE_SQL, getView(c), stream(ids).map(String::valueOf).collect(joining(",")));
 			try (Connection con = connector.getConnection();
@@ -285,11 +284,11 @@ public class DAOSQLImpl implements DAO {
 	}
 
 	private <T> T parseFromResultSet(Class<T> c, ResultSet rs) throws SQLException {
-		ResultSetMetaData rsmd = rs.getMetaData();
+		ResultSetMetaData metaData = rs.getMetaData();
 		ImmutableMap<String, Field> fieldMap = JSONUtil.getFields(c);
 		JSONObject jsonObject = new JSONObject();
-		for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-			String colName = rsmd.getColumnName(i).toLowerCase();
+		for (int i = 1; i <= metaData.getColumnCount(); i++) {
+			String colName = metaData.getColumnName(i).toLowerCase();
 			Object value = rs.getObject(i);
 			if (value != null) {
 				try {

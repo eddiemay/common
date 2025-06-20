@@ -1,7 +1,10 @@
 package com.digitald4.common.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.digitald4.common.storage.Query.Filter;
-import com.google.common.collect.ImmutableList;
+import com.digitald4.common.storage.Transaction.Op;
+import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,8 +20,8 @@ public class DAOInMemoryImplTest {
 
   @Before
   public void setup() {
-    dao = new DAOInMemoryImpl();
-    dao.create(ImmutableList.of(ADAM, SETH, ENOCH, MOSES));
+    dao = new DAOInMemoryImpl(new ChangeTracker( null, null, null, null));
+    dao.persist(Transaction.of(Stream.of(ADAM, SETH, ENOCH, MOSES).map(Op::create).collect(toImmutableList())));
   }
 
   @Test

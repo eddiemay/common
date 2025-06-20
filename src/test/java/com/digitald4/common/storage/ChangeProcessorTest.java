@@ -1,8 +1,8 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -11,10 +11,11 @@ import static org.mockito.Mockito.when;
 
 import com.digitald4.common.model.*;
 import com.digitald4.common.server.service.BulkGetable;
+import com.digitald4.common.storage.Transaction.Op;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import java.time.Instant;
-import javax.inject.Provider;;
+import javax.inject.Provider;
 import com.google.inject.util.Providers;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,41 +31,45 @@ public class ChangeProcessorTest {
   @Before
   public void setup() {
     when(clock.millis()).thenReturn(1000L);
-    // when(dao.get(any(), eq(ImmutableList.of()))).thenReturn(ImmutableList.of());
-    changeTracker = new ChangeTracker(() -> dao, userProvider, null, searchIndexer, clock);
+    when(dao.get(any(), eq(ImmutableList.of()))).thenReturn(
+        BulkGetable.MultiListResult.of(ImmutableList.of(), ImmutableList.of()));
+    when(dao.persist(any())).then(i -> i.getArgument(0));
+    changeTracker = new ChangeTracker(userProvider, null, searchIndexer, clock);
   }
 
   @Test
   public void createPojo() {
-    changeTracker.prePersist(ImmutableList.of(new Pojo()));
-    changeTracker.postPersist(ImmutableList.of(new Pojo()), true);
+    var op = Op.create(new Pojo());
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     // Pojo does not implement any interfaces so should invoke no mocks.
     verify(clock, never()).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void deletePojo() {
-    changeTracker.preDelete(Pojo.class, ImmutableList.of(75L));
+    changeTracker.preDelete(dao, Pojo.class, ImmutableList.of(75L));
     changeTracker.postDelete(Pojo.class, ImmutableList.of(75L));
 
     // Pojo does not implement any interfaces so should invoke no mocks.
     verify(clock, never()).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void createModTimes() {
     ModelObjectModTime modTimes = new ModelObjectModTime();
-    changeTracker.prePersist(ImmutableList.of(modTimes));
-    changeTracker.postPersist(ImmutableList.of(modTimes), true);
+    var op = Op.create(modTimes);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     // ModTimes only uses clock.
     verify(clock).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modTimes.getCreationTime().toEpochMilli()).isEqualTo(1000L);
@@ -76,27 +81,27 @@ public class ChangeProcessorTest {
   public void updateModTimes() {
     HasModificationTimes modTimes = new ModelObjectModTime().setCreationTime(500L).setLastModifiedTime(500L);
 
-    changeTracker.prePersist(ImmutableList.of(modTimes));
-    changeTracker.postPersist(ImmutableList.of(modTimes), false);
+    var op = Op.update(HasModificationTimes.class, 500L, null).setEntity(modTimes);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     // ModTimes only uses clock.
     verify(clock).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modTimes.getCreationTime().toEpochMilli()).isEqualTo(500L);
     assertThat(modTimes.getLastModifiedTime().toEpochMilli()).isEqualTo(1000L);
-    assertThat(modTimes.getDeletionTime()).isNull();
   }
 
   @Test
   public void deleteModTimes() {
-    changeTracker.preDelete(ModelObjectModTime.class, ImmutableList.of(75L));
+    changeTracker.preDelete(dao, ModelObjectModTime.class, ImmutableList.of(75L));
     changeTracker.postDelete(ModelObjectModTime.class, ImmutableList.of(75L));
 
     // Modtimes actually does not support deletiontime
     verify(clock, never()).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
   }
 
@@ -104,11 +109,12 @@ public class ChangeProcessorTest {
   public void createModUser() {
     ModelObjectModUser modUser = new ModelObjectModUser();
 
-    changeTracker.prePersist(ImmutableList.of(modUser));
-    changeTracker.postPersist(ImmutableList.of(modUser), true);
+    var op = Op.create(modUser);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modUser.getCreationTime().toEpochMilli()).isEqualTo(1000L);
@@ -125,11 +131,12 @@ public class ChangeProcessorTest {
     ModelObjectModUser modUser = (ModelObjectModUser)
         new ModelObjectModUser().setCreationUsername("username").setCreationTime(Instant.ofEpochMilli(500L));
 
-    changeTracker.prePersist(ImmutableList.of(modUser));
-    changeTracker.postPersist(ImmutableList.of(modUser), false);
+    var op = createUpdated(modUser);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
 
     assertThat(modUser.getCreationTime().toEpochMilli()).isEqualTo(500L);
@@ -143,12 +150,12 @@ public class ChangeProcessorTest {
 
   @Test
   public void deleteModUser() {
-    changeTracker.preDelete(ModelObjectModUser.class, ImmutableList.of(75L));
+    changeTracker.preDelete(dao, ModelObjectModUser.class, ImmutableList.of(75L));
     changeTracker.postDelete(ModelObjectModUser.class, ImmutableList.of(75L));
 
     // Moduser actually does not support deletion.
     verify(clock, never()).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer, never()).index(any());
   }
 
@@ -156,24 +163,25 @@ public class ChangeProcessorTest {
   public void createTrackable() {
     Trackable trackable = new Trackable();
 
-    changeTracker.prePersist(ImmutableList.of(trackable));
-    changeTracker.postPersist(ImmutableList.of(trackable), true);
+    var op = Op.create(trackable);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock).millis();
-    verify(dao).create(anyList());
+    verify(dao).persist(any());
     verify(searchIndexer, never()).index(any());
   }
 
   @Test
   public void updateTrackable() {
     Trackable trackable = new Trackable().setId(75L);
-    // when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(trackable));
 
-    changeTracker.prePersist(ImmutableList.of(trackable));
-    changeTracker.postPersist(ImmutableList.of(trackable), false);
+    var op = createUpdated(trackable);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock).millis();
-    verify(dao).create(anyList());
+    verify(dao).persist(any());
     verify(searchIndexer, never()).index(any());
   }
 
@@ -183,11 +191,11 @@ public class ChangeProcessorTest {
     when(dao.get(Trackable.class, ImmutableList.of(75L))).thenReturn(
         BulkGetable.MultiListResult.of(ImmutableList.of(trackable), ImmutableList.of(75L)));
 
-    changeTracker.preDelete(Trackable.class, ImmutableList.of(75L));
+    changeTracker.preDelete(dao, Trackable.class, ImmutableList.of(75L));
     changeTracker.postDelete(Trackable.class, ImmutableList.of(75L));
 
     verify(clock).millis();
-    verify(dao).create(anyList());
+    verify(dao).persist(any());
     verify(searchIndexer, never()).removeIndex(any(), any());
   }
 
@@ -195,11 +203,12 @@ public class ChangeProcessorTest {
   public void createSearchable() {
     SearchableObj searchable = new SearchableObj();
 
-    changeTracker.prePersist(ImmutableList.of(searchable));
-    changeTracker.postPersist(ImmutableList.of(searchable), true);
+    var op = Op.create(searchable);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock, never()).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer).index(ImmutableList.of(searchable));
   }
 
@@ -207,21 +216,22 @@ public class ChangeProcessorTest {
   public void updateSearchable() {
     SearchableObj searchableObj = new SearchableObj();
 
-    changeTracker.prePersist(ImmutableList.of(searchableObj));
-    changeTracker.postPersist(ImmutableList.of(searchableObj), false);
+    var op = createUpdated(searchableObj);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock, never()).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer).index(ImmutableList.of(searchableObj));
   }
 
   @Test
   public void deleteSearchable() {
-    changeTracker.preDelete(SearchableObj.class, ImmutableList.of(75L));
+    changeTracker.preDelete(dao, SearchableObj.class, ImmutableList.of(75L));
     changeTracker.postDelete(SearchableObj.class, ImmutableList.of(75L));
 
     verify(clock, never()).millis();
-    verify(dao, never()).create(anyList());
+    verify(dao, never()).persist(any());
     verify(searchIndexer).removeIndex(SearchableObj.class, ImmutableList.of(75L));
   }
 
@@ -229,11 +239,12 @@ public class ChangeProcessorTest {
   public void createSubClassAll() {
     SubAll subAll = new SubAll();
 
-    changeTracker.prePersist(ImmutableList.of(subAll));
-    changeTracker.postPersist(ImmutableList.of(subAll), true);
+    var op = Op.create(subAll);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock, times(2)).millis();
-    verify(dao).create(anyList());
+    verify(dao).persist(any());
     verify(searchIndexer).index(ImmutableList.of(subAll));
 
     assertThat(subAll.getCreationTime().toEpochMilli()).isEqualTo(1000L);
@@ -252,11 +263,12 @@ public class ChangeProcessorTest {
 
     // when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(ImmutableList.of(subAll));
 
-    changeTracker.prePersist(ImmutableList.of(subAll));
-    changeTracker.postPersist(ImmutableList.of(subAll), false);
+    var op = createUpdated(subAll);
+    changeTracker.prePersist(dao, Transaction.of(op));
+    changeTracker.postPersist(dao, Transaction.of(op));
 
     verify(clock, times(2)).millis();
-    verify(dao).create(anyList());
+    verify(dao).persist(any());
     verify(searchIndexer).index(ImmutableList.of(subAll));
 
     assertThat(subAll.getCreationTime().toEpochMilli()).isEqualTo(500L);
@@ -274,12 +286,16 @@ public class ChangeProcessorTest {
     when(dao.get(SubAll.class, ImmutableList.of(75L))).thenReturn(
         BulkGetable.MultiListResult.of(ImmutableList.of(subAll), ImmutableList.of(75L)));
 
-    changeTracker.preDelete(SubAll.class, ImmutableList.of(75L));
+    changeTracker.preDelete(dao, SubAll.class, ImmutableList.of(75L));
     changeTracker.postDelete(SubAll.class, ImmutableList.of(75L));
 
     verify(clock).millis();
-    verify(dao).create(anyList());
+    verify(dao).persist(any());
     verify(searchIndexer).removeIndex(SubAll.class, ImmutableList.of(75L));
+  }
+
+  private static <T extends ModelObject<?>> Op<T> createUpdated(T t) {
+    return Op.update((Class<T>) t.getClass(), t.getId(), null).setEntity(t);
   }
 
   public static class Pojo {}

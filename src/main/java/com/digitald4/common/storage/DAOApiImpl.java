@@ -2,7 +2,6 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.server.service.BulkGetable;
@@ -12,7 +11,6 @@ import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import com.google.common.collect.Streams;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -29,19 +27,21 @@ public class DAOApiImpl implements DAO {
   }
 
   @Override
-  public <T> T create(T t) {
-    String url = apiConnector.formatUrl(getResourceName(t.getClass())) + "/create";
-    return convert((Class<T>) t.getClass(), apiConnector.sendPost(url, new JSONObject(t).toString()));
+  public <T> Transaction<T> persist(Transaction<T> transaction) {
+    transaction.getOps().forEach(op -> {
+      if (op.getUpdater() == null) {
+        op.setEntity(create(op.getEntity()));
+      } else {
+        op.setEntity(update(op.getTypeClass(), op.getId(), op.getUpdater()));
+      }
+    });
+    return transaction;
   }
 
   @Override
-  public <T> ImmutableList<T> create(Iterable<T> entities) {
-    Class<T> c = (Class<T>) entities.iterator().next().getClass();
-    String url = apiConnector.formatUrl(getResourceName(c)) + "/batchCreate";
-    JSONArray items = new JSONArray();
-    Streams.stream(entities).map(JSONObject::new).forEach(items::put);
-    JSONObject postData = new JSONObject().put("items", items);
-    return convertList(c, apiConnector.sendPost(url, postData.toString()));
+  public <T> T create(T t) {
+    String url = apiConnector.formatUrl(getResourceName(t.getClass())) + "/create";
+    return convert((Class<T>) t.getClass(), apiConnector.sendPost(url, new JSONObject(t).toString()));
   }
 
   @Override
@@ -145,11 +145,6 @@ public class DAOApiImpl implements DAO {
       }
       return updated;
     });
-  }
-
-  @Override
-  public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
-    throw new DD4StorageException("Unimplemented");
   }
 
   @Override

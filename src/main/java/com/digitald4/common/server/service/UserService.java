@@ -62,34 +62,34 @@ public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 	}
 
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "updatePassword")
-	public Empty updatePassword(PasswordUpdateRequest updatePaswordRequest, @Named("idToken") String idToken)
-			throws ServiceException {
+	public Empty updatePassword(PasswordUpdateRequest updatePasswordRequest,
+			@Named("idToken") String idToken) throws ServiceException {
 		sessionStore.resolve(idToken, true);
-		long userId = updatePaswordRequest.getUserId();
-		String password = updatePaswordRequest.getPassword();
+		String username = updatePasswordRequest.getUsername();
+		String password = updatePasswordRequest.getPassword();
 
 		PasswordStore.validateEncoding(password);
 
-		U user = userStore.get(userId);
+		U user = userStore.getBy(username);
 		if (user == null) {
 			throw new NotFoundException("User not found");
 		}
 
-		passwordStore.updatePassword(userId, password);
+		passwordStore.updatePassword(user.getId(), password);
 
 		return Empty.getInstance();
 	}
 
 	public static class PasswordUpdateRequest {
-		private long userId;
+		private String username;
 		private String password;
 
-		public long getUserId() {
-			return userId;
+		public String getUsername() {
+			return username;
 		}
 
-		public PasswordUpdateRequest setUserId(long userId) {
-			this.userId = userId;
+		public PasswordUpdateRequest setUsername(String username) {
+			this.username = username;
 			return this;
 		}
 
@@ -104,7 +104,7 @@ public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 	}
 
 	public static class UserJSONService<U extends User> extends JSONServiceHelper<U> {
-		private UserService<U> userService;
+		private final UserService<U> userService;
 		public UserJSONService(UserService<U> userService) {
 			super(userService);
 			this.userService = userService;

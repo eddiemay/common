@@ -25,7 +25,9 @@ com.digitald4.common.JSONService.prototype.sendRequest = function(request, onSuc
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, onError) {
-  this.sendRequest({action: 'create', method: 'POST', data: entity}, onSuccess, onError);
+  this.sendRequest({action: 'create', method: 'POST', data: entity}, function(entity) {
+    onSuccess(this.transform(entity));
+  }.bind(this), onError);
 }
 
 /**
@@ -36,7 +38,9 @@ com.digitald4.common.JSONService.prototype.create = function(entity, onSuccess, 
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError) {
-	this.sendRequest({action: 'get', method: 'GET', params: {id: id}}, onSuccess, onError);
+	this.sendRequest({action: 'get', method: 'GET', params: {id: id}}, function(entity) {
+	  onSuccess(this.transform(entity));
+	}.bind(this), onError);
 }
 
 /**
@@ -48,8 +52,21 @@ com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError
 */
 com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, onError) {
   this.sendRequest({action: 'list', method: 'GET', params: request}, function(response) {
-    onSuccess(processPagination(response));
-  }, onError);
+    onSuccess(this.processPagination(response));
+  }.bind(this), onError);
+}
+
+/**
+* Gets a list of objects from the data store.
+*
+* @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
+* @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
+* @param {!function(!Object)} onError The call back function to call after a submission onError.
+*/
+com.digitald4.common.JSONService.prototype.listAsIds = function(request, onSuccess, onError) {
+  this.sendRequest({action: 'listAsIds', method: 'GET', params: request}, function(response) {
+    onSuccess(this.processPagination(response));
+  }.bind(this), onError);
 }
 
 /**
@@ -61,8 +78,8 @@ com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, o
 */
 com.digitald4.common.JSONService.prototype.search = function(request, onSuccess, onError) {
   this.sendRequest({action: 'search', method: 'GET', params: request}, function(response) {
-    onSuccess(processPagination(response));
-  }, onError);
+    onSuccess(this.processPagination(response));
+  }.bind(this), onError);
 }
 
 /**
@@ -79,7 +96,9 @@ com.digitald4.common.JSONService.prototype.update = function(entity, props, onSu
 	}
 	this.sendRequest(
 	    {action: 'update', method: 'PUT', params: {id: entity.id, updateMask: props.join()}, data: updated},
-	    onSuccess, onError);
+	    function(entity) {
+	      onSuccess(this.transform(entity));
+	    }.bind(this), onError);
 }
 
 /**
@@ -161,20 +180,32 @@ com.digitald4.common.JSONService.prototype.batchDelete = function(ids, onSuccess
 	this.sendRequest({action: 'batchDelete', method: 'PUT', params: {ids: ids.join()}}, onSuccess, onError);
 }
 
+/**
+* Runs a transform on an entity to add any additional information needed based on states.
+* Override this function in the specific service, it is called on every function that brings in an
+* entity.
+*/
+com.digitald4.common.JSONService.prototype.transform = function(entity) {
+	return entity;
+}
+
 com.digitald4.common.JSONService.prototype.getFileUrl = function(fileRef, type) {
   type = type || 'files';
   if (!fileRef) {
     return undefined;
   }
-  var fileName = fileRef.name || fileRef;
+  var fileName = fileRef.id || fileRef;
   var apiConnector = this.apiConnector;
   var globalData = apiConnector.globalData;
   var idTokenParam = globalData.activeSession ? '?idToken=' + globalData.activeSession.id : '';
   return apiConnector.baseUrl + apiConnector.apiUrl + type + '/v1/' + fileName + idTokenParam;
 }
 
-processPagination = function(response) {
+com.digitald4.common.JSONService.prototype.processPagination = function(response) {
   response.items = response.items || [];
+  for (var e = 0; e < response.items.length; e++) {
+    this.transform(response.items[e]);
+  }
   response.pageToken = response.pageToken || 0;
   response.pageSize = response.pageSize || 0;
   response.totalSize = response.totalSize || response.items.length;

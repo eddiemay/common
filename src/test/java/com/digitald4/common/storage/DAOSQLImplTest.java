@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.digitald4.common.jdbc.DBConnector;
 import com.digitald4.common.model.BasicUser;
 import com.digitald4.common.model.User;
+import com.digitald4.common.storage.Transaction.Op;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import org.junit.Before;
@@ -23,13 +24,12 @@ public class DAOSQLImplTest {
 	@Mock private final ResultSetMetaData rsmd = mock(ResultSetMetaData.class);
 
 	private DAOSQLImpl daoSql;
-	private ChangeTracker changeTracker;
 	private final SearchIndexer searchIndexer = mock(SearchIndexer.class);
 	private final Clock clock = mock(Clock.class);
 
 	@Before
 	public void setUp() throws SQLException {
-		changeTracker = new ChangeTracker(() -> daoSql, () -> ACTIVE_USER, null, searchIndexer, clock);
+		ChangeTracker changeTracker = new ChangeTracker(() -> ACTIVE_USER, null, searchIndexer, clock);
 		daoSql = new DAOSQLImpl(connector, changeTracker);
 
 		when(connector.getConnection()).thenReturn(connection);
@@ -44,7 +44,8 @@ public class DAOSQLImplTest {
 		when(connection.prepareStatement(anyString(), eq(Statement.RETURN_GENERATED_KEYS)))
 				.thenReturn(ps);
 
-		daoSql.create(new BasicUser().setUsername("user@name").setFirstName("FirstName"));
+		daoSql.persist(Transaction.of(
+				Op.create(new BasicUser().setUsername("user@name").setFirstName("FirstName"))));
 
 		verify(connection).prepareStatement(
 				"INSERT INTO BasicUser(firstName,username) VALUES(?,?);", Statement.RETURN_GENERATED_KEYS);
@@ -61,8 +62,15 @@ public class DAOSQLImplTest {
 	}
 
 	@Test
+	public void batch_get() throws SQLException {
+		daoSql.get(BasicUser.class, ImmutableList.of(123));
+
+		verify(connection).prepareStatement("SELECT * FROM BasicUser WHERE id IN (123);");
+	}
+
+	@Test
 	public void list() throws SQLException {
-		daoSql.list(BasicUser.class, Query.forList("read_only=true,type_id>10", null, 0, 0));
+		daoSql.list(BasicUser.class, Query.forList(null, "read_only=true,type_id>10", null, 0, 0));
 
 		verify(connection).prepareStatement("SELECT * FROM BasicUser WHERE read_only=? AND type_id>?;");
 		verify(ps).setObject(1, "true");
@@ -71,7 +79,7 @@ public class DAOSQLImplTest {
 
 	@Test
 	public void list_withIn() throws SQLException {
-		daoSql.list(BasicUser.class, Query.forList("read_only=true,type_id IN 5|10", null, 0, 0));
+		daoSql.list(BasicUser.class, Query.forList(null, "read_only=true,type_id IN 5|10", null, 0, 0));
 
 		verify(connection).prepareStatement(
 				"SELECT * FROM BasicUser WHERE read_only=? AND type_id IN (?);");
@@ -81,7 +89,7 @@ public class DAOSQLImplTest {
 
 	@Test
 	public void list_advanced() throws SQLException {
-		daoSql.list(BasicUser.class, Query.forList("read_only=true,type_id>10", "username", 10, 3));
+		daoSql.list(BasicUser.class, Query.forList(null, "read_only=true,type_id>10", "username", 10, 3));
 
 		verify(connection).prepareStatement(
 				"SELECT * FROM BasicUser WHERE read_only=? AND type_id>? ORDER BY username LIMIT 20,10;");
@@ -91,16 +99,19 @@ public class DAOSQLImplTest {
 
 	@Test
 	public void update() throws SQLException {
-		when(rs.next()).thenReturn(true);
+		when(rs.next()).thenReturn(true).thenReturn(false);
+		when(rsmd.getColumnCount()).thenReturn(3);
+		when(rsmd.getColumnName(anyInt())).thenReturn("id").thenReturn("first_name").thenReturn("last_name");
+		when(rs.getObject(anyInt())).thenReturn(123L).thenReturn("fName").thenReturn("lName");
 
-		daoSql.update(BasicUser.class, 123, user -> user.setTypeId(10).setLastName("LastName"));
+		daoSql.persist(Transaction.of(Op.update(
+				BasicUser.class, 123L, user -> user.setTypeId(10).setLastName("LastName"))));
 
-		verify(connection, times(2)).prepareStatement("SELECT * FROM BasicUser WHERE id=?;");
-		verify(ps, times(2)).setObject(1, 123);
+		verify(connection).prepareStatement("SELECT * FROM BasicUser WHERE id IN (123);");
 		verify(connection).prepareStatement("UPDATE BasicUser SET lastName=?, typeId=? WHERE id=?;");
 		verify(ps).setObject(1, "LastName");
 		verify(ps).setObject(2, 10);
-		verify(ps).setObject(3, 123);
+		verify(ps).setObject(3, 123L);
 	}
 
 	@Test

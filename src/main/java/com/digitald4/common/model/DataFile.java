@@ -4,6 +4,7 @@ import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 
 public class DataFile extends ModelObjectModUser<String> {
+  private String id;
   private String name;
   private String type;
   private int size;
@@ -11,10 +12,11 @@ public class DataFile extends ModelObjectModUser<String> {
   private String comment;
 
   public String getId() {
-    return getName();
+    return id;
   }
 
   public DataFile setId(String id) {
+    this.id = id;
     return this;
   }
 
@@ -24,6 +26,9 @@ public class DataFile extends ModelObjectModUser<String> {
 
   public DataFile setName(String name) {
     this.name = name;
+    if (id == null) {
+      this.id = name;
+    }
     return this;
   }
 

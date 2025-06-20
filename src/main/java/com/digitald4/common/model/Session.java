@@ -7,6 +7,7 @@ import org.joda.time.DateTime;
 public class Session {
   private String id;
   private long userId;
+  private String username;
   private DateTime startTime;
   private DateTime expTime;
   private DateTime endTime;
@@ -31,6 +32,15 @@ public class Session {
 
   public Session setUserId(long userId) {
     this.userId = userId;
+    return this;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public Session setUsername(String username) {
+    this.username = username;
     return this;
   }
 

@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.UnaryOperator;
 
 import org.json.JSONObject;
 
@@ -34,22 +33,19 @@ public class DAOTestingImpl implements DAO {
 	}
 
 	@Override
-	public <T> T create(T t) {
-		changeTracker.prePersist(ImmutableList.of(t));
-		JSONObject json = JSONUtil.toJSON(t);
-		Object id = json.opt("id");
-		if (id == null || id instanceof Long && (long) id == 0L) {
-			json.put("id", id = idGenerator.incrementAndGet());
-		}
-		items.put(getIdString(t.getClass(), id), json);
-
-		return changeTracker.postPersist(
-				ImmutableList.of(JSONUtil.toObject((Class<T>) t.getClass(), json)), true).get(0);
-	}
-
-	@Override
-	public <T> ImmutableList<T> create(Iterable<T> entities) {
-		return stream(entities).map(this::create).collect(toImmutableList());
+	public <T> Transaction<T> persist(Transaction<T> transaction) {
+		changeTracker.prePersist(this, transaction);
+		transaction.getOps().forEach(op -> {
+			JSONObject json = JSONUtil.toJSON(op.getEntity());
+			Object id = json.opt("id");
+			if (id == null || id instanceof Number && (long) id == 0L) {
+				json.put("id", id = idGenerator.incrementAndGet());
+			}
+			items.put(getIdString(op.getEntity().getClass(), id), json);
+			op.setEntity(JSONUtil.toObject(op.getTypeClass(), json));
+		});
+		changeTracker.postPersist(this, transaction);
+		return transaction;
 	}
 
 	@Override
@@ -101,23 +97,6 @@ public class DAOTestingImpl implements DAO {
 	@Override
 	public <T extends Searchable> QueryResult<T> search(Class<T> c, Search searchQuery) {
 		throw new DD4StorageException("Unimplemented method", ErrorCode.BAD_REQUEST);
-	}
-
-	@Override
-	public <T, I> T update(Class<T> c, I id, UnaryOperator<T> updater) {
-		T t = get(c, id);
-		if (t != null) {
-			t = updater.apply(t);
-			changeTracker.prePersist(ImmutableList.of(t));
-			items.put(getIdString(c, id), JSONUtil.toJSON(t));
-		}
-
-		return changeTracker.postPersist(ImmutableList.of(t), false).get(0);
-	}
-
-	@Override
-	public <T, I> ImmutableList<T> update(Class<T> c, Iterable<I> ids, UnaryOperator<T> updater) {
-		return stream(ids).map(id -> update(c, id, updater)).collect(toImmutableList());
 	}
 
 	@Override

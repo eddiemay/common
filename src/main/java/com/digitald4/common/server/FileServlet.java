@@ -1,5 +1,7 @@
 package com.digitald4.common.server;
 
+import static java.time.Duration.ofMinutes;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.model.DataFile;
@@ -8,7 +10,8 @@ import com.digitald4.common.model.User;
 import com.digitald4.common.server.ApiServiceServlet.ServerType;
 import com.digitald4.common.storage.ChangeTracker;
 import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.DAOCloudDS;
+import com.digitald4.common.storage.DAO.Context;
+import com.digitald4.common.storage.DAOAppEngineDatastore;
 import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.LoginResolver;
@@ -19,12 +22,10 @@ import com.digitald4.common.storage.SessionStore;
 import com.digitald4.common.storage.Store;
 import com.digitald4.common.storage.UserStore;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -56,6 +57,7 @@ public class FileServlet extends HttpServlet {
   private final ProviderThreadLocalImpl<User> userProvider = new ProviderThreadLocalImpl<>();
   protected UserStore userStore;
   private LoginResolver loginResolver;
+  private Context context;
 
   @Inject
   public FileServlet() {
@@ -65,9 +67,8 @@ public class FileServlet extends HttpServlet {
   @Override
   public void init() throws ServletException {
     super.init();
-    PasswordStore passwordStore = new PasswordStore(daoProvider);
-    loginResolver = new SessionStore<>(
-        daoProvider, userStore, passwordStore, userProvider, Duration.ofMinutes(30), false, clock);
+    loginResolver = new SessionStore<>(daoProvider, userStore, new PasswordStore(daoProvider),
+        userProvider, ofMinutes(30), false, clock);
     ServletContext sc = getServletContext();
     ServerType serverType =
         sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
@@ -79,27 +80,26 @@ public class FileServlet extends HttpServlet {
               sc.getInitParameter("dburl"),
               sc.getInitParameter("dbuser"),
               sc.getInitParameter("dbpass")),
-          new ChangeTracker(daoProvider, userProvider, null, null, clock),
+          new ChangeTracker(userProvider, null, null, clock),
           true);
     } else {
       // We use CloudDataStore with AppEngine.
-      SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl(() -> DAOCloudDS.Context.NONE);
-      ChangeTracker changeTracker =
-          new ChangeTracker(daoProvider, userProvider, null, searchIndexer, clock);
-      dao = new DAOCloudDS(
-          DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer, () -> DAOCloudDS.Context.NONE);
+      SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl(() -> context);
+      var changeTracker = new ChangeTracker(userProvider, null, searchIndexer, clock);
+      dao = new DAOAppEngineDatastore(() -> context, changeTracker, searchIndexer);
     }
   }
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+    context = request.getServerName().startsWith("test") ? Context.TEST : Context.NONE;
     String idToken = request.getParameter("idToken");
     Long id = Long.parseLong(request.getParameter("id"));
     try {
       resolveLogin(idToken, "getFileContents");
       DataFile df = dataFileStore.get(id);
       byte[] bytes = df.getData();
-      response.setContentType("application/" + (!df.getType().isEmpty() ? df.getType() : "pdf"));
+      response.setContentType(getContentType(df.getType()));
       response.setHeader("Cache-Control", "no-cache, must-revalidate");
       response.setContentLength(bytes.length);
       response.getOutputStream().write(bytes);
@@ -111,6 +111,7 @@ public class FileServlet extends HttpServlet {
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
     try {
+      context = request.getServerName().startsWith("test") ? Context.TEST : Context.NONE;
       String idToken = request.getParameter("idToken");
       resolveLogin(idToken, "upload");
       FileReference reference = FileReference.of(dataFileStore.create(converter.apply(request)));
@@ -121,12 +122,16 @@ public class FileServlet extends HttpServlet {
       response.setHeader("Access-Control-Allow-Origin", "*");
       response.setContentLength(json.length());
       response.getOutputStream().write(json.getBytes());
+      response.getOutputStream().close();
     } catch (DD4StorageException | IOException e) {
       throw new ServletException(e);
     }
   }
 
-  protected void postUpload(HttpServletRequest request, FileReference reference) {
+  protected void postUpload(HttpServletRequest request, FileReference reference) {}
+
+  protected String getFileId(HttpServletRequest request) throws ServletException, IOException {
+    return getFileName(request);
   }
 
   protected String getFileName(HttpServletRequest request) throws ServletException, IOException {
@@ -138,14 +143,25 @@ public class FileServlet extends HttpServlet {
         .orElseThrow(() -> new RuntimeException("No filename"));
   }
 
+  private static String getContentType(String fileType) {
+    return switch (fileType) {
+      case "png" -> "image/png";
+      case "jpg" -> "image/jpg";
+      case "html" -> "text/html";
+      default -> "application/pdf";
+    };
+  }
+
   private final Function<HttpServletRequest, DataFile> converter = request -> {
     Part filePart;
+    String id;
     String fileName;
     try {
       filePart = request.getPart("file");
       if (filePart == null) {
         throw new RuntimeException("Part is null");
       }
+      id = getFileId(request);
       fileName = getFileName(request);
     } catch (IOException | ServletException e) {
       throw new RuntimeException("Error reading file part", e);
@@ -163,6 +179,7 @@ public class FileServlet extends HttpServlet {
       // LOGGER.log(Level.INFO, "File {0} being uploaded.", fileName);
       byte[] data = buffer.toByteArray();
       return new DataFile()
+          .setId(id)
           .setName(fileName)
           .setType(fileName.substring(fileName.lastIndexOf('.') + 1))
           .setData(data);

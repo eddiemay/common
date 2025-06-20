@@ -3,6 +3,7 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Session;
+import com.digitald4.common.model.Session.State;
 import com.digitald4.common.model.User;
 import com.digitald4.common.storage.Annotations.SessionCacheEnabled;
 import com.digitald4.common.storage.Annotations.SessionDuration;
@@ -23,7 +24,7 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
   private final PasswordStore passwordStore;
   private final ProviderThreadLocalImpl<U> userProvider;
   private final Duration sessionDuration;
-  private final boolean sessionCacheEnabled;
+  private final boolean cacheEnabled;
   private final Clock clock;
   private final Map<String, Session> activeSessions;
 
@@ -31,14 +32,14 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
   public SessionStore(
       Provider<DAO> daoProvider, UserStore<U> userStore, PasswordStore passwordStore,
       ProviderThreadLocalImpl<U> userProvider, @SessionDuration Duration sessionDuration,
-      @SessionCacheEnabled boolean sessionCacheEnabled, Clock clock) {
+      @SessionCacheEnabled boolean cacheEnabled, Clock clock) {
     super(Session.class, daoProvider);
     this.userStore = userStore;
     this.passwordStore = passwordStore;
     this.userProvider  = userProvider;
     this.sessionDuration = sessionDuration;
-    this.sessionCacheEnabled = sessionCacheEnabled;
-    this.activeSessions = sessionCacheEnabled ? new HashMap<>() : null;
+    this.cacheEnabled = cacheEnabled;
+    this.activeSessions = cacheEnabled ? new HashMap<>() : null;
     this.clock = clock;
   }
 
@@ -63,9 +64,10 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
             new Session()
                 .setId(String.valueOf((int) (Math.random() * Integer.MAX_VALUE)))
                 .setUserId(user.getId())
+                .setUsername(user.getUsername())
                 .setStartTime(now)
                 .setExpTime(now.plus(sessionDuration.toMillis()))
-                .setState(Session.State.ACTIVE))
+                .setState(State.ACTIVE))
         .user(user));
   }
 
@@ -79,18 +81,21 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
     if (activeSession == null) {
       activeSession = super.get(token);
 
-      if (activeSession == null || activeSession.getState() != Session.State.ACTIVE) {
+      if (activeSession == null || activeSession.getState() != State.ACTIVE) {
         return null;
       }
 
       // Only set the user on active sessions.
       if (activeSession.getExpTime().isAfter(now)) {
-        activeSession = cachePut(activeSession.user(userStore.get(activeSession.getUserId())));
+        String username = activeSession.getUsername();
+        activeSession = cachePut(activeSession.user(username != null
+            ? userStore.getBy(activeSession.getUsername())
+            : userStore.get(activeSession.getUserId())));
       }
     }
 
     // If the session should be expired, expire it.
-    if (activeSession.getState() != Session.State.CLOSED && activeSession.getExpTime().isBefore(now)) {
+    if (activeSession.getState() != State.CLOSED && activeSession.getExpTime().isBefore(now)) {
       activeSession = close(activeSession);
     }
 
@@ -99,7 +104,7 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
 
   public Session resolve(String token, boolean loginRequired) {
     Session session = get(token);
-    if (loginRequired && (session == null || session.getState() != Session.State.ACTIVE)) {
+    if (loginRequired && (session == null || session.getState() != State.ACTIVE)) {
       throw NOT_AUTHENICATED;
     }
 
@@ -110,7 +115,7 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
     DateTime now = new DateTime(clock.millis());
     long duration = sessionDuration.toMillis();
     // Extend the session if it is more than halfway over.
-    if (session.getState() == Session.State.ACTIVE && session.getExpTime().isBefore(now.plus(duration / 2))) {
+    if (session.getState() == State.ACTIVE && session.getExpTime().isBefore(now.plus(duration / 2))) {
       session = cachePut(
           update(session.getId(), as -> as.setExpTime(now.plus(duration))).user(session.user()));
     }
@@ -130,24 +135,24 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
     }
 
     return update(
-        cacheRemove(session).getId(), s -> s.setEndTime(new DateTime(clock.millis()))
-            .setState(Session.State.CLOSED));
+        cacheRemove(session).getId(),
+        s -> s.setEndTime(new DateTime(clock.millis())).setState(State.CLOSED));
   }
 
 
   private Session cachePut(Session session) {
-    if (sessionCacheEnabled) {
+    if (cacheEnabled) {
       activeSessions.put(session.getId(), session);
     }
     return session;
   }
 
   private Session cacheGet(String token) {
-    return sessionCacheEnabled ? activeSessions.get(token) : null;
+    return cacheEnabled ? activeSessions.get(token) : null;
   }
 
   private Session cacheRemove(Session session) {
-    if (sessionCacheEnabled) {
+    if (cacheEnabled) {
       activeSessions.remove(session.getId());
     }
     return session;

@@ -126,3 +126,18 @@ com.digitald4.common.TableController.prototype.deleteSelected = function() {
 		this.loading = false;
 	}.bind(this));
 }
+
+com.digitald4.common.TableController.prototype.getCity = function(address) {
+  if (address) {
+    const regex = /,\s*([A-Za-z\s]+)(?:\s+([A-Za-z]{2})|\s+(\d{5}))?/;
+    const match = address.match(regex);
+    if (match) {
+      return match[1];
+    }
+  }
+  return undefined;
+}
+
+com.digitald4.common.TableController.prototype.isVisible = function(col) {
+  return col.isHidden == undefined || !col.isHidden();
+}

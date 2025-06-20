@@ -1,7 +1,6 @@
 package com.digitald4.common.test;
 
 public class StopWatch {
-    
     private long startTime = 0;
     private long stopTime = 0;
     private boolean running = false;

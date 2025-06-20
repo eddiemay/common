@@ -210,10 +210,11 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
     restrict: 'AE',
     scope: {
       ngModel: '=',
-      onUpdate: '&'
+      onUpdate: '&',
+      ngDisabled: '&'
     },
     template: '<span><label data-ng-if="label">{{label}}</label>' +
-        '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10"/>' +
+        '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10" ng-disabled="{{ngDisabled}}"/>' +
         '&nbsp;<img src="images/icons/fugue/calendar-month.png" width="16" height="16"/></span>',
     replace: true,
     require: 'ngModel',

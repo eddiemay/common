@@ -11,7 +11,6 @@ import com.digitald4.common.storage.*;
 import com.digitald4.common.util.Emailer;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
@@ -87,15 +86,13 @@ public class ApiServiceServlet extends HttpServlet {
 							sc.getInitParameter("dburl"),
 							sc.getInitParameter("dbuser"),
 							sc.getInitParameter("dbpass")),
-					new ChangeTracker(daoProvider, userProvider, null, null, clock),
+					new ChangeTracker(userProvider, null, null, clock),
 					useViews);
 		} else {
 			// We use CloudDataStore with AppEngine.
-			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl(() -> DAOCloudDS.Context.NONE);
-			ChangeTracker changeTracker =
-					new ChangeTracker(daoProvider, userProvider, null, searchIndexer, clock);
-			dao = new DAOCloudDS(
-					DatastoreServiceFactory.getDatastoreService(), changeTracker, searchIndexer, () -> DAOCloudDS.Context.NONE);
+			SearchIndexer searchIndexer = new SearchIndexerAppEngineImpl(() -> DAOAppEngineDatastore.Context.NONE);
+			var changeTracker = new ChangeTracker(userProvider, null, searchIndexer, clock);
+			dao = new DAOAppEngineDatastore(() -> DAOAppEngineDatastore.Context.NONE, changeTracker, searchIndexer);
 		}
 	}
 

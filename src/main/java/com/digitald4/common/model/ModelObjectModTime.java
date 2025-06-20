@@ -5,7 +5,7 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 
 import java.time.Instant;
 
-public class ModelObjectModTime<ID> extends ModelObject<ID> implements HasModificationTimes {
+public class ModelObjectModTime<ID> extends ModelObject<ID> implements HasModificationTimes<ID> {
   private Instant creationTime;
   private Instant lastModifiedTime;
   private Instant deletionTime;
@@ -17,7 +17,7 @@ public class ModelObjectModTime<ID> extends ModelObject<ID> implements HasModifi
   }
 
   @Override
-  public HasModificationTimes setCreationTime(Instant creationTime) {
+  public HasModificationTimes<ID> setCreationTime(Instant creationTime) {
     this.creationTime = creationTime;
     return this;
   }
@@ -27,7 +27,8 @@ public class ModelObjectModTime<ID> extends ModelObject<ID> implements HasModifi
     return getCreationTime() == null ? null : getCreationTime().toEpochMilli();
   }
 
-  public HasModificationTimes setCreationTime(long millis) {
+  @Override
+  public HasModificationTimes<ID> setCreationTime(long millis) {
     return setCreationTime(Instant.ofEpochMilli(millis));
   }
 
@@ -38,7 +39,7 @@ public class ModelObjectModTime<ID> extends ModelObject<ID> implements HasModifi
   }
 
   @Override
-  public HasModificationTimes setLastModifiedTime(Instant lastModifiedTime) {
+  public HasModificationTimes<ID> setLastModifiedTime(Instant lastModifiedTime) {
     this.lastModifiedTime = lastModifiedTime;
     return this;
   }
@@ -48,18 +49,17 @@ public class ModelObjectModTime<ID> extends ModelObject<ID> implements HasModifi
     return getLastModifiedTime() == null ? null : getLastModifiedTime().toEpochMilli();
   }
 
-  public HasModificationTimes setLastModifiedTime(long millis) {
+  @Override
+  public HasModificationTimes<ID> setLastModifiedTime(long millis) {
     return setLastModifiedTime(Instant.ofEpochMilli(millis));
   }
 
-  @Override
   @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
   public Instant getDeletionTime() {
     return deletionTime;
   }
 
-  @Override
-  public HasModificationTimes setDeletionTime(Instant deletionTime) {
+  public HasModificationTimes<ID> setDeletionTime(Instant deletionTime) {
     this.deletionTime = deletionTime;
     return this;
   }
@@ -69,7 +69,7 @@ public class ModelObjectModTime<ID> extends ModelObject<ID> implements HasModifi
     return getDeletionTime() == null ? null : getDeletionTime().toEpochMilli();
   }
 
-  public HasModificationTimes setDeletionTime(long millis) {
+  public HasModificationTimes<ID> setDeletionTime(long millis) {
     return setDeletionTime(Instant.ofEpochMilli(millis));
   }
 }

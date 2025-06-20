@@ -10,7 +10,7 @@ public class RetryableTest {
 	public void test() {
 		StringBuilder data = new StringBuilder();
 		String out = Calculate.executeWithRetries(2, () -> {
-			if (data.length() == 0) {
+			if (data.isEmpty()) {
 				data.append("done");
 				throw new IllegalArgumentException("Retry test planned error");
 			}

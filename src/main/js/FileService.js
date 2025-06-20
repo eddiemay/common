@@ -3,6 +3,9 @@ var FileService = function(apiConnector, globalData) {
 
   fileService.upload = function(request, callback) {
     var url = apiConnector.baseUrl + 'files/upload';
+    if (globalData.activeSession) {
+      url += '?idToken=' + globalData.activeSession.id;
+    }
     var xhr = new XMLHttpRequest();
     xhr.addEventListener('progress', function(e) {
       var done = e.position || e.loaded, total = e.totalSize || e.total;
@@ -20,9 +23,6 @@ var FileService = function(apiConnector, globalData) {
     var fd = new FormData;
     for (var prop in request) {
       fd.append(prop, prop == 'file' ? request[prop].files[0] : request[prop]);
-    }
-    if (globalData.activeSession) {
-      fd.append('idToken', globalData.activeSession.id);
     }
     xhr.send(fd);
   }

@@ -7,7 +7,7 @@ import static com.google.common.collect.Streams.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.model.Searchable;
-import com.digitald4.common.storage.DAOCloudDS.Context;
+import com.digitald4.common.storage.DAO.Context;
 import com.digitald4.common.storage.Query.Search;
 import com.digitald4.common.util.JSONUtil;
 import com.digitald4.common.util.JSONUtil.Field;

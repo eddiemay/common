@@ -4,6 +4,7 @@ import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.model.GeneralData;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.*;
+import com.digitald4.common.storage.Transaction.Op;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 
@@ -24,7 +25,7 @@ public class DataImporter {
 		ImmutableList<T> results = dao.list(c, listQuery).getItems();
 		results.stream().parallel().forEach(t -> {
 			try {
-				apiDAO.create(t);
+				apiDAO.persist(Transaction.of(Op.create(t)));
 			} catch (Exception ioe) {
 				ioe.printStackTrace();
 			}

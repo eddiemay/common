@@ -9,8 +9,8 @@ var createUserService = function($cookies, apiConnector, globalData) {
     }, error);
   }
 
-  userService.setPassword = function(userId, password, success, error) {
-    var request = {userId: userId, password: CryptoJS.MD5(password).toString().toUpperCase()};
+  userService.setPassword = function(username, password, success, error) {
+    var request = {username: username, password: CryptoJS.MD5(password).toString().toUpperCase()};
     this.sendRequest({action: 'updatePassword', method: 'POST', data: request}, success, error);
   }
 

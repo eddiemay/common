@@ -1,15 +1,13 @@
 package com.digitald4.common.model;
 
-public interface HasModificationUser extends HasModificationTimes {
+public interface HasModificationUser<ID> extends HasModificationTimes<ID> {
   @Deprecated Long getCreationUserId();
-  @Deprecated HasModificationUser setCreationUserId(Long userId);
+  @Deprecated HasModificationUser<ID> setCreationUserId(Long userId);
   @Deprecated Long getLastModifiedUserId();
-  @Deprecated HasModificationUser setLastModifiedUserId(Long userId);
+  @Deprecated HasModificationUser<ID> setLastModifiedUserId(Long userId);
 
   String getCreationUsername();
-  HasModificationUser setCreationUsername(String creationUsername);
+  HasModificationUser<ID> setCreationUsername(String creationUsername);
   String getLastModifiedUsername();
-  HasModificationUser setLastModifiedUsername(String lastModifiedUsername);
-  String getDeletionUsername();
-  HasModificationUser setDeletionUsername(String deletionUsername);
+  HasModificationUser<ID> setLastModifiedUsername(String lastModifiedUsername);
 }
