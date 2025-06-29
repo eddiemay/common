@@ -27,10 +27,13 @@ com.digitald4.common.TableController.prototype.refresh = function(pageToken) {
   this.loading = true;
   this.pageToken = pageToken || 1;
   var filter = this.filter;
-  if (this.dateRange) {
-    var dateFilter = this.dateRange.prop + '>=' + this.dateRange.start +
-        "," + this.dateRange.prop + '<=' + this.dateRange.end;
-    filter = (filter ? filter + ',' : '') + dateFilter;
+  if (this.dateRange && this.dateRange.start) {
+    filter = filter ? filter + ',' : '';
+    filter += this.dateRange.prop + '>=' + this.dateRange.start;
+  }
+  if (this.dateRange && this.dateRange.end) {
+    filter = filter ? filter + ',' : '';
+    filter += this.dateRange.prop + '<=' + this.dateRange.end;
   }
   var request =
       {filter: filter, pageSize: this.pageSize, pageToken: this.pageToken, orderBy: this.orderBy};
@@ -65,6 +68,27 @@ com.digitald4.common.TableController.prototype.next = function() {
 com.digitald4.common.TableController.prototype.setSort = function(col) {
   this.orderBy = (this.orderBy == col.prop) ? col.prop + " DESC" : col.prop;
   this.refresh();
+}
+
+com.digitald4.common.TableController.prototype.clicked = function(value) {
+  var $ctrl = this;
+  this.onClick({clickRequest: {
+    original: JSON.parse(JSON.stringify(value)),
+    entity: value,
+    shown: true,
+    postUpdate: function(transaction) {$ctrl.postUpdate(transaction)},
+    postDelete: function(response) {$ctrl.postDelete(response)},
+  }})
+}
+
+com.digitald4.common.TableController.prototype.postUpdate = function(transaction) {
+  var index = this.resultList.items.indexOf(transaction.original);
+  this.resultList.items.splice(index, 1, transaction.entity);
+}
+
+com.digitald4.common.TableController.prototype.postDelete = function(transaction) {
+  var index = this.resultList.items.indexOf(transaction.original);
+  this.resultList.items.splice(index, 1);
 }
 
 com.digitald4.common.TableController.prototype.update = function(entity, prop) {
