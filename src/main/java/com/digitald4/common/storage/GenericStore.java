@@ -7,8 +7,6 @@ import static com.google.common.collect.Streams.stream;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.HasModificationTimes;
-import com.digitald4.common.model.Identifier;
-import com.digitald4.common.model.ModelObject;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.model.SoftDeletable;
 import com.digitald4.common.server.service.BulkGetable;
@@ -73,14 +71,6 @@ public class GenericStore<T, I> implements Store<T, I> {
 		QueryResult<T> result = daoProvider.get().list(c, query);
 		transform(result.getItems());
 		return result;
-	}
-
-	@Override
-	public QueryResult<Identifier> listAsIdentifer(List query) {
-		QueryResult<T> result = daoProvider.get().list(c, query);
-		ImmutableList<Identifier> results = result.getItems().stream()
-				.map(r -> Identifier.of((ModelObject<I>) r)).collect(toImmutableList());
-		return QueryResult.of(Identifier.class, results, result.getTotalSize(), result.query());
 	}
 
 	@Override

@@ -2,7 +2,6 @@ package com.digitald4.common.server.service;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
-import com.digitald4.common.model.Identifier;
 import com.digitald4.common.model.Searchable;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
@@ -79,40 +78,6 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 		try {
 			resolveLogin(idToken, "list");
 			return transform(getStore().list(Query.forList(fields, filter, orderBy, pageSize, pageToken)));
-		} catch (DD4StorageException e) {
-			e.printStackTrace();
-			throw new ServiceException(e.getErrorCode(), e);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
-		}
-	}
-
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "listAsIds")
-	public QueryResult<Identifier> listAsIds(
-			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1")
-			int pageToken, @Nullable @Named("idToken") String idToken) throws ServiceException {
-		try {
-			resolveLogin(idToken, "listAsIds");
-			return getStore().listAsIdentifer(Query.forList(null, filter, orderBy, pageSize, pageToken));
-		} catch (DD4StorageException e) {
-			e.printStackTrace();
-			throw new ServiceException(e.getErrorCode(), e);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
-		}
-	}
-
-	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "listForReport")
-	public QueryResult<T> listforReport(
-			@Nullable @Named("filter") String filter, @Nullable @Named("orderBy") String orderBy,
-			@Named("pageSize") @DefaultValue("200") int pageSize, @Named("pageToken") @DefaultValue("1") int pageToken,
-			@Nullable @Named("idToken") String idToken) throws ServiceException {
-		try {
-			resolveLogin(idToken, "listForReport");
-			return getStore().list(Query.forList(String.join(",", getReportFields()), filter, orderBy, pageSize, pageToken));
 		} catch (DD4StorageException e) {
 			e.printStackTrace();
 			throw new ServiceException(e.getErrorCode(), e);

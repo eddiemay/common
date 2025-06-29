@@ -46,12 +46,18 @@ com.digitald4.common.JSONService.prototype.get = function(id, onSuccess, onError
 /**
 * Gets a list of objects from the data store.
 *
-* @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
+* @param {Object{fields, filter, orderBy, pageSize, pageToken}} query The options associated with a list request.
 * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
-com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, onError) {
-  this.sendRequest({action: 'list', method: 'GET', params: request}, function(response) {
+com.digitald4.common.JSONService.prototype.list = function(query, onSuccess, onError) {
+  if (query.fields) {
+    query.fields = query.fields.join(',');
+  }
+  if (query.filters) {
+    query.filter = query.filters.join(',');
+  }
+  this.sendRequest({action: 'list', method: 'GET', params: query}, function(response) {
     onSuccess(this.processPagination(response));
   }.bind(this), onError);
 }
@@ -59,14 +65,13 @@ com.digitald4.common.JSONService.prototype.list = function(request, onSuccess, o
 /**
 * Gets a list of objects from the data store.
 *
-* @param {Object{filter, orderBy, pageSize, pageToken}} listOptions The options associated with a list request.
+* @param {Object{filter, orderBy, pageSize, pageToken}} query The options associated with a list request.
 * @param {!function(!Object)} onSuccess The call back function to call after a onSuccessful submission.
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
-com.digitald4.common.JSONService.prototype.listAsIds = function(request, onSuccess, onError) {
-  this.sendRequest({action: 'listAsIds', method: 'GET', params: request}, function(response) {
-    onSuccess(this.processPagination(response));
-  }.bind(this), onError);
+com.digitald4.common.JSONService.prototype.listAsIds = function(query, onSuccess, onError) {
+  query.fields = ['id', 'name', 'firstName', 'lastName'];
+  this.list(query, onSuccess, onError);
 }
 
 /**

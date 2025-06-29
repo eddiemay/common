@@ -1,6 +1,6 @@
 com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
     .factory('globalData', function() { return new com.digitald4.common.GlobalData(); })
-    .factory('flags', function() { return {}; })
+    .factory('flags', function() { return {} })
     .service('apiConnector', com.digitald4.common.ApiConnector)
     .service('fileService', com.digitald4.common.FileService)
     .service('flagService', com.digitald4.common.FlagService)
@@ -72,18 +72,23 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
         scope: {
           label: '@',
           ngModel: '=',
+          ngDisabled: '@',
           onUpdate: '&'
         },
         template: '<span><label data-ng-if="$ctrl.label">{{$ctrl.label}}</label>'
-            + '<input type="text" value="{{ngModel | date:\'HH:mm\'}}" data-on-change="handleChange()" size="5"></span>',
+            + '<input type="text" value="{{ngModel | date:\'HH:mm\'}}"'
+            + ' data-on-change="handleChange()" size="5" data-ng-disabled="isDisabled()"></span>',
         link: function(scope, element, attrs) {
           var textField = $('input', element);
           scope.handleChange = function() {
-            scope.$parent.$eval(attrs.ngModel + ' = ' + new Date('01/01/1979 ' + textField.val()).getTime());
+            scope.$parent.$eval(attrs.ngModel+'='+new Date('01/01/1979 '+textField.val()).getTime());
             scope.onUpdate();
-          };
+          }
+          scope.isDisabled = function() {
+            return scope.$parent.$eval(attrs.ngDisabled);
+          }
         }
-      };
+      }
     })
     .directive('dd4MultiCheck', ['$compile', function($compile) {
       return {
@@ -121,7 +126,7 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
               }
             }
             scope.onUpdate();
-          };
+          }
         }
       }
     }])
@@ -146,7 +151,7 @@ com.digitald4.common.module = angular.module('DD4Common', ['ngCookies'])
             event.preventDefault();
           }
         });
-      };
+      }
     })
     .component('youtubeVideo', {
       controller: function() {
@@ -240,7 +245,7 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
             scope.$parent.$eval(attrs.onUpdate);
           }
         }
-      };
+      }
 
       textField.bind('blur', function() { update(new Date(textField.val())); });
       $compile(textField)(scope.$parent);
@@ -330,6 +335,7 @@ com.digitald4.common.module.component('dd4Table', {
   controller: com.digitald4.common.TableCtrl,
   bindings: {
     metadata: '=',
+    onClick: '&',
   },
   templateUrl: 'js/html/dd4table.html',
 })
@@ -413,5 +419,5 @@ com.digitald4.common.module.directive('dd4Table', function() {
         }
       }
     },
-  };
+  }
 });
