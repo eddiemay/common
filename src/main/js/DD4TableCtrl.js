@@ -70,11 +70,12 @@ com.digitald4.common.TableController.prototype.setSort = function(col) {
   this.refresh();
 }
 
-com.digitald4.common.TableController.prototype.clicked = function(value) {
+com.digitald4.common.TableController.prototype.clicked = function(entity, metadata) {
   var $ctrl = this;
   this.onClick({clickRequest: {
-    original: JSON.parse(JSON.stringify(value)),
-    entity: value,
+    original: JSON.parse(JSON.stringify(entity)),
+    entity: entity,
+    metadata: metadata,
     shown: true,
     postUpdate: function(transaction) {$ctrl.postUpdate(transaction)},
     postDelete: function(response) {$ctrl.postDelete(response)},

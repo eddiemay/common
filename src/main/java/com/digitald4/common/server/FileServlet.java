@@ -143,7 +143,7 @@ public class FileServlet extends HttpServlet {
         .orElseThrow(() -> new RuntimeException("No filename"));
   }
 
-  private static String getContentType(String fileType) {
+  public static String getContentType(String fileType) {
     return switch (fileType) {
       case "png" -> "image/png";
       case "jpg" -> "image/jpg";

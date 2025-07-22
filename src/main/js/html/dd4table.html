@@ -36,9 +36,10 @@
         <td data-ng-repeat="col in $ctrl.columns | filter: $ctrl.isVisible">
           <input type="text" data-ng-if="col.editable || col.type == 'editable'" size="{{col.size}}"
                  data-ng-model="entity[col.prop]" data-on-change="$ctrl.update(entity, col.prop)"/>
-          <span data-ng-if="col.value && !col.url && col.type != 'onClick'">{{col.value(entity)}}</span>
+          <span data-ng-if="col.value && !col.url && col.type != 'clickable'">{{col.value(entity)}}</span>
           <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}{{col.value(entity)}}</a></span>
-          <span data-ng-if="col.type == 'onClick'"><a href="" data-ng-click="$ctrl.clicked(col.getClickValue(entity))">{{col.value(entity)}}</a></span>
+          <span data-ng-if="col.type == 'clickable' && col.value"><a href="" data-ng-click="$ctrl.clicked(entity, col.clickMeta(entity))">{{col.value(entity)}}</a></span>
+          <span data-ng-if="col.type == 'clickable' && col.prop"><a href="" data-ng-click="$ctrl.clicked(entity, col.clickMeta(entity))">{{entity[col.prop]}}</a></span>
           <span data-ng-if="col.button">
             <button data-ng-click="col.button.action(entity, $ctrl)" data-ng-disabled="col.button.disabled(entity)">
               {{col.button.display(entity)}}

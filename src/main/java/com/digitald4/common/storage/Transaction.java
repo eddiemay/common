@@ -218,14 +218,12 @@ public class Transaction<T> {
       return updater;
     }
 
-    public Op<T> prePersist() {
+    public void prePersist() {
       prePersist.apply(this);
-      return this;
     }
 
-    public Op<T> postPersist() {
+    public void postPersist() {
       postPersist.apply(this);
-      return this;
     }
   }
 }

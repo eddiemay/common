@@ -57,6 +57,10 @@ public class DAOAppEngineDatastore implements DAO {
 	@Override
 	public <T> Transaction<T> persist(Transaction<T> transaction) {
 		ImmutableList<Op<T>> ops = transaction.getOps();
+		if (ops.isEmpty()) {
+			return transaction;
+		}
+
 		Class<T> c = ops.get(0).getTypeClass();
 		String kind = getTableName(c);
 		ImmutableMap<String, Field> fields = JSONUtil.getFields(c);

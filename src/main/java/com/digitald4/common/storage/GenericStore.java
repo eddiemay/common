@@ -105,7 +105,7 @@ public class GenericStore<T, I> implements Store<T, I> {
 		ImmutableList<Op<T>> ops = stream(entities)
 				.map(t -> Op.migrate(t, this::preprocess, this::postprocess))
 				.collect(toImmutableList());
-		daoProvider.get().persist(Transaction.of(ops));
+		daoProvider.get().persist(Transaction.of(ops, this::preprocess, this::postprocess));
 		return ops.stream().map(Op::getEntity).collect(toImmutableList());
 	}
 

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DAOFileDBImpl implements DAO {
-  private static final String FIlE_FORMAT = "data/%s.db";
+  private static final String FIlE_FORMAT = "data/%s.jsonl";
   protected final Map<Class<?>, DAOFileBasedImpl> itemDAOs = new HashMap<>();
   private final ChangeTracker changeTracker;
 

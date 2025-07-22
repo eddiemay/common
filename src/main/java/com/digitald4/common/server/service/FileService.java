@@ -3,6 +3,7 @@ package com.digitald4.common.server.service;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.DataFile;
+import com.digitald4.common.server.FileServlet;
 import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.common.storage.Store;
 import com.google.api.server.spi.config.Api;
@@ -65,7 +66,7 @@ public class FileService extends EntityServiceImpl<DataFile, String> {
 			DataFile df = dataFileStore.get(fileName);
 			HttpServletResponse response = responseProvider.get();
 			byte[] bytes = df.getData();
-			response.setContentType("application/" + (!df.getType().isEmpty() ? df.getType() : "pdf"));
+			response.setContentType(FileServlet.getContentType(df.getType()));
 			response.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
 			// Cache for the max of 1 year bcz we like to add a new file rather than update files.
 			response.setHeader("Cache-Control", "max-age=30");
