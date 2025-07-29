@@ -3,6 +3,7 @@ package com.digitald4.common.server.service;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Searchable;
+import com.digitald4.common.model.Session;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.util.JSONUtil;
 import com.google.api.server.spi.ServiceException;
@@ -185,11 +186,11 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 		return true;
 	}
 
-	protected void resolveLogin(String idToken, boolean requiresLogin) {
-		loginResolver.resolve(idToken, requiresLogin);
+	protected Session resolveLogin(String idToken, boolean requiresLogin) {
+		return loginResolver.resolve(idToken, requiresLogin);
 	}
 
-	protected void resolveLogin(String idToken, String method) {
-		resolveLogin(idToken, requiresLogin(method));
+	protected Session resolveLogin(String idToken, String method) {
+		return resolveLogin(idToken, requiresLogin(method));
 	}
 }

@@ -36,7 +36,9 @@
         <td data-ng-repeat="col in $ctrl.columns | filter: $ctrl.isVisible">
           <input type="text" data-ng-if="col.editable || col.type == 'editable'" size="{{col.size}}"
                  data-ng-model="entity[col.prop]" data-on-change="$ctrl.update(entity, col.prop)"/>
-          <span data-ng-if="col.value && !col.url && col.type != 'clickable'">{{col.value(entity)}}</span>
+          <textarea data-ng-if="col.type=='textarea'" data-ng-model="entity[col.prop]"
+                    data-on-change="$ctrl.update(entity, col.prop)" cols="20" rows="4"></textarea>
+          <span data-ng-if="col.value && !col.url && col.type === 'undefined'">{{col.value(entity)}}</span>
           <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}{{col.value(entity)}}</a></span>
           <span data-ng-if="col.type == 'clickable' && col.value"><a href="" data-ng-click="$ctrl.clicked(entity, col.clickMeta(entity))">{{col.value(entity)}}</a></span>
           <span data-ng-if="col.type == 'clickable' && col.prop"><a href="" data-ng-click="$ctrl.clicked(entity, col.clickMeta(entity))">{{entity[col.prop]}}</a></span>
@@ -44,6 +46,10 @@
             <button data-ng-click="col.button.action(entity, $ctrl)" data-ng-disabled="col.button.disabled(entity)">
               {{col.button.display(entity)}}
             </button>
+          </span>
+          <span data-ng-if="col.type == 'select'">
+            <select data-ng-model="entity[col.prop]" data-ng-change="$ctrl.update(entity, col.prop)"
+                    data-ng-options="option for option in col.options | orderBy: option"></select>
           </span>
           <span data-ng-if="col.type == 'address'">{{entity[col.prop].address}}</span>
           <span data-ng-if="col.type == 'city'">{{$ctrl.getCity(entity[col.prop].address)}}</span>

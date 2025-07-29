@@ -148,6 +148,7 @@ public class FileServlet extends HttpServlet {
       case "png" -> "image/png";
       case "jpg" -> "image/jpg";
       case "html" -> "text/html";
+      case "csv" -> "text/csv";
       default -> "application/pdf";
     };
   }

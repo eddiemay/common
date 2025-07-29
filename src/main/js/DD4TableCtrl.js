@@ -92,7 +92,12 @@ com.digitald4.common.TableController.prototype.postDelete = function(transaction
   this.resultList.items.splice(index, 1);
 }
 
-com.digitald4.common.TableController.prototype.update = function(entity, prop) {
+com.digitald4.common.TableController.prototype.update = function(entity, prop, customUpdate) {
+  if (customUpdate) {
+    customUpdate(entity, prop);
+    return;
+  }
+
   this.loading = true;
   var index = this.resultList.items.indexOf(entity);
   this.jsonService.update(entity, [prop], function(updated) {
