@@ -179,12 +179,25 @@ com.digitald4.common.module.directive('mapauto', function() {
   }
 });
 
+
+com.digitald4.common.module.directive('mapautoElement', function() {
+  return function(scope, element, attrs) {
+    if (typeof(google) != 'undefined') {
+      google.maps.event.addDomListener(window, 'load', addMapAutoCompleteElement(element.get(0), function(place) {
+        scope.place = place;
+        scope.$apply(attrs.mapautoElement);
+      }));
+    }
+  }
+});
+
 com.digitald4.common.module.directive('dd4Address', ['$compile', function($compile) {
   return {
     restrict: 'AE',
     scope: {
       label: '@',
-      ngModel: '='
+      ngModel: '=',
+      onUpdate: '&'
     },
     template: '<span><label data-ng-if="label">{{label}}</label>' +
         '<input type="text" value="{{ngModel.address}}" class="full-width"/></span>',
@@ -197,13 +210,14 @@ com.digitald4.common.module.directive('dd4Address', ['$compile', function($compi
       if (typeof(google) != 'undefined') {
         google.maps.event.addDomListener(window, 'load', addMapAutoComplete(textField[0], function(place) {
           if (typeof(gpsAddress) == 'undefined') {
-            // scope.$parent.$eval(attrs.ngModel + ' = {}');
             gpsAddress = scope.$parent.$eval(attrs.ngModel);
           }
           gpsAddress.address = place.formatted_address;
           gpsAddress.latitude = place.geometry.location.lat();
           gpsAddress.longitude = place.geometry.location.lng();
-          scope.$parent.$apply(attrs.dd4Address);
+          if (attrs.onUpdate) {
+            scope.$parent.$eval(attrs.onUpdate);
+          }
         }));
       }
     }
@@ -216,10 +230,10 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
     scope: {
       ngModel: '=',
       onUpdate: '&',
-      ngDisabled: '&'
+      isDisabled: '='
     },
     template: '<span><label data-ng-if="label">{{label}}</label>' +
-        '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10" ng-disabled="{{ngDisabled}}"/>' +
+        '<input type="text" class="datepicker" value="{{ngModel | date:\'MM/dd/yyyy\'}}" size="10" ng-disabled="isDisabled"/>' +
         '&nbsp;<img src="images/icons/fugue/calendar-month.png" width="16" height="16"/></span>',
     replace: true,
     require: 'ngModel',
@@ -240,7 +254,6 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
         if (currentValue != newValue) {
           console.log('DateTime changed from ' + currentValue + ' to ' + newValue);
           scope.$parent.$eval(attrs.ngModel + ' = ' + newValue);
-          scope.$parent.$apply(attrs.dd4Datepicker);
           if (attrs.onUpdate) {
             scope.$parent.$eval(attrs.onUpdate);
           }
