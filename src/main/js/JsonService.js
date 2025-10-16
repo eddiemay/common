@@ -125,8 +125,7 @@ com.digitald4.common.JSONService.prototype.Delete = function(id, onSuccess, onEr
 * @param {!function(!Object)} onError The call back function to call after a submission onError.
 */
 com.digitald4.common.JSONService.prototype.batchCreate = function(entities, onSuccess, onError) {
-	this.sendRequest(
-	    {action: 'batchCreate', method: 'POST', data: {items: entities}}, onSuccess, onError);
+	this.sendRequest({action: 'batchCreate', method: 'POST', data: {items: entities}}, onSuccess, onError);
 }
 
 /**

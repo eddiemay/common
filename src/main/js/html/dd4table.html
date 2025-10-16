@@ -38,7 +38,7 @@
                  data-ng-model="entity[col.prop]" data-on-change="$ctrl.update(entity, col.prop)"/>
           <textarea data-ng-if="col.type=='textarea'" data-ng-model="entity[col.prop]"
                     data-on-change="$ctrl.update(entity, col.prop)" cols="20" rows="4"></textarea>
-          <span data-ng-if="col.value && !col.url && col.type === 'undefined'">{{col.value(entity)}}</span>
+          <span data-ng-if="col.value && !col.url && col.type === undefined">{{col.value(entity)}}</span>
           <span data-ng-if="col.url"><a href="{{col.url(entity)}}">{{entity[col.prop]}}{{col.value(entity)}}</a></span>
           <span data-ng-if="col.type == 'clickable' && col.value"><a href="" data-ng-click="$ctrl.clicked(entity, col.clickMeta(entity))">{{col.value(entity)}}</a></span>
           <span data-ng-if="col.type == 'clickable' && col.prop"><a href="" data-ng-click="$ctrl.clicked(entity, col.clickMeta(entity))">{{entity[col.prop]}}</a></span>
@@ -58,7 +58,7 @@
           <input type="checkbox" data-ng-if="col.type == 'checkbox'" data-ng-model="entity[col.prop]"
                  data-ng-change="$ctrl.update(entity, col.prop)"/>
           <div data-dd4-datepicker data-ng-if="col.type == 'editableDate'" data-ng-model="entity[col.prop]"
-               data-on-update="$ctrl.update(entity, col.prop)" data-ng-disabled="col.disabled(entity)"></div>
+               data-on-update="$ctrl.update(entity, col.prop)" is-disabled="col.disabled(entity)"></div>
           <dd4-time data-ng-if="col.type == 'editableTime'" data-ng-model="entity[col.prop]"
                     data-on-update="$ctrl.update(entity, col.prop)"></dd4-time>
           <span data-ng-if="col.type == 'date'">{{$ctrl.getDate(entity[col.prop]) | date:'MM/dd/yyyy'}}</span>
@@ -75,7 +75,8 @@
             <a href="{{col.imageLink.url(entity)}}" target="{{col.imageLink.target}}">
               <img data-ng-src="{{col.imageLink.src}}"></a>
           </span>
-          <div data-ng-if="col.type == 'html'" data-bind-html-compile="entity[col.prop]"></div>
+          <div data-ng-if="col.type == 'html' && col.prop" data-bind-html-compile="entity[col.prop]"></div>
+          <div data-ng-if="col.type == 'html' && col.value" data-bind-html-compile="col.value(entity)"></div>
         </td>
       </tr>
     </tbody>

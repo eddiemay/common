@@ -73,8 +73,8 @@ com.digitald4.common.TableController.prototype.setSort = function(col) {
 com.digitald4.common.TableController.prototype.clicked = function(entity, metadata) {
   var $ctrl = this;
   this.onClick({clickRequest: {
-    original: JSON.parse(JSON.stringify(entity)),
-    entity: entity,
+    original: entity,
+    entity: JSON.parse(JSON.stringify(entity)),
     metadata: metadata,
     shown: true,
     postUpdate: function(transaction) {$ctrl.postUpdate(transaction)},
@@ -83,8 +83,10 @@ com.digitald4.common.TableController.prototype.clicked = function(entity, metada
 }
 
 com.digitald4.common.TableController.prototype.postUpdate = function(transaction) {
+  var appointment = JSON.parse(JSON.stringify(transaction.entity));
   var index = this.resultList.items.indexOf(transaction.original);
-  this.resultList.items.splice(index, 1, transaction.entity);
+  this.resultList.items.splice(index, 1, appointment);
+  transaction.original = appointment;
 }
 
 com.digitald4.common.TableController.prototype.postDelete = function(transaction) {

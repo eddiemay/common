@@ -19,6 +19,9 @@ var FileService = function(apiConnector, globalData) {
         callback(JSON.parse(xhr.response));
       }
     }
+    xhr.onerror = function(e) {
+      notify("Error uploading file");
+    }
     xhr.open('post', url, true);
     var fd = new FormData;
     for (var prop in request) {

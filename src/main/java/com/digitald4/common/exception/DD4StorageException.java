@@ -6,6 +6,7 @@ public class DD4StorageException extends RuntimeException {
 		NOT_AUTHENTICATED(401),
 		FORBIDDEN(403),
 		NOT_FOUND(404),
+		CONFLICT(409),
 		INTERNAL_SERVER_ERROR(500),
 		NOT_IMPLEMENTED(501);
 

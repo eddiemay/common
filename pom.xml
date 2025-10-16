@@ -161,6 +161,7 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>yuicompressor-maven-plugin</artifactId>
+        <version>1.5.1</version>
         <configuration>
           <preProcessAggregates>true</preProcessAggregates>
           <aggregations>
@@ -171,10 +172,6 @@
               <includes>
                 <include>**/*.js</include>
               </includes>
-              <excludes>
-                <exclude>**/*abc.js</exclude>
-                <exclude>**/compressed.css</exclude>
-              </excludes>
             </aggregation>
           </aggregations>
           <excludes>
@@ -185,7 +182,7 @@
           </excludes>
           <jswarn>false</jswarn>
           <nosuffix>false</nosuffix>
-          <sourceDirectory>${basedir}/target/generated-sources/js/</sourceDirectory>
+          <sourceDirectory>${basedir}/target/generated-sources/js</sourceDirectory>
           <outputDirectory>${basedir}/target/${project.artifactId}-${project.version}/js</outputDirectory>
         </configuration>
         <executions>
@@ -201,3 +198,4 @@
     </plugins>
   </build>
 </project>
+    
