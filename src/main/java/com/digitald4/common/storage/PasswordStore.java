@@ -3,6 +3,7 @@ package com.digitald4.common.storage;
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Password;
+import com.digitald4.common.storage.Query.OrderBy;
 import java.time.Instant;
 
 import javax.inject.Inject;
@@ -20,7 +21,7 @@ public class PasswordStore extends GenericStore<Password, Long> {
   public boolean verify(long userId, String passwordHash) {
     validateEncoding(passwordHash);
 
-    var passwords = list(Query.forList(Query.Filter.of("userId", userId))).getItems();
+    var passwords = list(Query.forList(Query.Filter.of("userId", userId)).setOrderBys(OrderBy.of("createdAt", true))).getItems();
     if (passwords.isEmpty()) {
       throw new DD4StorageException("Password record not found for userId: " + userId, ErrorCode.NOT_AUTHENTICATED);
     } else if (!passwords.get(0).getDigest().equals(passwordHash)) {
