@@ -6,6 +6,7 @@ import static java.util.Arrays.stream;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
+import com.digitald4.common.util.JSONUtil;
 import com.google.common.collect.ImmutableList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -88,16 +89,20 @@ public class Query {
     return (pageSize == null ? 0 : pageSize) * (getPageToken() - 1);
   }
 
-  public static Query.List forList() {
-    return new Query.List();
+  public Query copy() {
+    return JSONUtil.copy(this);
+  }
+
+  public static List forList() {
+    return new List();
   }
 
   public static List forList(Filter... filters) {
     return new List().setFilters(filters);
   }
 
-  public static Query.List forList(String fields, String filters, String orderBys, Integer pageSize, int pageToken) {
-    Query.List query = new Query.List();
+  public static List forList(String fields, String filters, String orderBys, Integer pageSize, int pageToken) {
+    List query = new List();
     if (fields != null && !fields.isEmpty()) {
       query.setFields(stream(fields.split(",")).collect(toImmutableList()));
     }
@@ -168,6 +173,11 @@ public class Query {
     public Query.List setOffset(int offset) {
       super.setPageToken(offset);
       return this;
+    }
+
+    @Override
+    public List copy() {
+      return JSONUtil.copy(this);
     }
 
     public String toString() {

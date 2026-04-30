@@ -70,8 +70,7 @@ public class FileServlet extends HttpServlet {
     loginResolver = new SessionStore<>(daoProvider, userStore, new PasswordStore(daoProvider),
         userProvider, ofMinutes(30), false, clock);
     ServletContext sc = getServletContext();
-    ServerType serverType =
-        sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
+    ServerType serverType = sc.getServerInfo().contains("Tomcat") ? ServerType.TOMCAT : ServerType.APPENGINE;
     if (serverType == ServerType.TOMCAT) {
       // We use MySQL with Tomcat, so if Tomcat, MySQL
       dao = new DAOSQLImpl(
@@ -147,16 +146,16 @@ public class FileServlet extends HttpServlet {
     return switch (fileType) {
       case "png" -> "image/png";
       case "jpg" -> "image/jpg";
-      case "html" -> "text/html";
       case "csv" -> "text/csv";
+      case "html" -> "text/html";
+      case "xml" -> "text/xml";
       default -> "application/pdf";
     };
   }
 
   private final Function<HttpServletRequest, DataFile> converter = request -> {
     Part filePart;
-    String id;
-    String fileName;
+    String id, fileName;
     try {
       filePart = request.getPart("file");
       if (filePart == null) {
@@ -167,14 +166,14 @@ public class FileServlet extends HttpServlet {
     } catch (IOException | ServletException e) {
       throw new RuntimeException("Error reading file part", e);
     }
-    try (InputStream filecontent = filePart.getInputStream();
+    try (InputStream fileContent = filePart.getInputStream();
         ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
 
       // Create path components to save the file
       int read;
       final byte[] bytes = new byte[1024];
 
-      while ((read = filecontent.read(bytes)) != -1) {
+      while ((read = fileContent.read(bytes)) != -1) {
         buffer.write(bytes, 0, read);
       }
       // LOGGER.log(Level.INFO, "File {0} being uploaded.", fileName);
@@ -183,6 +182,8 @@ public class FileServlet extends HttpServlet {
           .setId(id)
           .setName(fileName)
           .setType(fileName.substring(fileName.lastIndexOf('.') + 1))
+          .setEntityType(request.getParameter("entityType"))
+          .setEntityId(request.getParameter("entityId"))
           .setData(data);
     } catch (IOException e) {
       e.printStackTrace();

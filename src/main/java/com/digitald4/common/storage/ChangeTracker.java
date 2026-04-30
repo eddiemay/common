@@ -151,7 +151,6 @@ public class ChangeTracker {
             .setEntityId(String.valueOf(op.getId()))
             .setAction(op.getAction())
             .setTimeStamp(clock.millis())
-            .setUserId(user.getId())
             .setUsername(user.getUsername())
             .setEntity(new JSONObject(op.getEntity()).toString())
             .setChanges(commuteChanges(op)));
@@ -186,7 +185,6 @@ public class ChangeTracker {
     private String entityId;
     private Action action;
     private Instant timeStamp;
-    private Long userId;
     private String username;
     private StringBuilder entity;
     private ImmutableList<Change> changes;
@@ -249,12 +247,13 @@ public class ChangeTracker {
       return this;
     }
 
+    @Deprecated
     public Long getUserId() {
-      return userId;
+      return null;
     }
 
+    @Deprecated
     public ChangeHistory setUserId(Long userId) {
-      this.userId = userId;
       return this;
     }
 

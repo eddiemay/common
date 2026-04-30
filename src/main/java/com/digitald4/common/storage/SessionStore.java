@@ -55,7 +55,7 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
       throw PasswordStore.BAD_LOGIN;
     }
 
-    passwordStore.verify(user.getId(), password);
+    passwordStore.verify(username, password);
 
     DateTime now = new DateTime(clock.millis());
 
@@ -63,7 +63,6 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
         create(
             new Session()
                 .setId(String.valueOf((int) (Math.random() * Integer.MAX_VALUE)))
-                .setUserId(user.getId())
                 .setUsername(user.getUsername())
                 .setStartTime(now)
                 .setExpTime(now.plus(sessionDuration.toMillis()))
@@ -87,10 +86,7 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
 
       // Only set the user on active sessions.
       if (activeSession.getExpTime().isAfter(now)) {
-        String username = activeSession.getUsername();
-        activeSession = cachePut(activeSession.user(username != null
-            ? userStore.getBy(activeSession.getUsername())
-            : userStore.get(activeSession.getUserId())));
+        activeSession = cachePut(activeSession.user(userStore.getBy(activeSession.getUsername())));
       }
     }
 
@@ -103,6 +99,13 @@ public class SessionStore<U extends User> extends GenericStore<Session, String> 
   }
 
   public Session resolve(String token, boolean loginRequired) {
+    if ((token == null || token.isEmpty())) {
+      if (loginRequired) {
+        throw NOT_AUTHENICATED;
+      }
+      return null;
+    }
+
     Session session = get(token);
     if (loginRequired && (session == null || session.getState() != State.ACTIVE)) {
       throw NOT_AUTHENICATED;

@@ -1,6 +1,6 @@
 package com.digitald4.common.storage;
 
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.digitald4.common.jdbc.DBConnector;

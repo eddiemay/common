@@ -55,8 +55,7 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 
 	@Override
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "get")
-	public T get(@Named("id") I id, @Nullable @Named("idToken") String idToken)
-			throws ServiceException {
+	public T get(@Named("id") I id, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken, "get");
 			return transform(getStore().get(id));
@@ -136,8 +135,11 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 			@Nullable @Named("orderBy") String orderBy, @Nullable @Named("idToken") String idToken) throws ServiceException {
 		try {
 			resolveLogin(idToken, "migrate");
+			var store = getStore();
 			return new AtomicInteger(
-					getStore().create(getStore().list(Query.forList(null, filter, orderBy, pageSize, pageToken)).getItems()).size());
+					store.create(
+							store.migrate(
+									store.list(Query.forList(null, filter, orderBy, pageSize, pageToken)).getItems())).size());
 		} catch (DD4StorageException e) {
 			throw new ServiceException(e.getErrorCode(), e);
 		} catch (Exception e) {

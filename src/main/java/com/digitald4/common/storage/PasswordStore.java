@@ -4,7 +4,6 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Password;
 import com.digitald4.common.storage.Query.OrderBy;
-import java.time.Instant;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -18,12 +17,12 @@ public class PasswordStore extends GenericStore<Password, Long> {
     super(Password.class, daoProvider);
   }
 
-  public boolean verify(long userId, String passwordHash) {
+  public boolean verify(String username, String passwordHash) {
     validateEncoding(passwordHash);
-
-    var passwords = list(Query.forList(Query.Filter.of("userId", userId)).setOrderBys(OrderBy.of("createdAt", true))).getItems();
+    var passwords = list(Query.forList(Query.Filter.of("username", username))
+        .setOrderBys(OrderBy.of("creationTime", true))).getItems();
     if (passwords.isEmpty()) {
-      throw new DD4StorageException("Password record not found for userId: " + userId, ErrorCode.NOT_AUTHENTICATED);
+      throw new DD4StorageException("Password record not found for user: " + username, ErrorCode.NOT_AUTHENTICATED);
     } else if (!passwords.get(0).getDigest().equals(passwordHash)) {
       throw new DD4StorageException("Password does not match", ErrorCode.NOT_AUTHENTICATED);
     }
@@ -31,9 +30,9 @@ public class PasswordStore extends GenericStore<Password, Long> {
     return true;
   }
 
-  public void updatePassword(long userId, String passwordHash) {
+  public void updatePassword(String username, String passwordHash) {
     validateEncoding(passwordHash);
-    create(new Password().setUserId(userId).setDigest(passwordHash).setCreatedAt(Instant.now()));
+    create(new Password().setUsername(username).setDigest(passwordHash));
   }
 
   /**

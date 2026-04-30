@@ -8,8 +8,10 @@ public class DataFile extends ModelObjectModUser<String> {
   private String name;
   private String type;
   private int size;
-  private byte[] data;
+  private String entityType;
+  private String entityId;
   private String comment;
+  private byte[] data;
 
   public String getId() {
     return id;
@@ -50,14 +52,21 @@ public class DataFile extends ModelObjectModUser<String> {
     return this;
   }
 
-  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-  public byte[] getData() {
-    return data;
+  public String getEntityType() {
+    return entityType;
   }
 
-  public DataFile setData(byte[] data) {
-    this.data = data;
-    this.size = data.length;
+  public DataFile setEntityType(String entityType) {
+    this.entityType = entityType;
+    return this;
+  }
+
+  public String getEntityId() {
+    return entityId;
+  }
+
+  public DataFile setEntityId(String entityId) {
+    this.entityId = entityId;
     return this;
   }
 
@@ -67,6 +76,17 @@ public class DataFile extends ModelObjectModUser<String> {
 
   public DataFile setComment(String comment) {
     this.comment = comment;
+    return this;
+  }
+
+  @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+  public byte[] getData() {
+    return data;
+  }
+
+  public DataFile setData(byte[] data) {
+    this.data = data;
+    this.size = data.length;
     return this;
   }
 }

@@ -63,14 +63,12 @@ public class DAOAppEngineDatastoreTest {
 		Session session = create(
 				new Session()
 						.setId("4567")
-						.setUserId(123)
 						.setUsername("username")
 						.setStartTime(new DateTime(1000))
 						.setExpTime(new DateTime(10000))
 						.setState(Session.State.ACTIVE));
 
 		assertThat(session.getId()).isEqualTo("4567");
-		assertThat(session.getUserId()).isEqualTo(123);
 		assertThat(session.getUsername()).isEqualTo("username");
 		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
 		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
@@ -79,7 +77,6 @@ public class DAOAppEngineDatastoreTest {
 		session = dao.get(Session.class, session.getId());
 
 		assertThat(session.getId()).isEqualTo("4567");
-		assertThat(session.getUserId()).isEqualTo(123);
 		assertThat(session.getUsername()).isEqualTo("username");
 		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
 		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
@@ -91,14 +88,12 @@ public class DAOAppEngineDatastoreTest {
 		Session session = create(
 				new Session()
 						.setId("4567")
-						.setUserId(123)
 						.setUsername("username")
 						.setStartTime(new DateTime(1000))
 						.setExpTime(new DateTime(10000))
 						.setState(Session.State.ACTIVE));
 
 		assertThat(session.getId()).isEqualTo("4567");
-		assertThat(session.getUserId()).isEqualTo(123);
 		assertThat(session.getUsername()).isEqualTo("username");
 		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
 		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
@@ -106,7 +101,6 @@ public class DAOAppEngineDatastoreTest {
 
 		session = dao.get(Session.class, "4567");
 		assertThat(session.getId()).isEqualTo("4567");
-		assertThat(session.getUserId()).isEqualTo(123);
 		assertThat(session.getUsername()).isEqualTo("username");
 		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
 		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
@@ -116,7 +110,6 @@ public class DAOAppEngineDatastoreTest {
 		session = update(Session.class, "4567", s -> s.setExpTime(new DateTime(20000)));
 
 		assertThat(session.getId()).isEqualTo("4567");
-		assertThat(session.getUserId()).isEqualTo(123);
 		assertThat(session.getUsername()).isEqualTo("username");
 		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
 		assertThat(session.getExpTime().getMillis()).isEqualTo(20000);
@@ -174,13 +167,11 @@ public class DAOAppEngineDatastoreTest {
 		Session session = create(
 				new Session()
 						.setId("4567")
-						.setUserId(123)
 						.setStartTime(new DateTime(1000))
 						.setExpTime(new DateTime(10000))
 						.setState(Session.State.ACTIVE));
 
 		assertThat(session.getId()).isEqualTo("4567");
-		assertThat(session.getUserId()).isEqualTo(123);
 		assertThat(session.getStartTime().getMillis()).isEqualTo(1000);
 		assertThat(session.getExpTime().getMillis()).isEqualTo(10000);
 		assertThat(session.getState()).isEqualTo(Session.State.ACTIVE);

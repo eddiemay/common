@@ -1,9 +1,10 @@
 package com.digitald4.common.model;
 
 import com.digitald4.common.util.JSONUtil;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class ModelObject<ID> {
+public class ModelObject<ID> implements Serializable {
 
   private ID id;
 

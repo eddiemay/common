@@ -2,10 +2,9 @@ package com.digitald4.common.model;
 
 import java.time.Instant;
 
-public class Password extends ModelObject<Long> {
-  private long userId;
+public class Password extends ModelObjectModUser<Long> {
+  private String username;
   private String digest;
-  private Instant createdAt;
   private String resetToken;
   private Instant resetSentAt;
 
@@ -14,12 +13,12 @@ public class Password extends ModelObject<Long> {
     return this;
   }
 
-  public long getUserId() {
-    return userId;
+  public String getUsername() {
+    return username;
   }
 
-  public Password setUserId(long userId) {
-    this.userId = userId;
+  public Password setUsername(String username) {
+    this.username = username;
     return this;
   }
 
@@ -30,19 +29,6 @@ public class Password extends ModelObject<Long> {
   public Password setDigest(String digest) {
     this.digest = digest;
     return this;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
-
-  public Password setCreatedAt(Instant createdAt) {
-    this.createdAt = createdAt;
-    return this;
-  }
-
-  public Password setCreatedAt(long createdAt) {
-    return setCreatedAt(Instant.ofEpochMilli(createdAt));
   }
 
   public String getResetToken() {

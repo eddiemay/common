@@ -6,7 +6,6 @@ import org.joda.time.DateTime;
 
 public class Session {
   private String id;
-  private long userId;
   private String username;
   private DateTime startTime;
   private DateTime expTime;
@@ -23,15 +22,6 @@ public class Session {
 
   public Session setId(String id) {
     this.id = id;
-    return this;
-  }
-
-  public long getUserId() {
-    return userId;
-  }
-
-  public Session setUserId(long userId) {
-    this.userId = userId;
     return this;
   }
 

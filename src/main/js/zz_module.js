@@ -254,6 +254,7 @@ com.digitald4.common.module.directive('dd4Datepicker', ['$compile', function($co
         if (currentValue != newValue) {
           console.log('DateTime changed from ' + currentValue + ' to ' + newValue);
           scope.$parent.$eval(attrs.ngModel + ' = ' + newValue);
+          scope.$parent.$apply(attrs.dd4Datepicker);
           if (attrs.onUpdate) {
             scope.$parent.$eval(attrs.onUpdate);
           }

@@ -15,6 +15,7 @@ var createUserService = function($cookies, apiConnector, globalData) {
   }
 
   userService.logout = function(success, error) {
+    success = success || function(){};
     if (globalData.activeSession) {
       this.sendRequest({action: 'logout'}, success, error);
       globalData.activeSession = undefined;

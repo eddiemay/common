@@ -67,7 +67,6 @@ public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 		sessionStore.resolve(idToken, true);
 		String username = updatePasswordRequest.getUsername();
 		String password = updatePasswordRequest.getPassword();
-
 		PasswordStore.validateEncoding(password);
 
 		U user = userStore.getBy(username);
@@ -75,7 +74,7 @@ public class UserService<U extends User> extends EntityServiceImpl<U, Long> {
 			throw new NotFoundException("User not found");
 		}
 
-		passwordStore.updatePassword(user.getId(), password);
+		passwordStore.updatePassword(username, password);
 
 		return Empty.getInstance();
 	}

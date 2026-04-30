@@ -212,8 +212,8 @@ public class DAOCloudDatastore implements DAO {
 		var eQuery = com.google.cloud.datastore.Query.newEntityQueryBuilder().setKind(getTableName(c));
 		if (!query.getFilters().isEmpty()) {
 			eQuery.setFilter(CompositeFilter.and(
-					toPropertyFilter(c, query.getFilters().getFirst()),
-					toPropertyFilters(c, query.getFilters())));
+					toPropertyFilter(c, query.getFilters().get(0)),
+					toPropertyFilters(c, query.getFilters().subList(1, query.getFilters().size()))));
 		}
 
 		Integer limit = query.getLimit();
@@ -223,7 +223,7 @@ public class DAOCloudDatastore implements DAO {
 
 		if (query.useDBSort()) {
 			if (!query.getOrderBys().isEmpty()) {
-				eQuery.setOrderBy(toOrderBy(query.getOrderBys().getFirst()), toOrderBys(query.getOrderBys()));
+				eQuery.setOrderBy(toOrderBy(query.getOrderBys().get(0)), toOrderBys(query.getOrderBys()));
 			}
 			if (query.getLimit() != null && query.getLimit() > 0) {
 				eQuery.setLimit(query.getLimit());

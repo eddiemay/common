@@ -6,9 +6,9 @@ import java.time.Clock;
 
 public interface User {
 
-	Long getId();
+	@Deprecated Long getId();
 
-	User setId(Long id);
+	@Deprecated User setId(Long id);
 
 	String getUsername();
 

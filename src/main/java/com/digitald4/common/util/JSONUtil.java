@@ -84,19 +84,26 @@ public class JSONUtil {
   }
 
   public static ImmutableMap<String, Field> getFields(Class<?> c) {
-    return typeFields.computeIfAbsent(c, v -> {
-      Map<String, Method> methods = new HashMap<>();
-      stream(c.getMethods()).forEach(method -> methods.put(method.getName(), method));
+    var fieldMap = typeFields.get(c);
+    if (fieldMap != null) {
+      return fieldMap;
+    }
+    synchronized(c) {
+      return typeFields.computeIfAbsent(c, v -> {
+        Map<String, Method> methods = new HashMap<>();
+        stream(c.getMethods()).forEach(method -> methods.put(method.getName(), method));
 
-      return methods.values().stream()
-          .filter(m -> m.getParameters().length == 0
-              && (m.getName().startsWith("get") || m.getName().startsWith("is")))
-          .map(method -> {
-            String name = method.getName().substring(method.getName().startsWith("is") ? 2 : 3);
-            return new Field(name, method, methods.get("set" + name));
-          })
-          .collect(toImmutableMap(Field::getName, identity()));
-    });
+        return methods.values().stream()
+            .filter(m -> m.getParameters().length == 0
+                && (m.getName().startsWith("get") || m.getName().startsWith("is")))
+            .map(method -> {
+              String name = method.getName().substring(method.getName().startsWith("is") ? 2 : 3);
+              return new Field(name, method, methods.get("set" + name));
+            })
+            .collect(toImmutableMap(Field::getName, identity()));
+      });
+    }
+
   }
 
   public static class Field {

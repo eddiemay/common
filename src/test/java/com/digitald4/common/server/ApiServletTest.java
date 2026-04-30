@@ -1,7 +1,7 @@
 package com.digitald4.common.server;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.digitald4.common.server.service.JSONService;

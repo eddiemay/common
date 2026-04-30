@@ -2,7 +2,7 @@ package com.digitald4.common.storage;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -13,7 +13,6 @@ import com.digitald4.common.model.Session;
 import com.digitald4.common.storage.testing.DAOTestingImpl;
 import com.digitald4.common.util.ProviderThreadLocalImpl;
 import com.google.common.collect.ImmutableList;
-import javax.inject.Provider;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -85,8 +84,9 @@ public class SessionStoreTest {
   @Test
   public void create_wrongPassword() {
     try {
-      when(mockUserStore.getBy("username")).thenReturn(new BasicUser().setId(1L).setUsername("username"));
-      when(mockPasswordStore.verify(1L, "0123456789ABCDEF")).thenThrow(PasswordStore.BAD_LOGIN);
+      BasicUser user = new BasicUser().setId(1L).setUsername("username");
+      when(mockUserStore.getBy("username")).thenReturn(user);
+      when(mockPasswordStore.verify("username", "0123456789ABCDEF")).thenThrow(PasswordStore.BAD_LOGIN);
 
       sessionStore.create("username", "0123456789ABCDEF");
       fail("Should not have got here");
@@ -180,7 +180,6 @@ public class SessionStoreTest {
   public void testStoreToJSON() {
     Session session = new Session()
         .setId("4567")
-        .setUserId(123)
         .setUsername("username")
         .setStartTime(new DateTime(1000))
         .setExpTime(new DateTime(10000))
@@ -189,7 +188,6 @@ public class SessionStoreTest {
     JSONObject json = new JSONObject(session);
 
     assertEquals("4567", json.getString("id"));
-    assertEquals(session.getUserId(), json.getLong("userId"));
     assertThat(session.getUsername()).isEqualTo("username");
     assertEquals(session.getStartTime().getMillis(), json.get("startTime"));
     assertEquals(session.getExpTime().getMillis(), json.getLong("expTime"));

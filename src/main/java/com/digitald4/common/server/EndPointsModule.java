@@ -53,7 +53,6 @@ public class EndPointsModule extends EndpointsModule {
 		bind(Clock.class).toInstance(Clock.systemUTC());
 
 		bind(DAO.class).to(DAOAppEngineDatastore.class);
-
 		bind(new TypeLiteral<Store<DataFile, String>>(){}).to(new TypeLiteral<GenericStore<DataFile, String>>(){});
 		// bind(new TypeLiteral<Store<Flag, String>>(){}).to(new TypeLiteral<GenericStore<Flag, String>>(){});
 	}

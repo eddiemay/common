@@ -317,7 +317,13 @@ public class DAOAppEngineDatastore implements DAO {
 									(value instanceof Long) ? value : Instant.parse((String) value).toEpochMilli());
 						}
 					}
-					case "Integer", "int" -> jsonObject.put(javaName, ((Long) value).intValue());
+					case "Integer", "int" -> {
+						if (value instanceof Double) {
+							jsonObject.put(javaName, ((Double) value).intValue());
+						} else {
+							jsonObject.put(javaName, ((Long) value).intValue());
+						}
+					}
 					case "Long", "long" -> {
 						if (colName.endsWith("id")) {
 							jsonObject.put(javaName, value);

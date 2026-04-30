@@ -50,4 +50,9 @@ public class DD4StorageException extends RuntimeException {
 	public int getErrorCode() {
 		return errorCode.getErrorCode();
 	}
+
+	@Override
+	public String toString() {
+		return getMessage();
+	}
 }

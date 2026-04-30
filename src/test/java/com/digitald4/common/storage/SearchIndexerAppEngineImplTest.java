@@ -2,7 +2,7 @@ package com.digitald4.common.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.anyListOf;
+import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -58,7 +58,7 @@ public class SearchIndexerAppEngineImplTest {
         ImmutableList.of(
             new SearchableUser().setId(123L).setFirstName("First").setLastName("Last")));
 
-    verify(index, times(1)).putAsync(anyListOf(Document.class));
+    verify(index, times(1)).putAsync(anyIterable());
   }
 
   @Test
@@ -68,7 +68,7 @@ public class SearchIndexerAppEngineImplTest {
             new SearchableUser().setId(123L).setFirstName("First1").setLastName("Last1"),
             new SearchableUser().setId(456L).setFirstName("First2").setLastName("Last2")));
 
-    verify(index, times(1)).putAsync(anyListOf(Document.class));
+    verify(index, times(1)).putAsync(anyIterable());
   }
 
   @Test
@@ -80,7 +80,7 @@ public class SearchIndexerAppEngineImplTest {
                     .setId((long) i).setFirstName("First" + i).setLastName("Last" + i))
             .collect(toImmutableList()));
 
-    verify(index, times(3)).putAsync(anyListOf(Document.class));
+    verify(index, times(3)).putAsync(anyIterable());
   }
 
   public static class SearchableUser extends BasicUser implements Searchable {

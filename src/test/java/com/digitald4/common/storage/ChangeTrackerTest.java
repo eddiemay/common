@@ -1,7 +1,7 @@
 package com.digitald4.common.storage;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static java.util.function.UnaryOperator.identity;
@@ -44,7 +44,6 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getAction()).isEqualTo(Action.CREATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
     assertThat(changeHistory.getEntityId()).isEqualTo("1002");
-    assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity().toString()).isEqualTo(new JSONObject(trackable).toString());
   }
@@ -61,7 +60,6 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getAction()).isEqualTo(Action.UPDATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
     assertThat(changeHistory.getEntityId()).isEqualTo("1002");
-    assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity().toString()).isEqualTo(new JSONObject(updated).toString());
   }
@@ -78,7 +76,6 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getAction()).isEqualTo(Action.DELETED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
     assertThat(changeHistory.getEntityId()).isEqualTo("1002");
-    assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getEntity().toString()).isEqualTo(new JSONObject(trackable).toString());
   }
@@ -98,7 +95,6 @@ public class ChangeTrackerTest {
     assertThat(changeHistory.getAction()).isEqualTo(Action.CREATED);
     assertThat(changeHistory.getEntityType()).isEqualTo("ChangeTrackableUser");
     assertThat(changeHistory.getEntityId()).isEqualTo("1002");
-    assertThat(changeHistory.getUserId()).isEqualTo(1001L);
     assertThat(changeHistory.getUsername()).isEqualTo("user1");
     assertThat(changeHistory.getChanges()).isNull();
   }

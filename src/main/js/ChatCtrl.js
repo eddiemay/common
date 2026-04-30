@@ -2,8 +2,7 @@ com.digitald4.common.ChatCtrl = ['$http', '$httpParamSerializer', 'globalData',
     function($http, $httpParamSerializer, globalData) {
   this.globalData = globalData;
   globalData.showThought = globalData.showThought || false;
-  globalData.chatSessionId = globalData.chatSessionId || Math.floor(Math.random() * 32768);
-  var sessionId = globalData.chatSessionId;
+  var sessionId = globalData.chatSessionId = globalData.chatSessionId || Math.floor(Math.random() * 32768);
 
   var replacer = function(match, p1, /* …, */ pN, offset, string, groups) {
     return '(<scripture ref="' + p1 + '"/>)';
