@@ -72,7 +72,14 @@ public class JSONUtil {
   }
 
   public static <T> T getDefaultInstance(Class<T> cls) {
-    return (T) defaultInstances.computeIfAbsent(cls, c -> newInstance(c));
+    T t = (T) defaultInstances.get(cls);
+    if (t != null) {
+      return t;
+    }
+
+    synchronized (cls) {
+      return (T) defaultInstances.computeIfAbsent(cls, c -> newInstance(c));
+    }
   }
 
   public static <T> T newInstance(Class<T> cls) {
@@ -96,6 +103,7 @@ public class JSONUtil {
         return methods.values().stream()
             .filter(m -> m.getParameters().length == 0
                 && (m.getName().startsWith("get") || m.getName().startsWith("is")))
+            .filter(m -> !m.getName().equals("getClass"))
             .map(method -> {
               String name = method.getName().substring(method.getName().startsWith("is") ? 2 : 3);
               return new Field(name, method, methods.get("set" + name));
@@ -141,13 +149,12 @@ public class JSONUtil {
       return nonIndexed;
     }
 
-    public <T> T invokeSet(T t, Object value) {
+    public <T> void invokeSet(T t, Object value) {
       try {
         setMethod.invoke(t, value);
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new DD4StorageException("Error invoking set method", e);
       }
-      return t;
     }
 
     public boolean isObject() {

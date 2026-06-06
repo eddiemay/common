@@ -92,7 +92,13 @@ public class SearchIndexerAppEngineImpl implements SearchIndexer {
   }
 
   private Index getIndex(Class<?> c) {
-    return indexes.computeIfAbsent(c, this::computeIndex);
+    var index = indexes.get(c);
+    if (index != null) {
+      return index;
+    }
+    synchronized (c) {
+      return indexes.computeIfAbsent(c, this::computeIndex);
+    }
   }
 
   protected Index computeIndex(Class<?> c) {
