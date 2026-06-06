@@ -1,5 +1,7 @@
 package com.digitald4.common.server.service;
 
+import static java.util.stream.Collectors.joining;
+
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.exception.DD4StorageException.ErrorCode;
 import com.digitald4.common.model.Searchable;
@@ -36,6 +38,23 @@ public class EntityServiceImpl<T,I> implements Createable<T>, Getable<T,I>, List
 	@Override
 	public Class<T> getTypeClass() {
 		return store.getTypeClass();
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "describe")
+	public StringBuilder describe(@Nullable @Named("idToken") String idToken) throws ServiceException {
+		try {
+			resolveLogin(idToken, true);
+			var fields = JSONUtil.getFields(getTypeClass());
+
+			return new StringBuilder(String.format("%s {\n%s}", getTypeClass().getSimpleName(), fields.values().stream().map(
+					field -> String.format("\t%s %s\n", field.getType().getSimpleName(), field.getName())).collect(joining())));
+		} catch (DD4StorageException e) {
+			e.printStackTrace();
+			throw new ServiceException(e.getErrorCode(), e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ServiceException(ErrorCode.INTERNAL_SERVER_ERROR.getErrorCode(), e);
+		}
 	}
 
 	@Override

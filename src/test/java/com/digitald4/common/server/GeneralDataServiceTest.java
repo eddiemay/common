@@ -1,5 +1,6 @@
 package com.digitald4.common.server;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,6 +24,14 @@ public class GeneralDataServiceTest {
 	@Mock private final GeneralDataStore mockStore = mock(GeneralDataStore.class);
 	@Mock private final UserStore<BasicUser> mockUserStore = mock(UserStore.class);
 	@Mock private final SessionStore<BasicUser> sessionStore = mock(SessionStore.class);
+
+	@Test
+	public void describe() throws Exception {
+		when(mockStore.getTypeClass()).thenReturn(GeneralData.class);
+		GeneralDataService generalDataService = new GeneralDataService(mockStore, sessionStore);
+		assertThat(generalDataService.describe("123").toString()).contains(
+				"GeneralData {\n\tString name\n\tdouble rank\n\tint inGroupId\n");
+	}
 
 	@Test
 	public void testCreate() throws Exception {
